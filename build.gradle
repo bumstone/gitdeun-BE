@@ -24,7 +24,7 @@ repositories {
 }
 
 ext {
-	mapstructVersion = "1.6.0.Final"
+	mapstructVersion = "1.6.3"
 	springDocVersion = "2.5.0"
 	jjwtVersion = "0.12.6"
 	awsSdkVersion = "2.25.68"
