@@ -24,14 +24,20 @@ public enum ErrorCode {
 
 
     // S3 파일 관련
-    FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "FILE-001", "업로드 가능한 파일 개수를 초과했습니다."),
-    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "FILE-002", "파일 크기가 허용된 용량을 초과했습니다."),
-    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "FILE-003", "지원하지 않는 파일 형식입니다."),
-    FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE-004", "요청한 파일을 찾을 수 없습니다."),
-    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE-006", "파일 업로드 중 오류가 발생했습니다."),
-    INVALID_FILE_LIST(HttpStatus.BAD_REQUEST, "FILE-006", "파일 목록이 비어있거나 유효하지 않습니다."),
-    INVALID_FILE_PATH(HttpStatus.BAD_REQUEST, "FILE-007", "파일 경로나 이름이 유효하지 않습니다."),
-    FILE_MOVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE-008", "파일 이동 중 오류가 발생했습니다.");
+    // Client Errors (4xx)
+    FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE-001", "요청한 파일을 찾을 수 없습니다."),
+    INVALID_FILE_LIST(HttpStatus.BAD_REQUEST, "FILE-002", "파일 목록이 비어있거나 유효하지 않습니다."),
+    INVALID_FILE_PATH(HttpStatus.BAD_REQUEST, "FILE-003", "파일 경로나 이름이 유효하지 않습니다."),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "FILE-004", "지원하지 않는 파일 형식입니다."),
+    FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "FILE-005", "업로드 가능한 파일 개수를 초과했습니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "FILE-006", "파일 크기가 허용된 용량을 초과했습니다."),
+    INVALID_S3_URL(HttpStatus.BAD_REQUEST, "FILE-007", "S3 URL 형식이 올바르지 않습니다."),
+
+    // Server Errors (5xx)
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE-501", "파일 업로드 중 서버 오류가 발생했습니다."),
+    FILE_DOWNLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE-502", "파일 다운로드 중 서버 오류가 발생했습니다."),
+    FILE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE-503", "파일 삭제 중 서버 오류가 발생했습니다."),
+    FILE_MOVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE-504", "파일 이동 중 서버 오류가 발생했습니다.");
 
     
 
