@@ -6,17 +6,17 @@ import com.teamEWSN.gitdeun.common.jwt.CustomAccessDeniedHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+
 
 @Configuration
 @EnableWebSecurity
@@ -26,7 +26,6 @@ public class SecurityConfig {
 
   private final JwtTokenProvider jwtTokenProvider;
   private final ObjectMapper objectMapper;
-  private final CustomUserDetailsService customUserDetailsService;
   private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
   private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
@@ -34,14 +33,14 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
     http
-        .csrf((auth) -> auth.disable())
+        .csrf(AbstractHttpConfigurer::disable)
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .formLogin((auth) -> auth.disable())
-        .httpBasic((auth) -> auth.disable())
+        .formLogin(AbstractHttpConfigurer::disable)
+        .httpBasic(AbstractHttpConfigurer::disable)
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .headers((headerConfig) -> headerConfig
-            .frameOptions(frameOptionsConfig -> frameOptionsConfig.disable()));
+            .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
 
     // 경로별 인가 작업
     http
@@ -50,6 +49,7 @@ public class SecurityConfig {
             .requestMatchers(SecurityPath.USER_ENDPOINTS).hasAnyRole("USER", "ADMIN")
             .requestMatchers(SecurityPath.PUBLIC_ENDPOINTS).permitAll()
             .anyRequest().permitAll()
+            // .anyRequest().authenticated()
         );
 
     // 예외 처리
@@ -67,13 +67,7 @@ public class SecurityConfig {
   // CORS 설정을 위한 Bean 등록
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
-    org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-    configuration.addAllowedOrigin("http://localhost:3000"); // 개발 환경
-    configuration.addAllowedOrigin("https://gitdeun.netlify.app");
-    configuration.addAllowedOrigin("https://gitdeun.site"); // 혜택온 도메인
-    configuration.addAllowedOrigin("https://www.gitdeun.site");
-    configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
-    configuration.addAllowedHeader("*"); // 모든 헤더 허용
+    CorsConfiguration configuration = getCorsConfiguration();
     configuration.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type"));
     configuration.setExposedHeaders(java.util.List.of("Authorization"));
     configuration.setAllowCredentials(true); // 인증 정보 허용 (쿠키 등)
@@ -83,23 +77,16 @@ public class SecurityConfig {
     return source;
   }
 
-  // Authentication manager
-  @Bean
-  public AuthenticationManager authenticationManager(
-      HttpSecurity http,
-      PasswordEncoder passwordEncoder) throws Exception {
-    AuthenticationManagerBuilder authenticationManagerBuilder
-        = http.getSharedObject(AuthenticationManagerBuilder.class);
-    authenticationManagerBuilder
-        .userDetailsService(customUserDetailsService)
-        .passwordEncoder(passwordEncoder);
 
-    return authenticationManagerBuilder.build();
+  private static CorsConfiguration getCorsConfiguration() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.addAllowedOrigin("http://localhost:3000"); // 개발 환경
+    configuration.addAllowedOrigin("https://gitdeun.netlify.app");
+    configuration.addAllowedOrigin("https://gitdeun.site"); // 혜택온 도메인
+    configuration.addAllowedOrigin("https://www.gitdeun.site");
+    configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
+    configuration.addAllowedHeader("*"); // 모든 헤더 허용
+    return configuration;
   }
 
-  // 비밀번호 암호화 저장을 위한 Encoder Bean 등록
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
 }
