@@ -15,6 +15,8 @@ public enum ErrorCode {
     ACCESS_DENIED(HttpStatus.UNAUTHORIZED, "AUTH-005", "인증되지 않은 유저입니다."),
     INVALID_SECRET_KEY(HttpStatus.UNAUTHORIZED, "AUTH-006", "유효하지 않은 비밀 키입니다."),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH-007", "유효하지 않은 사용자 정보 또는 비밀번호입니다."),
+    ROLE_NOT_FOUND(HttpStatus.FORBIDDEN, "AUTH-008", "권한 정보가 없습니다."),
+    NO_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH-009", "토큰이 존재하지 않습니다."),
 
     // 계정 관련
     USER_NOT_FOUND_BY_ID(HttpStatus.NOT_FOUND, "ACCOUNT-001", "해당 아이디의 회원을 찾을 수 없습니다."),

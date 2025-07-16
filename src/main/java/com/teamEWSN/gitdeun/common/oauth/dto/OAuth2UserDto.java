@@ -8,10 +8,9 @@ import lombok.ToString;
 @Getter
 @Builder
 public class OAuth2UserDto {
-
-    private String oauthName;
     private String nickname;
     private String name;
     private String email;
     private String role;
+    private String profileImage;
 }
