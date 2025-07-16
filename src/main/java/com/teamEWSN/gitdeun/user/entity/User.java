@@ -1,5 +1,64 @@
 package com.teamEWSN.gitdeun.user.entity;
 
-public class User {
-    
+import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
+import com.teamEWSN.gitdeun.common.util.BaseEntity;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "users")
+public class User extends BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(length = 100)
+    private String name;
+
+    @Column(nullable = false, length = 100, unique = true)
+    private String nickname;
+
+    @Column(nullable = false, length = 256)
+    private String email;
+
+    @Column(name="profile_image", length = 512)
+    private String profileImage;  // image url
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SocialConnection> socialConnections = new ArrayList<>();
+
+    @Column(name = "deleted_at", columnDefinition = "DATETIME(0) DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime deletedAt;
+
+
+    @Builder
+    public User(String name, String nickname, String email, String profileImage, Role role) {
+        this.name = name;
+        this.nickname = nickname;
+        this.email = email;
+        this.profileImage = profileImage;
+        this.role = role;
+    }
+
+    // 회원 탈퇴 처리
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    // 회원 닉네임 변경
+    public void updateNickname(String newNickname) {
+        this.nickname = newNickname;
+    }
+
+
 }
