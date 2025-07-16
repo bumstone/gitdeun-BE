@@ -4,12 +4,21 @@ spring:
   data:
     redis:
       host: localhost
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: http://localhost:8080/login/oauth2/code/google
+          github:
+            redirect-uri: http://localhost:8080/login/oauth2/code/github
 
 jwt:
   access-expired: 28800  # 8시간
   refresh-expired: 86400  # 1일
 
 app:
+  front-url: http://localhost:3000
   cookie:
     secure: false
     same-site: Lax

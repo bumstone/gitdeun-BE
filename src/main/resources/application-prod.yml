@@ -8,6 +8,14 @@ spring:
     redis:
       host: gitdeun-redis
       password: ${REDIS_PASSWORD}
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: https://api.gitdeun.ac.kr/login/oauth2/code/google
+          github:
+            redirect-uri: https://api.gitdeun.ac.kr/login/oauth2/code/github
 
 
 jwt:
@@ -15,6 +23,7 @@ jwt:
   refresh-expired: 604800  # 7일(초 단위: 7 * 24 * 60 * 60)
 
 app:
+  front-url: https://gitdeun.ac.kr
   cookie:
     secure: true
     same-site: None

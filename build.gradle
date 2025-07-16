@@ -90,6 +90,9 @@ dependencies {
 	// redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	// Reactive 웹 프레임워크 WebFlux
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
 	// test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

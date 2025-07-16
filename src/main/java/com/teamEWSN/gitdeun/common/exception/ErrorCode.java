@@ -8,20 +8,27 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum ErrorCode {
     // 인증 관련
-    INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "AUTH-001", "비밀번호가 일치하지 않습니다."),
-    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "AUTH-002", "리프레시 토큰이 만료되었습니다."),
-    NO_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH-003", "토큰이 존재하지 않습니다."),
-    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH-004", "유효하지 않은 토큰입니다."),
+    INVALID_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH-001", "유효하지 않은 액세스 토큰입니다."),
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH-002", "리프레시 토큰이 유효하지 않습니다."),
+    TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "AUTH-003", "요청에 토큰이 존재하지 않습니다."),
+    FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "AUTH-004", "접근 권한이 없습니다."),
     ACCESS_DENIED(HttpStatus.UNAUTHORIZED, "AUTH-005", "인증되지 않은 유저입니다."),
-    DELETE_USER_DENIED(HttpStatus.FORBIDDEN, "AUTH-006", "회원 탈퇴가 거부되었습니다."),
-    ROLE_NOT_FOUND(HttpStatus.FORBIDDEN, "AUTH-007", "권한 정보가 없습니다."),
-
+    INVALID_SECRET_KEY(HttpStatus.UNAUTHORIZED, "AUTH-006", "유효하지 않은 비밀 키입니다."),
+    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH-007", "유효하지 않은 사용자 정보 또는 비밀번호입니다."),
 
     // 계정 관련
-    DUPLICATED_REAL_ID(HttpStatus.CONFLICT, "ACCOUNT-001", "이미 존재하는 아이디입니다."),
-    USER_NOT_FOUND_BY_REAL_ID(HttpStatus.NOT_FOUND, "ACCOUNT-002", "해당 아이디의 회원을 찾을 수 없습니다."),
-    FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "AUTH-011", "잘못된 접근입니다."),
+    USER_NOT_FOUND_BY_ID(HttpStatus.NOT_FOUND, "ACCOUNT-001", "해당 아이디의 회원을 찾을 수 없습니다."),
+    ACCOUNT_ALREADY_LINKED(HttpStatus.CONFLICT, "ACCOUNT-002", "이미 다른 사용자와 연동된 소셜 계정입니다."),
+    SOCIAL_CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOUNT-003", "연동된 소셜 계정 정보를 찾을 수 없습니다."),
 
+    // 소셜 로그인 관련
+    OAUTH_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-001", "소셜 로그인 처리 중 오류가 발생했습니다."),
+    UNSUPPORTED_OAUTH_PROVIDER(HttpStatus.BAD_REQUEST, "OAUTH-002", "지원하지 않는 소셜 로그인 제공자입니다."),
+    EMAIL_NOT_PROVIDED(HttpStatus.BAD_REQUEST, "OAUTH-003", "소셜 플랫폼에서 이메일 정보를 제공하지 않습니다."),
+    OAUTH_COMMUNICATION_FAILED(HttpStatus.BAD_GATEWAY, "OAUTH-004", "소셜 플랫폼과의 통신에 실패했습니다."),
+    SOCIAL_TOKEN_REFRESH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-005", "소셜 플랫폼의 토큰 갱신에 실패했습니다."),
+    SOCIAL_ACCOUNT_CONNECT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-006", "소셜 계정 연동에 실패했습니다."),
+    GITHUB_TOKEN_REFRESH_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "OAUTH-007", "GitHub 토큰 갱신은 지원하지 않습니다. 재인증이 필요합니다."),
 
     // S3 파일 관련
     // Client Errors (4xx)
