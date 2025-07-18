@@ -2,9 +2,9 @@ package com.teamEWSN.gitdeun.common.oauth.service;
 
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
-import com.teamEWSN.gitdeun.user.dto.provider.GitHubResponseDto;
-import com.teamEWSN.gitdeun.user.dto.provider.GoogleResponseDto;
-import com.teamEWSN.gitdeun.user.dto.provider.OAuth2ResponseDto;
+import com.teamEWSN.gitdeun.common.oauth.dto.provider.GitHubResponseDto;
+import com.teamEWSN.gitdeun.common.oauth.dto.provider.GoogleResponseDto;
+import com.teamEWSN.gitdeun.common.oauth.dto.provider.OAuth2ResponseDto;
 import com.teamEWSN.gitdeun.common.oauth.entity.OauthProvider;
 import com.teamEWSN.gitdeun.user.entity.Role;
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final SocialConnectionRepository socialConnectionRepository;
 
     @Override
+    @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User;
         try {
@@ -46,7 +48,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return new CustomOAuth2User(user.getId(), user.getRole());
     }
 
-    @Transactional
+    // @Transactional
     public User processUserInTransaction(OAuth2User oAuth2User, OAuth2UserRequest userRequest) {
         OAuth2ResponseDto oAuth2ResponseDto = getOAuth2ResponseDto(oAuth2User, userRequest);
 
@@ -100,10 +102,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     private User createNewUser(OAuth2ResponseDto response, OauthProvider provider, String providerId, String accessToken, String refreshToken) {
+        // provider별 다른 Nickname 처리 로직
+        String nickname = response.getNickname();
+        if (provider == OauthProvider.GOOGLE) {
+            nickname = nickname + "_" + UUID.randomUUID().toString().substring(0, 6);
+        }
+
         User newUser = User.builder()
             .email(response.getEmail())
-            .name(response.getName())
-            .nickname(response.getName() + "_" + UUID.randomUUID().toString().substring(0, 6))
+            .name(response.getName())   // GitHub의 경우 full name, Google의 경우 name
+            .nickname(nickname)
             .profileImage(response.getProfileImageUrl())
             .role(Role.ROLE_USER)
             .build();

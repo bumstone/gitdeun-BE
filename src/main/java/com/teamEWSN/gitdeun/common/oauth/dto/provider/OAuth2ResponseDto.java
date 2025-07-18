@@ -13,6 +13,8 @@ public interface OAuth2ResponseDto {
 
     String getName();
 
+    String getNickname();
+
     String getProfileImageUrl();
 
 }

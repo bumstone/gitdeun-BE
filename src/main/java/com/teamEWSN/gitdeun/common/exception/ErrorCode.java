@@ -20,8 +20,9 @@ public enum ErrorCode {
 
     // 계정 관련
     USER_NOT_FOUND_BY_ID(HttpStatus.NOT_FOUND, "ACCOUNT-001", "해당 아이디의 회원을 찾을 수 없습니다."),
-    ACCOUNT_ALREADY_LINKED(HttpStatus.CONFLICT, "ACCOUNT-002", "이미 다른 사용자와 연동된 소셜 계정입니다."),
-    SOCIAL_CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOUNT-003", "연동된 소셜 계정 정보를 찾을 수 없습니다."),
+    USER_NOT_FOUND_BY_EMAIL(HttpStatus.NOT_FOUND, "ACCOUNT-002", "해당 이메일의 회원을 찾을 수 없습니다."),
+    ACCOUNT_ALREADY_LINKED(HttpStatus.CONFLICT, "ACCOUNT-003", "이미 다른 사용자와 연동된 소셜 계정입니다."),
+    SOCIAL_CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOUNT-004", "연동된 소셜 계정 정보를 찾을 수 없습니다."),
 
     // 소셜 로그인 관련
     OAUTH_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-001", "소셜 로그인 처리 중 오류가 발생했습니다."),

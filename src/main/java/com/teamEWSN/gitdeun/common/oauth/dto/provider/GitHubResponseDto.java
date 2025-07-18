@@ -31,6 +31,11 @@ public class GitHubResponseDto implements OAuth2ResponseDto {
     }
 
     @Override
+    public String getNickname() {
+        return attributes.get("login").toString();
+    }
+
+    @Override
     public String getProfileImageUrl() {
         return attributes.get("avatar_url").toString();
     }

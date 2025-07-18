@@ -15,7 +15,10 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Map;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
+
 
 // 레포 및 마인드맵 호출 시 소셜로그인 토큰 갱신 호출
 @Slf4j
@@ -57,17 +60,18 @@ public class SocialTokenRefreshService {
             // Google Token 갱신 API 호출
             String tokenUrl = "https://oauth2.googleapis.com/token";
 
-            Map<String, String> refreshRequest = Map.of(
-                "client_id", googleClientId,
-                "client_secret", googleClientSecret,
-                "refresh_token", connection.getRefreshToken(),
-                "grant_type", "refresh_token"
-            );
+
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("client_id", googleClientId);
+            formData.add("client_secret", googleClientSecret);
+            formData.add("refresh_token", connection.getRefreshToken());
+            formData.add("grant_type", "refresh_token");
+
 
             String response = webClient.post()
                 .uri(tokenUrl)
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .bodyValue(refreshRequest)
+                .bodyValue(BodyInserters.fromFormData(formData))
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();   // 결과를 동기적으로 기다림

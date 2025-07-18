@@ -30,6 +30,12 @@ public class GoogleResponseDto implements OAuth2ResponseDto {
     }
 
     @Override
+    public String getNickname() {
+        // 별도 닉네임이 없으므로 이름(name)을 그대로 반환
+        return attributes.get("name").toString();
+    }
+
+    @Override
     public String getProfileImageUrl() {
         return attributes.get("picture").toString();
     }
