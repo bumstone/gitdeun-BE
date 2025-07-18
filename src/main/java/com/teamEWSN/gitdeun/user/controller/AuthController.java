@@ -1,9 +1,10 @@
 package com.teamEWSN.gitdeun.user.controller;
 
 import com.teamEWSN.gitdeun.common.cookie.CookieUtil;
+import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
+import com.teamEWSN.gitdeun.common.jwt.JwtToken;
 import com.teamEWSN.gitdeun.user.dto.UserTokenResponseDto;
 import com.teamEWSN.gitdeun.user.service.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +28,18 @@ public class AuthController {
 
     // 로그아웃 API
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
-        authService.logout(request, response);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> logout(
+        @RequestHeader("Authorization") String authHeader,
+        @CookieValue(name = "refreshToken", required = false) String refreshToken,
+        HttpServletResponse response
+    ) {
+        // 헤더에서 Access Token 추출
+        String accessToken = authHeader.replace("Bearer ", "");
+
+        // 로그아웃 로직 - AccessToken: Blacklist 등록, RefreshToken: redis에서 삭제 및 쿠키 제거
+        authService.logout(accessToken, refreshToken, response);
+
+        return ResponseEntity.noContent().build(); // 204 No Content 응답
     }
 
     // 토큰 재발급
@@ -39,7 +49,7 @@ public class AuthController {
         HttpServletResponse response) {
         JwtToken newJwtToken = authService.refreshTokens(refreshToken);
 
-        cookieUtil.setCookie(response, "refreshToken", newJwtToken.getRefreshToken(), authService.getRefreshTokenExpiredSeconds());
+        cookieUtil.setCookie(response, "refreshToken", newJwtToken.getRefreshToken(), refreshTokenExpired);
         return ResponseEntity.ok(new UserTokenResponseDto(newJwtToken.getAccessToken()));
     }
 
