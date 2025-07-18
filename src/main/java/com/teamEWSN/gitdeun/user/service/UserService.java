@@ -2,10 +2,14 @@ package com.teamEWSN.gitdeun.user.service;
 
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
+import com.teamEWSN.gitdeun.common.jwt.BlacklistService;
+import com.teamEWSN.gitdeun.common.jwt.RefreshTokenService;
 import com.teamEWSN.gitdeun.common.oauth.service.GitHubApiHelper;
 import com.teamEWSN.gitdeun.common.oauth.service.GoogleApiHelper;
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
+import com.teamEWSN.gitdeun.user.dto.UserResponseDto;
 import com.teamEWSN.gitdeun.user.entity.User;
+import com.teamEWSN.gitdeun.user.mapper.UserMapper;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +22,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
+    private final UserMapper userMapper;
+    private final RefreshTokenService refreshTokenService;
+    private final BlacklistService blacklistService;
     private final UserRepository userRepository;
     private final GoogleApiHelper googleApiHelper;
     private final GitHubApiHelper gitHubApiHelper;
@@ -35,7 +41,7 @@ public class UserService {
 
     // 로그인된 회원 탈퇴 처리
     @Transactional
-    public void deleteUser(Long userId) {
+    public void deleteUser(Long userId, String accessToken, String refreshToken) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
@@ -63,11 +69,22 @@ public class UserService {
             }
         }
 
+        // redis에서 리프레시 토큰 삭제
+        refreshTokenService.deleteRefreshToken(refreshToken);
+        // access token 블랙리스트에 등록
+        blacklistService.addToBlacklist(accessToken);
+
         // 깃든 서비스 DB에서 soft-delete 처리
         user.markAsDeleted();
         userRepository.save(user);
         log.info("User {} has been marked as deleted.", userId);
     }
 
+    // 이메일로 회원 검색
+    @Transactional(readOnly = true)
+    public User findUserByEmail(String email) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
+            .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
 
+    }
 }
