@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -53,19 +54,13 @@ public class AuthController {
         return ResponseEntity.ok(new UserTokenResponseDto(newJwtToken.getAccessToken()));
     }
 
-    /**
-     * 이미 로그인된 사용자의 계정에 추가로 소셜 계정을 연동
-     * @param userDetails 현재 로그인된 사용자 정보 (JWT 기반)
-     * @param provider 연동할 소셜 플랫폼
-     * @param code 연동할 계정의 인가 코드
-     */
-    @GetMapping("/connect/{provider}")
-    public ResponseEntity<Void> connectSocialAccount(
-        @AuthenticationPrincipal CustomUserDetails userDetails,
-        @PathVariable("provider") String provider,
-        @RequestParam String code) {
+    @GetMapping("/connect/github/callback")
+    public ResponseEntity<Void> connectGithubAccountCallback(
+        @RequestParam("code") String code,
+        @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        authService.connectGithubAccount(userDetails.getId(), code);
 
-        authService.connectSocialAccount(userDetails.getId(), provider, code);
         return ResponseEntity.ok().build();
     }
 

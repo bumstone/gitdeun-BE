@@ -12,15 +12,15 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class AuthenticateUser {
-  public Long authenticateUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public Long authenticateUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
-      return 0L; // 인증되지 않은 사용자일 경우 0 반환
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
+            return 0L; // 인증되지 않은 사용자일 경우 0 반환
+        }
+
+        // 인증된 사용자의 경우 userId 반환
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return userDetails.getId();
     }
-
-    // 인증된 사용자의 경우 userId 반환
-    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-    return userDetails.getId();
-  }
 }

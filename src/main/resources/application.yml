@@ -35,7 +35,7 @@ spring:
             client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: profile, email
           github:
-            scope: read:user, user:email, repo
+            scope: user:email, repo
   profiles:
     active: dev, s3Bucket  # logback-spring SpringProfile 설정 및 AWS S3 Bucket 설정
 

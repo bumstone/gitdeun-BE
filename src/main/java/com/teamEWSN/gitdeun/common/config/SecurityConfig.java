@@ -3,6 +3,9 @@ package com.teamEWSN.gitdeun.common.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.teamEWSN.gitdeun.common.jwt.*;
 import com.teamEWSN.gitdeun.common.jwt.CustomAccessDeniedHandler;
+import com.teamEWSN.gitdeun.common.oauth.handler.CustomOAuth2FailureHandler;
+import com.teamEWSN.gitdeun.common.oauth.handler.CustomOAuth2SuccessHandler;
+import com.teamEWSN.gitdeun.common.oauth.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +27,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+  private final CustomOAuth2UserService customOAuth2UserService;
+  private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
+  private final CustomOAuth2FailureHandler customOAuthFailureHandler;
   private final JwtTokenProvider jwtTokenProvider;
   private final ObjectMapper objectMapper;
   private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
@@ -41,6 +47,22 @@ public class SecurityConfig {
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .headers((headerConfig) -> headerConfig
             .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
+
+    // oauth2 로그인 설정
+    http
+        .oauth2Login((oauth2) -> oauth2
+            .userInfoEndpoint(userInfoEndpointConfig -> userInfoEndpointConfig
+                .userService(customOAuth2UserService))
+//                        .defaultSuccessUrl("/oauth/success") // 로그인 성공시 이동할 URL
+            .successHandler(customOAuth2SuccessHandler)
+//                        .failureUrl("/oauth/fail") // 로그인 실패시 이동할 URL
+            .failureHandler(customOAuthFailureHandler))
+        .logout(logout -> logout
+            .logoutUrl("/logout")
+            .logoutSuccessUrl("/oauth/logout") // 로그아웃 성공시 해당 url로 이동
+            .clearAuthentication(true)  // 현재 요청의 SecurityContext 초기화
+            .deleteCookies("refreshToken")  // JWT RefreshToken 쿠키를 프론트에서 제거 명시
+        );
 
     // 경로별 인가 작업
     http

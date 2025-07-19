@@ -1,6 +1,8 @@
 package com.teamEWSN.gitdeun.common.oauth.handler;
 
 import com.teamEWSN.gitdeun.common.cookie.CookieUtil;
+import com.teamEWSN.gitdeun.common.jwt.JwtToken;
+import com.teamEWSN.gitdeun.common.jwt.JwtTokenProvider;
 import com.teamEWSN.gitdeun.common.oauth.entity.CustomOAuth2User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,14 +29,13 @@ public class CustomOAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHa
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
 
         // 우리 서비스의 JWT 생성
-        JwtToken jwtToken = jwtTokenProvider.generateToken(oAuth2User.getUserId(), oAuth2User.getRole());
+        JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
         log.info("JWT가 발급되었습니다. Access Token: {}", jwtToken.getAccessToken());
 
         // Refresh Token은 HttpOnly 쿠키에 저장
-        cookieUtil.setCookie(response, "refreshToken", jwtToken.getRefreshToken(), jwtTokenProvider.getRefreshTokenExpiredSeconds());
+        cookieUtil.setCookie(response, "refreshToken", jwtToken.getRefreshToken(), jwtTokenProvider.getRefreshTokenExpired());
 
         // Access Token은 쿼리 파라미터로 프론트엔드에 전달
         String targetUrl = UriComponentsBuilder.fromUriString(frontUrl + "/oauth/callback")
