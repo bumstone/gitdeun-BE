@@ -9,14 +9,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/oauth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -54,6 +53,7 @@ public class AuthController {
         return ResponseEntity.ok(new UserTokenResponseDto(newJwtToken.getAccessToken()));
     }
 
+    // 깃허브 계정 연동
     @GetMapping("/connect/github/callback")
     public ResponseEntity<Void> connectGithubAccountCallback(
         @RequestParam("code") String code,
