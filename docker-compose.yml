@@ -29,6 +29,7 @@
       volumes:
         - redis-data:/data  # 데이터 지속성을 위한 볼륨 추가
       command: redis-server --appendonly yes
+      restart: unless-stopped
       healthcheck:
         test: ["CMD", "redis-cli", "ping"]
         interval: 30s
