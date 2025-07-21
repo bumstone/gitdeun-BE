@@ -32,15 +32,13 @@ public class GitHubApiHelper {
     @Value("${spring.security.oauth2.client.registration.github.client-secret}")
     private String clientSecret;
 
-    @Value("${spring.security.oauth2.client.registration.github.redirect-uri}")
-    private String redirectUri;
 
     /**
      * 인가 코드로 GitHub Access Token을 요청합니다.
      * @param code GitHub에서 받은 인가 코드
      * @return Access Token 문자열
      */
-    public String getAccessToken(String code) {
+    public String getAccessToken(String code, String redirectUri) {
         String tokenUri = "https://github.com/login/oauth/access_token";
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();

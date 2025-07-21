@@ -11,7 +11,7 @@ import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.common.oauth.repository.SocialConnectionRepository;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
-import com.teamEWSN.gitdeun.common.oauth.entity.CustomOAuth2User;
+import com.teamEWSN.gitdeun.common.oauth.dto.CustomOAuth2User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +21,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -44,12 +45,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new GlobalException(ErrorCode.OAUTH_COMMUNICATION_FAILED);
         }
 
-        User user = processUserInTransaction(oAuth2User, userRequest);
+        User user = processUser(oAuth2User, userRequest);
         return new CustomOAuth2User(user.getId(), user.getRole());
     }
 
     // @Transactional
-    public User processUserInTransaction(OAuth2User oAuth2User, OAuth2UserRequest userRequest) {
+    public User processUser(OAuth2User oAuth2User, OAuth2UserRequest userRequest) {
         OAuth2ResponseDto oAuth2ResponseDto = getOAuth2ResponseDto(oAuth2User, userRequest);
 
         // 이메일 정보가 없는 경우 예외 처리 (GitHub 등)
@@ -70,19 +71,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             })
             .orElseGet(() -> {
                 // 다른 사용자가 이미 해당 이메일을 사용 중인지 확인
-                userRepository.findByEmailAndDeletedAtIsNull(oAuth2ResponseDto.getEmail())
-                    .ifPresent(existingUser -> {
-                        // 이메일은 같지만, 소셜 연동 정보가 없는 경우 -> 계정 연동
-                        log.info("기존 회원 계정에 소셜 계정을 연동합니다: {}", provider);
-                        connectSocialAccount(existingUser, provider, providerId, accessToken, refreshToken);
-                    });
-                // 위에서 연동했거나, 완전 신규 유저인 경우를 처리
-                // 다시 이메일로 조회하여 최종 유저를 반환하거나 새로 생성
-                return userRepository.findByEmailAndDeletedAtIsNull(oAuth2ResponseDto.getEmail())
-                    .orElseGet(() -> {
-                        log.info("신규 회원 및 소셜 계정을 생성합니다: {}", provider);
-                        return createNewUser(oAuth2ResponseDto, provider, providerId, accessToken, refreshToken);
-                    });
+                Optional<User> existingUser = userRepository.findByEmailAndDeletedAtIsNull(oAuth2ResponseDto.getEmail());
+                if (existingUser.isPresent()) {
+                    // 이메일은 같지만, 소셜 연동 정보가 없는 경우 -> 계정 연동
+                    log.info("기존 회원 계정에 소셜 계정을 연동합니다: {}", provider);
+
+                    connectSocialAccount(existingUser.get(), provider, providerId, accessToken, refreshToken);
+                    return existingUser.get();
+                } else {    // 위에서 연동했거나, 완전 신규 유저인 경우를 처리
+                    // 다시 이메일로 조회하여 최종 유저를 반환하거나 새로 생성
+                    log.info("신규 회원 및 소셜 계정을 생성합니다: {}", provider);
+                    return createNewUser(oAuth2ResponseDto, provider, providerId, accessToken, refreshToken);
+                }
             });
     }
 

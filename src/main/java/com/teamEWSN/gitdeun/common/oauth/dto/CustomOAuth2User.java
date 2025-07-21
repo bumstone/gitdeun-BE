@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.common.oauth.entity;
+package com.teamEWSN.gitdeun.common.oauth.dto;
 
 import com.teamEWSN.gitdeun.user.entity.Role;
 import lombok.Getter;
