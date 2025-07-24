@@ -15,11 +15,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @MappedSuperclass
-public class BaseEntity {
-
-  @CreatedDate
-  @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME(0)")
-  private LocalDateTime createdAt;
+public class AuditedEntity extends CreatedEntity {
 
   @LastModifiedDate
   @Column(name = "updated_at", nullable = false, columnDefinition = "DATETIME(0)")
