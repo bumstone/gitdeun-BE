@@ -31,7 +31,7 @@ public enum ErrorCode {
     OAUTH_COMMUNICATION_FAILED(HttpStatus.BAD_GATEWAY, "OAUTH-004", "소셜 플랫폼과의 통신에 실패했습니다."),
     SOCIAL_TOKEN_REFRESH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-005", "소셜 플랫폼의 토큰 갱신에 실패했습니다."),
     SOCIAL_ACCOUNT_CONNECT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-006", "소셜 계정 연동에 실패했습니다."),
-    GITHUB_TOKEN_REFRESH_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "OAUTH-007", "GitHub 토큰 갱신은 지원하지 않습니다. 재인증이 필요합니다."),
+    SOCIAL_TOKEN_REFRESH_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "OAUTH-007", "리프레시 토큰 갱신은 지원하지 않습니다. 재인증이 필요합니다."),
 
     // S3 파일 관련
     // Client Errors (4xx)

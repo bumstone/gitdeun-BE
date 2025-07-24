@@ -2,6 +2,7 @@ package com.teamEWSN.gitdeun.common.oauth.service;
 
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
+import com.teamEWSN.gitdeun.common.oauth.dto.GitHubEmailDto;
 import com.teamEWSN.gitdeun.common.oauth.dto.provider.GitHubResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -34,56 +36,26 @@ public class GitHubApiHelper {
 
 
     /**
-     * 인가 코드로 GitHub Access Token을 요청합니다.
-     * @param code GitHub에서 받은 인가 코드
-     * @return Access Token 문자열
-     */
-    public String getAccessToken(String code, String redirectUri) {
-        String tokenUri = "https://github.com/login/oauth/access_token";
-
-        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add("client_id", clientId);
-        formData.add("client_secret", clientSecret);
-        formData.add("code", code);
-        formData.add("redirect_uri", redirectUri);
-
-        Map<String, Object> response = webClient.post()
-            .uri(tokenUri)
-            .accept(MediaType.APPLICATION_JSON)
-            .bodyValue(formData)
-            .retrieve()
-            // 단순 map이 아닌 정확한 타입 정보를 런타임에도 잃어버리지 않도록 ParameterizedTypeReference를 사용
-            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-            .block();
-
-        if (response == null || response.get("access_token") == null) {
-            log.error("GitHub Access Token 발급 실패: {}", response);
-            throw new GlobalException(ErrorCode.OAUTH_PROCESSING_ERROR);
-        }
-
-        return (String) response.get("access_token");
-    }
-
-    /**
-     * Access Token으로 GitHub 사용자 정보를 조회합니다.
+     * Access Token으로 사용자의 이메일 목록을 조회합니다.
+     * GitHub 기본 사용자 정보에 이메일이 포함되지 않은 경우 사용됩니다.
      * @param accessToken GitHub Access Token
-     * @return GitHub 사용자 정보를 담은 DTO
+     * @return 이메일 정보 DTO 리스트
      */
-    public GitHubResponseDto getUserInfo(String accessToken) {
-        String userInfoUri = "https://api.github.com/user";
+    public List<GitHubEmailDto> getPrimaryEmails(String accessToken) {
+        String emailsUri = "https://api.github.com/user/emails";
 
-        Map<String, Object> attributes = webClient.get()
-            .uri(userInfoUri)
-            .header(HttpHeaders.AUTHORIZATION, "token " + accessToken)
+        List<GitHubEmailDto> emails = webClient.get()
+            .uri(emailsUri)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
             .retrieve()
-            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+            .bodyToMono(new ParameterizedTypeReference<List<GitHubEmailDto>>() {})
             .block();
 
-        if (attributes == null) {
+        if (emails == null || emails.isEmpty()) {
+            log.error("GitHub 이메일 정보를 가져올 수 없습니다.");
             throw new GlobalException(ErrorCode.OAUTH_COMMUNICATION_FAILED);
         }
-
-        return new GitHubResponseDto(attributes);
+        return emails;
     }
 
 

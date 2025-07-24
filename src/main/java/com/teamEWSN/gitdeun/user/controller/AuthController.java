@@ -32,6 +32,7 @@ public class AuthController {
     @Value("${app.front-url}")
     private String frontUrl;
 
+    // 깃허브 연동 흐름 구분 조회
     @GetMapping("/connect/github/state")
     public ResponseEntity<Map<String, String>> generateStateForGithubConnect(@AuthenticationPrincipal CustomUserDetails user) {
         String state = oAuthStateService.createState("connect:" + user.getId());
