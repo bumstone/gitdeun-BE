@@ -34,10 +34,8 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final BlacklistService blacklistService;
-    private final CustomOAuth2UserService customOAuth2UserService;
     private final UserService userService;
     private final CookieUtil cookieUtil;
-    private final GitHubApiHelper gitHubApiHelper;
     private final UserRepository userRepository;
     private final SocialConnectionRepository socialConnectionRepository;
 
@@ -52,9 +50,6 @@ public class AuthService {
 
     @Value("${spring.security.oauth2.client.registration.github.redirect-uri}")
     private String githubRedirectUri;
-
-    @Value("${app.oauth.github.connect-redirect-uri}")
-    private String githubConnectRedirectUri;
 
     // 로그 아웃
     @Transactional
@@ -126,32 +121,5 @@ public class AuthService {
 
         socialConnectionRepository.save(connection);
     }
-//
-//    /**
-//     * GitHub 콜백 코드를 받아 로그인 또는 회원가입을 처리하고 JWT를 발급하는 메서드
-//     * @param code GitHub에서 받은 Authorization Code
-//     * @param response HttpServletResponse (쿠키 설정을 위해)
-//     * @return 생성된 JWT와 사용자 정보를 담은 DTO
-//     */
-//    @Transactional
-//    public GithubLoginResponseDto loginWithGithub(String code, HttpServletResponse response) {
-//        // 1. 코드로 GitHub Access Token 받기
-//        String githubAccessToken = gitHubApiHelper.getAccessToken(code, "YOUR_SINGLE_CALLBACK_URL"); // 실제 콜백 URL 필요
-//
-//        // Access Token으로 GitHub 사용자 정보 받기
-//        OAuth2UserRequest userRequest = createOAuth2UserRequest(githubAccessToken);
-//        OAuth2User oAuth2User = super.loadUser(userRequest); // DefaultOAuth2UserService의 메서드 활용
-//
-//        // CustomOAuth2UserService의 핵심 로직을 호출하여 User 엔티티 처리
-//        User user = customOAuth2UserService.processUserInTransaction(oAuth2User, userRequest);
-//
-//        // 내부 JWT 생성
-//        JwtToken jwtToken = jwtTokenProvider.generateToken(createAuthentication(user));
-//
-//        // HttpOnly 쿠키에 Refresh Token 저장
-//        cookieUtil.setCookie(response, "refreshToken", jwtToken.getRefreshToken(), jwtTokenProvider.getRefreshTokenExpired());
-//
-//        // 프론트엔드에 전달할 DTO 생성
-//        return new GithubLoginResponseDto(jwtToken.getAccessToken(), user.getNickname(), user.getProfileImage());
-//    }
+
 }

@@ -29,6 +29,3 @@ app:
   cookie:
     secure: true
     same-site: None
-  oauth:
-    github:
-      connect-redirect-uri: https://api.gitdeun.site/api/auth/connect/github
