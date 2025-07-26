@@ -6,11 +6,9 @@ import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.cookie.CookieUtil;
 import com.teamEWSN.gitdeun.common.jwt.*;
-import com.teamEWSN.gitdeun.common.oauth.dto.provider.GitHubResponseDto;
 import com.teamEWSN.gitdeun.common.oauth.entity.OauthProvider;
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
 import com.teamEWSN.gitdeun.common.oauth.repository.SocialConnectionRepository;
-import com.teamEWSN.gitdeun.common.oauth.service.GitHubApiHelper;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,8 +17,11 @@ import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 
 @Slf4j
@@ -33,7 +34,6 @@ public class AuthService {
     private final BlacklistService blacklistService;
     private final UserService userService;
     private final CookieUtil cookieUtil;
-    private final GitHubApiHelper gitHubApiHelper;
     private final UserRepository userRepository;
     private final SocialConnectionRepository socialConnectionRepository;
 
@@ -48,7 +48,6 @@ public class AuthService {
 
     @Value("${spring.security.oauth2.client.registration.github.redirect-uri}")
     private String githubRedirectUri;
-
 
     // 로그 아웃
     @Transactional
@@ -89,47 +88,36 @@ public class AuthService {
 
 
     // 구글 -> Github 계정 연동
-    @Transactional
-    public void connectGithubAccount(Long userId, String code) {
+    public void connectGithubAccount(OAuth2User githubUser, Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
-        // GitHubApiHelper를 통해 Access Token 요청
-        String accessToken = gitHubApiHelper.getAccessToken(code);
+        String providerId = Objects.requireNonNull(githubUser.getAttribute("id")).toString();
+        String accessToken = githubUser.getAttribute("access_token");
+        String refreshToken = githubUser.getAttribute("refresh_token");
 
-        // GitHubApiHelper를 통해 사용자 정보 요청
-        GitHubResponseDto githubResponse = gitHubApiHelper.getUserInfo(accessToken);
-
-        String providerId = githubResponse.getProviderId();
-        OauthProvider provider = OauthProvider.GITHUB;
-
-        // 이미 다른 계정에 연동되어 있는지 확인
-        socialConnectionRepository.findByProviderAndProviderId(provider, providerId)
+        // 이미 다른 계정에 연동되어 있는지, 동일 사용자에 의해 이미 연동되는지 확인
+        socialConnectionRepository.findByProviderAndProviderId(OauthProvider.GITHUB, providerId)
             .ifPresent(connection -> {
                 if (!connection.getUser().getId().equals(userId)) {
                     throw new GlobalException(ErrorCode.ACCOUNT_ALREADY_LINKED);
+                } else {
+                    log.info("이미 현재 사용자와 연동된 GitHub 계정입니다: {}", providerId);
+                    return;
                 }
             });
 
-        // 현재 사용자에 대한 중복 연동 확인 (이미 연동되어 있으면 추가 로직 없음)
-        boolean alreadyLinked = user.getSocialConnections().stream()
-            .anyMatch(conn -> conn.getProvider() == provider && conn.getProviderId().equals(providerId));
-
-        if (alreadyLinked) {
-            log.info("이미 현재 사용자와 연동된 GitHub 계정입니다: {}", providerId);
-            return; // 이미 연동되었으므로 여기서 종료
-        }
 
         // 신규 소셜 연동 정보 생성 및 저장
-        SocialConnection newConnection = SocialConnection.builder()
+        SocialConnection connection = SocialConnection.builder()
             .user(user)
-            .provider(provider)
+            .provider(OauthProvider.GITHUB)
             .providerId(providerId)
             .accessToken(accessToken)
-            .refreshToken(null)
+            .refreshToken(refreshToken)
             .build();
 
-        socialConnectionRepository.save(newConnection);
-        log.info("사용자(ID:{})에게 GitHub 계정(ProviderId:{}) 연동이 완료되었습니다.", userId, providerId);
+        socialConnectionRepository.save(connection);
     }
+
 }

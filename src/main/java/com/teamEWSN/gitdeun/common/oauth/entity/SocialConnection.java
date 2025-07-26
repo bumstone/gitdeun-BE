@@ -1,7 +1,7 @@
 package com.teamEWSN.gitdeun.common.oauth.entity;
 
 import com.teamEWSN.gitdeun.common.converter.CryptoConverter;
-import com.teamEWSN.gitdeun.common.util.BaseEntity;
+import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,7 +10,7 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "social_connection")
-public class SocialConnection extends BaseEntity {
+public class SocialConnection extends AuditedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

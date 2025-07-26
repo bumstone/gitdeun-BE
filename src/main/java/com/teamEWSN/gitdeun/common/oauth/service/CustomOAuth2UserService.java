@@ -2,6 +2,7 @@ package com.teamEWSN.gitdeun.common.oauth.service;
 
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
+import com.teamEWSN.gitdeun.common.oauth.dto.GitHubEmailDto;
 import com.teamEWSN.gitdeun.common.oauth.dto.provider.GitHubResponseDto;
 import com.teamEWSN.gitdeun.common.oauth.dto.provider.GoogleResponseDto;
 import com.teamEWSN.gitdeun.common.oauth.dto.provider.OAuth2ResponseDto;
@@ -11,7 +12,7 @@ import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.common.oauth.repository.SocialConnectionRepository;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
-import com.teamEWSN.gitdeun.common.oauth.entity.CustomOAuth2User;
+import com.teamEWSN.gitdeun.common.oauth.dto.CustomOAuth2User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -29,6 +32,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
+    private final GitHubApiHelper gitHubApiHelper;
+    private final SocialTokenRefreshService socialTokenRefreshService;
     private final UserRepository userRepository;
     private final SocialConnectionRepository socialConnectionRepository;
 
@@ -44,61 +49,68 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new GlobalException(ErrorCode.OAUTH_COMMUNICATION_FAILED);
         }
 
-        User user = processUserInTransaction(oAuth2User, userRequest);
+        User user = processUser(oAuth2User, userRequest);
         return new CustomOAuth2User(user.getId(), user.getRole());
     }
 
     // @Transactional
-    public User processUserInTransaction(OAuth2User oAuth2User, OAuth2UserRequest userRequest) {
-        OAuth2ResponseDto oAuth2ResponseDto = getOAuth2ResponseDto(oAuth2User, userRequest);
-
-        // 이메일 정보가 없는 경우 예외 처리 (GitHub 등)
-        if (oAuth2ResponseDto.getEmail() == null) {
-            throw new GlobalException(ErrorCode.EMAIL_NOT_PROVIDED);
-        }
-
-        OauthProvider provider = OauthProvider.valueOf(oAuth2ResponseDto.getProvider().toUpperCase());
-        String providerId = oAuth2ResponseDto.getProviderId();
-        String accessToken = userRequest.getAccessToken().getTokenValue();
+    public User processUser(OAuth2User oAuth2User, OAuth2UserRequest userRequest) {
+        OAuth2ResponseDto dto = getOAuth2ResponseDto(oAuth2User, userRequest);
+        OauthProvider provider = OauthProvider.valueOf(dto.getProvider().toUpperCase());
+        String providerId   = dto.getProviderId();
+        String accessToken  = userRequest.getAccessToken().getTokenValue();
         String refreshToken = (String) userRequest.getAdditionalParameters().get("refresh_token");
 
+        /* ② 이미 연결된 계정 → 토큰 갱신 로직 추상화  */
         return socialConnectionRepository.findByProviderAndProviderId(provider, providerId)
-            .map(connection -> {
-                log.info("기존 소셜 계정 정보를 업데이트합니다: {}", provider);
-                connection.updateTokens(accessToken, refreshToken);
-                return connection.getUser();
+            .map(conn -> {
+                // provider 별 refresh 정책
+                socialTokenRefreshService.refreshSocialToken(conn, accessToken, refreshToken);
+                return conn.getUser();
             })
-            .orElseGet(() -> {
-                // 다른 사용자가 이미 해당 이메일을 사용 중인지 확인
-                userRepository.findByEmailAndDeletedAtIsNull(oAuth2ResponseDto.getEmail())
-                    .ifPresent(existingUser -> {
-                        // 이메일은 같지만, 소셜 연동 정보가 없는 경우 -> 계정 연동
-                        log.info("기존 회원 계정에 소셜 계정을 연동합니다: {}", provider);
-                        connectSocialAccount(existingUser, provider, providerId, accessToken, refreshToken);
-                    });
-                // 위에서 연동했거나, 완전 신규 유저인 경우를 처리
-                // 다시 이메일로 조회하여 최종 유저를 반환하거나 새로 생성
-                return userRepository.findByEmailAndDeletedAtIsNull(oAuth2ResponseDto.getEmail())
-                    .orElseGet(() -> {
-                        log.info("신규 회원 및 소셜 계정을 생성합니다: {}", provider);
-                        return createNewUser(oAuth2ResponseDto, provider, providerId, accessToken, refreshToken);
-                    });
-            });
+            .orElseGet(() -> createOrConnect(dto, provider, providerId, accessToken, refreshToken));
     }
 
-    private static OAuth2ResponseDto getOAuth2ResponseDto(OAuth2User oAuth2User, OAuth2UserRequest userRequest) {
+    // OAuth2 공급자로부터 받은 사용자 정보를 기반으로 OAuth2ResponseDto를 생성(인스턴스 메서드)
+    private OAuth2ResponseDto getOAuth2ResponseDto(OAuth2User oAuth2User, OAuth2UserRequest userRequest) {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
+        Map<String, Object> attr = oAuth2User.getAttributes();
 
-        OAuth2ResponseDto oAuth2ResponseDto;
         if (registrationId.equalsIgnoreCase("google")) {
-            oAuth2ResponseDto = new GoogleResponseDto(oAuth2User.getAttributes());
-        } else if (registrationId.equalsIgnoreCase("github")) {
-            oAuth2ResponseDto = new GitHubResponseDto(oAuth2User.getAttributes());
+            return new GoogleResponseDto(attr);
+        }
+        if (registrationId.equalsIgnoreCase("github")) {
+            /* ① 기본 프로필에 e-mail 없으면 /user/emails 호출 */
+            if (attr.get("email") == null) {
+                // accessToken 으로 GitHub 보조 API 호출
+                List<GitHubEmailDto> emails =
+                    gitHubApiHelper.getPrimaryEmails(userRequest.getAccessToken().getTokenValue());
+                attr.put("email",
+                    emails.stream().filter(GitHubEmailDto::isPrimary)
+                        .findFirst().map(GitHubEmailDto::getEmail).orElse(null));
+            }
+            return new GitHubResponseDto(attr);
         } else {
             // 지원하지 않는 소셜 로그인 제공자
             throw new GlobalException(ErrorCode.UNSUPPORTED_OAUTH_PROVIDER);
         }
-        return oAuth2ResponseDto;
+    }
+
+    /**
+     * 사용자가 존재하면 계정을 연결하고, 존재하지 않으면 새로 생성합니다.
+     */
+    private User createOrConnect(OAuth2ResponseDto response, OauthProvider provider, String providerId, String accessToken, String refreshToken) {
+        // 이메일로 기존 사용자를 찾습니다.
+        return userRepository.findByEmailAndDeletedAtIsNull(response.getEmail())
+            .map(user -> {
+                // 사용자가 존재하면, 새 소셜 계정을 연결
+                connectSocialAccount(user, provider, providerId, accessToken, refreshToken);
+                return user;
+            })
+            .orElseGet(() -> {
+                // 사용자가 존재하지 않으면, 새 사용자를 생성
+                return createNewUser(response, provider, providerId, accessToken, refreshToken);
+            });
     }
 
     private User createNewUser(OAuth2ResponseDto response, OauthProvider provider, String providerId, String accessToken, String refreshToken) {

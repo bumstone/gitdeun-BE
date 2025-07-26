@@ -23,6 +23,7 @@ public enum ErrorCode {
     USER_NOT_FOUND_BY_EMAIL(HttpStatus.NOT_FOUND, "ACCOUNT-002", "해당 이메일의 회원을 찾을 수 없습니다."),
     ACCOUNT_ALREADY_LINKED(HttpStatus.CONFLICT, "ACCOUNT-003", "이미 다른 사용자와 연동된 소셜 계정입니다."),
     SOCIAL_CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOUNT-004", "연동된 소셜 계정 정보를 찾을 수 없습니다."),
+    USER_SETTING_NOT_FOUND_BY_ID(HttpStatus.NOT_FOUND, "ACCOUNT-005", "해당 아이디의 설정을 찾을 수 없습니다."),
 
     // 소셜 로그인 관련
     OAUTH_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-001", "소셜 로그인 처리 중 오류가 발생했습니다."),
@@ -31,7 +32,7 @@ public enum ErrorCode {
     OAUTH_COMMUNICATION_FAILED(HttpStatus.BAD_GATEWAY, "OAUTH-004", "소셜 플랫폼과의 통신에 실패했습니다."),
     SOCIAL_TOKEN_REFRESH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-005", "소셜 플랫폼의 토큰 갱신에 실패했습니다."),
     SOCIAL_ACCOUNT_CONNECT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-006", "소셜 계정 연동에 실패했습니다."),
-    GITHUB_TOKEN_REFRESH_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "OAUTH-007", "GitHub 토큰 갱신은 지원하지 않습니다. 재인증이 필요합니다."),
+    SOCIAL_TOKEN_REFRESH_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "OAUTH-007", "리프레시 토큰 갱신은 지원하지 않습니다. 재인증이 필요합니다."),
 
     // S3 파일 관련
     // Client Errors (4xx)

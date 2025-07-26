@@ -1,7 +1,7 @@
 package com.teamEWSN.gitdeun.user.entity;
 
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
-import com.teamEWSN.gitdeun.common.util.BaseEntity;
+import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
-public class User extends BaseEntity {
+public class User extends AuditedEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
