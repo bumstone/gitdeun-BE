@@ -27,7 +27,6 @@ public class UserSettingController {
     public ResponseEntity<UserSettingResponseDto> getUserSettings(
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        // CustomUserDetails가 null인 경우는 Spring Security에서 처리하므로, 여기서는 null이 아님을 가정합니다.
         UserSettingResponseDto responseDto = userSettingService.getSettings(userDetails.getId());
         return ResponseEntity.ok(responseDto);
     }
