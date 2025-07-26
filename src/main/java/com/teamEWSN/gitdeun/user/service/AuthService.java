@@ -9,8 +9,6 @@ import com.teamEWSN.gitdeun.common.jwt.*;
 import com.teamEWSN.gitdeun.common.oauth.entity.OauthProvider;
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
 import com.teamEWSN.gitdeun.common.oauth.repository.SocialConnectionRepository;
-import com.teamEWSN.gitdeun.common.oauth.service.CustomOAuth2UserService;
-import com.teamEWSN.gitdeun.common.oauth.service.GitHubApiHelper;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;

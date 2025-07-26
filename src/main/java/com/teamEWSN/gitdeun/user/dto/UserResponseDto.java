@@ -4,7 +4,6 @@ import com.teamEWSN.gitdeun.user.entity.Role;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDate;
 
 @Getter
 @Builder
