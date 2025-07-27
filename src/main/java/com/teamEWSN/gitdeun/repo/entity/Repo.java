@@ -1,6 +1,6 @@
 package com.teamEWSN.gitdeun.repo.entity;
 
-import com.teamEWSN.gitdeun.common.config.fastapi.AnalysisResultDto;
+import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

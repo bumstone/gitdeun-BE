@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.common.config.fastapi;
+package com.teamEWSN.gitdeun.common.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

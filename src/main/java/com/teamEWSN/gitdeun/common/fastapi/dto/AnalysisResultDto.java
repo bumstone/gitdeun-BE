@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.common.config.fastapi;
+package com.teamEWSN.gitdeun.common.fastapi.dto;
 
 import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
 import lombok.Getter;

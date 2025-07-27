@@ -1,5 +1,6 @@
-package com.teamEWSN.gitdeun.common.config.fastapi;
+package com.teamEWSN.gitdeun.common.fastapi;
 
+import com.teamEWSN.gitdeun.common.fastapi.dto.FastApiCommitTimeResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;

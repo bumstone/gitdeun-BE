@@ -1,6 +1,6 @@
 package com.teamEWSN.gitdeun.repo.service;
 
-import com.teamEWSN.gitdeun.common.config.fastapi.FastApiClient;
+import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.repo.dto.RepoResponseDto;
