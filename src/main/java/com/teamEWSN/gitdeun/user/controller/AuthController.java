@@ -3,7 +3,9 @@ package com.teamEWSN.gitdeun.user.controller;
 import com.teamEWSN.gitdeun.common.cookie.CookieUtil;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import com.teamEWSN.gitdeun.common.jwt.JwtToken;
+import com.teamEWSN.gitdeun.common.oauth.entity.OauthProvider;
 import com.teamEWSN.gitdeun.common.oauth.service.OAuthStateService;
+import com.teamEWSN.gitdeun.common.oauth.service.SocialTokenRefreshService;
 import com.teamEWSN.gitdeun.user.dto.UserTokenResponseDto;
 import com.teamEWSN.gitdeun.user.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,6 +28,7 @@ public class AuthController {
     private Long refreshTokenExpired;
 
     private final OAuthStateService oAuthStateService;
+    private final SocialTokenRefreshService socialTokenRefreshService;
     private final AuthService authService;
     private final CookieUtil cookieUtil;
 
@@ -66,30 +69,13 @@ public class AuthController {
         return ResponseEntity.ok(new UserTokenResponseDto(newJwtToken.getAccessToken()));
     }
 
-//    /**
-//     * GitHub의 모든 OAuth 콜백을 처리하는 단일 엔드포인트
-//     * @param code GitHub에서 제공하는 Authorization Code
-//     * @param userDetails 현재 로그인된 사용자 정보. 비로그인 상태면 null.
-//     * @return 로그인 또는 계정 연동 흐름에 따라 적절한 경로로 포워딩 또는 리디렉션
-//     */
-//    @GetMapping("/github/callback")
-//    public ResponseEntity<?> githubCallback(
-//        @RequestParam("code") String code,
-//        @AuthenticationPrincipal CustomUserDetails userDetails,
-//        HttpServletResponse response // 쿠키 설정을 위해 필요
-//    ) {
-//
-//        if (userDetails != null) {
-//            // "계정 연동" 흐름
-//            authService.connectGithubAccount(userDetails.getId(), code);
-//            // 성공했다는 응답 전달
-//            return ResponseEntity.ok().body(Map.of("status", "success", "message", "계정 연동 성공!"));
-//
-//        } else {
-//            // "최초 로그인" 흐름
-//            GithubLoginResponseDto loginResponse = authService.loginWithGithub(code, response);
-//            return ResponseEntity.ok(loginResponse);
-//        }
-//    }
+    // 외부 OAuth 재발급 (Access 만료 → provider 선택)
+    @PostMapping("/oauth/refresh/{provider}")
+    public ResponseEntity<Void> refreshSocial(
+        @AuthenticationPrincipal CustomUserDetails user,
+        @PathVariable OauthProvider provider) {
 
+        socialTokenRefreshService.refreshSocialToken(user.getId(), provider);
+        return ResponseEntity.noContent().build();
+    }
 }
