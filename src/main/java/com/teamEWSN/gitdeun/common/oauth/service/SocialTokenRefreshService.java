@@ -1,6 +1,5 @@
 package com.teamEWSN.gitdeun.common.oauth.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.oauth.entity.OauthProvider;
@@ -10,11 +9,11 @@ import com.teamEWSN.gitdeun.common.oauth.repository.SocialConnectionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.reactive.function.client.WebClient;
+
+import static com.teamEWSN.gitdeun.common.exception.ErrorCode.*;
 
 
 // 레포 및 마인드맵 호출 시 소셜로그인 토큰 갱신 호출
@@ -25,22 +24,14 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class SocialTokenRefreshService {
 
     private final SocialConnectionRepository socialConnectionRepository;
-    private final WebClient webClient;
-    private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 파싱을 위한 ObjectMapper'
     private final GitHubApiHelper gitHubApiHelper;
     private final GoogleApiHelper googleApiHelper;
-
-    @Value("${spring.security.oauth2.client.registration.google.client-id}")
-    private String googleClientId;
-
-    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
-    private String googleClientSecret;
 
 
     // 기존 refreshToken 기반 갱신(주기적/자동 갱신)
     public void refreshSocialToken(Long userId, OauthProvider provider) {
         SocialConnection connection = socialConnectionRepository.findByUserIdAndProvider(userId, provider)
-            .orElseThrow(() -> new GlobalException(ErrorCode.SOCIAL_CONNECTION_NOT_FOUND));
+            .orElseThrow(() -> new GlobalException(SOCIAL_CONNECTION_NOT_FOUND));
 
         switch (provider) {
             case GOOGLE -> refreshGoogle(connection, Optional.empty(), Optional.empty());
@@ -81,7 +72,7 @@ public class SocialTokenRefreshService {
         // 2. refreshToken 기반 재발급 (latestRefresh가 있으면 그것 사용, 없으면 기존)
         String refreshToUse = latestRefreshOpt.orElse(conn.getRefreshToken());
         if (refreshToUse == null) {
-            throw new GlobalException(ErrorCode.INVALID_REFRESH_TOKEN);
+            throw new GlobalException(INVALID_REFRESH_TOKEN);
         }
 
         GoogleTokenResponse res = googleApiHelper.refreshToken(refreshToUse);

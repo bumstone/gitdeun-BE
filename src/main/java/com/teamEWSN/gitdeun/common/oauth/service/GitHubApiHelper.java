@@ -3,8 +3,8 @@ package com.teamEWSN.gitdeun.common.oauth.service;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.oauth.dto.GitHubEmailDto;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
@@ -20,10 +20,13 @@ import java.util.Map;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class GitHubApiHelper {
 
     private final WebClient webClient;
+
+    public GitHubApiHelper(@Qualifier("oauthWebClient") WebClient webClient) {
+        this.webClient = webClient;
+    }
 
     @Value("${spring.security.oauth2.client.registration.github.client-id}")
     private String clientId;

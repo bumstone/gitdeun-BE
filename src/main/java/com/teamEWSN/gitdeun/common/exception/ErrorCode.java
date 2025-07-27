@@ -34,6 +34,10 @@ public enum ErrorCode {
     SOCIAL_ACCOUNT_CONNECT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-006", "소셜 계정 연동에 실패했습니다."),
     SOCIAL_TOKEN_REFRESH_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "OAUTH-007", "리프레시 토큰 갱신은 지원하지 않습니다. 재인증이 필요합니다."),
 
+    // 리포지토리 관련
+    REPO_NOT_FOUND_BY_ID(HttpStatus.NOT_FOUND, "REPO-001", "해당 ID로 요청한 리포지토리를 찾을 수 없습니다."),
+    REPO_NOT_FOUND_BY_URL(HttpStatus.NOT_FOUND, "REPO-002", "해당 URL로 요청한 리포지토리를 찾을 수 없습니다."),
+
     // S3 파일 관련
     // Client Errors (4xx)
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE-001", "요청한 파일을 찾을 수 없습니다."),
