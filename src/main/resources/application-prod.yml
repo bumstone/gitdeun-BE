@@ -29,3 +29,6 @@ app:
   cookie:
     secure: true
     same-site: None
+
+fastapi:
+  base-url: http://fastapi-server:8000 # Docker 네트워크 내부에서 사용할 주소

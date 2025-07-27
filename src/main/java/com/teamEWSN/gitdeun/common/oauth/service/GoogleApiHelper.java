@@ -3,8 +3,8 @@ package com.teamEWSN.gitdeun.common.oauth.service;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.oauth.record.GoogleTokenResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -18,10 +18,13 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class GoogleApiHelper {
 
     private final WebClient webClient;
+
+    public GoogleApiHelper(@Qualifier("oauthWebClient") WebClient webClient) {
+        this.webClient = webClient;
+    }
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;

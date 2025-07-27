@@ -31,3 +31,6 @@ app:
   cookie:
     secure: false
     same-site: Lax
+
+fastapi:
+  base-url: http://localhost:8000  # 내 PC에서 개발할 때의 주소
