@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,22 +24,17 @@ public class RepoService {
     private final RepoMapper repoMapper;
     private final FastApiClient fastApiClient;
 
-    /**
-     * Mapper를 통해 'updateNeeded' 플래그가 포함된 DTO를 반환합니다.
-     */
+    // 레포지토리 ID로 정보 조회
     public RepoResponseDto findRepoById(Long repoId) {
         Repo repo = repoRepository.findById(repoId)
             .orElseThrow(() -> new GlobalException(ErrorCode.REPO_NOT_FOUND_BY_ID));
         return repoMapper.toResponseDto(repo);
     }
 
-    /**
-     * 리포지토리 URL로 정보를 조회
-     */
-    public RepoResponseDto findRepoByUrl(String url) {
-        Repo repo = repoRepository.findByGithubRepoUrl(url)
-            .orElseThrow(() -> new GlobalException(ErrorCode.REPO_NOT_FOUND_BY_URL));
-        return repoMapper.toResponseDto(repo);
+    // 리포지토리 URL을 통한 조회하여 등록 확인
+    public Optional<RepoResponseDto> findRepoByUrl(String url) {
+        return repoRepository.findByGithubRepoUrl(url)
+            .map(repoMapper::toResponseDto);
     }
 
     /**

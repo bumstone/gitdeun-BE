@@ -18,8 +18,9 @@ public class RepoController {
     // 리포지토리 URL을 통한 등록 확인
     @GetMapping("/check")
     public ResponseEntity<RepoResponseDto> checkRepoExists(@RequestParam String url) {
-        RepoResponseDto response = repoService.findRepoByUrl(url);
-        return ResponseEntity.ok(response);
+        return repoService.findRepoByUrl(url) // Optional<RepoResponseDto>를 받음
+            .map(ResponseEntity::ok) // 값이 있으면 200 OK와 함께 body에 담아 반환
+            .orElseGet(() -> ResponseEntity.noContent().build()); // 값이 없으면 204 No Content 반환
     }
 
     // 리포지토리 정보 조회
