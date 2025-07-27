@@ -2,6 +2,7 @@ package com.teamEWSN.gitdeun.mindmap.entity;
 
 import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
+import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,6 +24,11 @@ public class Mindmap extends AuditedEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "repo_id", nullable = false)
     private Repo repo;
+
+    // owner
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(columnDefinition = "TEXT")
     private String prompt;

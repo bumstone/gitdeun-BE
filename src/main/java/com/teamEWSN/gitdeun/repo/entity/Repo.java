@@ -1,8 +1,9 @@
 package com.teamEWSN.gitdeun.repo.entity;
 
-import com.teamEWSN.gitdeun.user.entity.User;
+import com.teamEWSN.gitdeun.common.config.fastapi.AnalysisResultDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,16 +18,34 @@ public class Repo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @Column(name = "github_repo_url", length = 512, nullable = false)
+    @Column(name = "github_repo_url", length = 512, nullable = false, unique = true)
     private String githubRepoUrl;
 
     @Column(name = "default_branch", length = 100)
-    private String defaultBranch;
+    private String defaultBranch;   // 기본 브랜치
 
-    @Column(name = "last_synced_at")
-    private LocalDateTime lastSyncedAt;
+    @Column(length = 50)
+    private String language; // 주요 언어
+
+    @Column(columnDefinition = "TEXT")
+    private String description; // 설명
+
+    @Column(name = "github_last_updated_at")
+    private LocalDateTime githubLastUpdatedAt; // GitHub 브랜치 최신 커밋 시간 (commit.committer.date)
+
+
+    @Builder
+    public Repo(String githubRepoUrl, String defaultBranch, String language, String description, LocalDateTime githubLastUpdatedAt) {
+        this.githubRepoUrl = githubRepoUrl;
+        this.defaultBranch = defaultBranch;
+        this.language = language;
+        this.description = description;
+        this.githubLastUpdatedAt = githubLastUpdatedAt;
+    }
+
+    public void updateWithAnalysis(AnalysisResultDto result) {
+        this.language = result.getLanguage();
+        this.description = result.getDescription();
+        this.githubLastUpdatedAt = result.getGithubLastUpdatedAt();
+    }
 }
