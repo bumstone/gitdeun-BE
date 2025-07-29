@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "Comment_Attachment")
+@Table(name = "comment_attachment")
 public class CommentAttachment {
 
     @Id

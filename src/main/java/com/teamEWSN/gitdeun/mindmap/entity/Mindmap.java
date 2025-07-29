@@ -13,7 +13,7 @@ import org.hibernate.type.SqlTypes;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Mindmap")
+@Table(name = "mindmap")
 public class Mindmap extends AuditedEntity {
 
     @Id
