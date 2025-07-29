@@ -5,6 +5,7 @@ import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequest;
+import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapResponseDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
@@ -12,6 +13,7 @@ import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
 import com.teamEWSN.gitdeun.repo.repository.RepoRepository;
+import com.teamEWSN.gitdeun.repo.service.RepoService;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +29,7 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class MindmapService {
-
+    private final RepoService repoService;
     private final MindmapMapper mindmapMapper;
     private final MindmapRepository mindmapRepository;
     private final RepoRepository repoRepository;
@@ -39,21 +41,20 @@ public class MindmapService {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
-        Repo repo = repoRepository.findByGithubRepoUrl(req.getRepoUrl())
-            .orElseGet(() -> repoRepository.save(Repo.builder().githubRepoUrl(req.getRepoUrl()).build()));
-
         AnalysisResultDto dto = fastApiClient.analyze(req.getRepoUrl(), req.getPrompt(), req.getType());
 
+        Repo repo = repoRepository.findByGithubRepoUrl(req.getRepoUrl())
+            .orElseGet(() -> Repo.builder().githubRepoUrl(req.getRepoUrl()).build());
+
         repo.updateWithAnalysis(dto);
-        repoRepository.save(repo);             // dirty-checking
+        repoRepository.save(repo);
 
         String field;
-
         if (req.getType() == MindmapType.DEV) {
             field = "개발용";
         } else {
-            if (req.getTitle() != null && !req.getTitle().isEmpty()) {
-                field = req.getTitle();
+            if (req.getField() != null && !req.getField().isEmpty()) {
+                field = req.getField();
             } else {
                 // findNextCheckSequence 호출 시 repo 정보 제거
                 long nextSeq = findNextCheckSequence(user);
@@ -101,5 +102,59 @@ public class MindmapService {
         return 1;
     }
 
+
+    /**
+     * 마인드맵 상세 정보 조회
+     */
+    @Transactional
+    public MindmapDetailResponseDto getMindmap(Long mapId) {
+        Mindmap mindmap = mindmapRepository.findById(mapId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+
+        return mindmapMapper.toDetailResponseDto(mindmap);
+    }
+
+    /**
+     * 마인드맵 새로고침
+     */
+    @Transactional
+    public MindmapDetailResponseDto refreshMindmap(Long mapId, Long userId) {
+        Mindmap mindmap = mindmapRepository.findById(mapId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+
+        // 마인드맵 생성자만 새로고침 가능
+        if (!mindmap.getUser().getId().equals(userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 기존 정보로 FastAPI 재호출
+        AnalysisResultDto dto = fastApiClient.analyze(
+            mindmap.getRepo().getGithubRepoUrl(),
+            mindmap.getPrompt(),
+            mindmap.getType()
+        );
+
+        // 데이터 최신화
+        mindmap.getRepo().updateWithAnalysis(dto);
+        mindmap.updateMapData(dto.getMapData()); // Mindmap 엔티티에 편의 메서드 추가 필요
+
+        return mindmapMapper.toDetailResponseDto(mindmap);
+    }
+
+    /**
+     * 마인드맵 삭제
+     */
+    @Transactional
+    public void deleteMindmap(Long mapId, Long userId) {
+        Mindmap mindmap = mindmapRepository.findById(mapId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+
+        // 마인드맵 생성자만 삭제 가능
+        if (!mindmap.getUser().getId().equals(userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        mindmapRepository.delete(mindmap);
+    }
 
 }
