@@ -13,10 +13,10 @@ import java.util.Optional;
 public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public void saveRefreshToken(String refreshToken, String email, long refreshTokenExpired) {
+    public void saveRefreshToken(String refreshToken, Long userId, long refreshTokenExpired) {
         RefreshToken token = RefreshToken.builder()
             .refreshToken(refreshToken)
-            .email(email)
+            .userId(userId)
             .issuedAt(System.currentTimeMillis())
             .ttl(refreshTokenExpired) // @TimeToLive에 사용될 만료 시간
             .build();

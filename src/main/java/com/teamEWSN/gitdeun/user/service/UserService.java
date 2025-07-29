@@ -8,6 +8,7 @@ import com.teamEWSN.gitdeun.common.oauth.service.GitHubApiHelper;
 import com.teamEWSN.gitdeun.common.oauth.service.GoogleApiHelper;
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
 import com.teamEWSN.gitdeun.user.dto.UserResponseDto;
+import com.teamEWSN.gitdeun.user.entity.Role;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.mapper.UserMapper;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
@@ -86,5 +87,26 @@ public class UserService {
         return userRepository.findByEmailAndDeletedAtIsNull(email)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
 
+    }
+
+    // 아이디로 회원 검색
+    @Transactional(readOnly = true)
+    public User findById(Long id) {
+        return userRepository.findByIdAndDeletedAtIsNull(id)
+            .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
+
+    }
+
+    @Transactional
+    public Long upsertAndGetId(String email, String name, String picture, String nickname) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
+            .map(u -> u.updateProfile(name, picture))  // 이미 있으면 갱신
+            .orElseGet(() -> userRepository.save(
+                User.builder()
+                    .email(email).name(name).profileImage(picture)
+                    .nickname(nickname)
+                    .role(Role.USER)
+                    .build()))
+            .getId();
     }
 }

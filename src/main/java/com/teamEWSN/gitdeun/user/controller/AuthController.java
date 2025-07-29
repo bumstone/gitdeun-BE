@@ -59,7 +59,7 @@ public class AuthController {
     }
 
     // 토큰 재발급
-    @PostMapping("/token/refresh")
+    @GetMapping("/token/refresh")
     public ResponseEntity<UserTokenResponseDto> refreshAccessToken(
         @CookieValue(name = "refreshToken") String refreshToken,
         HttpServletResponse response) {

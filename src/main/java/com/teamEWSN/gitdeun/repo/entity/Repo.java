@@ -24,9 +24,6 @@ public class Repo {
     @Column(name = "default_branch", length = 100)
     private String defaultBranch;   // 기본 브랜치
 
-    @Column(length = 50)
-    private String language; // 주요 언어
-
     @Column(columnDefinition = "TEXT")
     private String description; // 설명
 
@@ -35,16 +32,14 @@ public class Repo {
 
 
     @Builder
-    public Repo(String githubRepoUrl, String defaultBranch, String language, String description, LocalDateTime githubLastUpdatedAt) {
+    public Repo(String githubRepoUrl, String defaultBranch, String description, LocalDateTime githubLastUpdatedAt) {
         this.githubRepoUrl = githubRepoUrl;
         this.defaultBranch = defaultBranch;
-        this.language = language;
         this.description = description;
         this.githubLastUpdatedAt = githubLastUpdatedAt;
     }
 
     public void updateWithAnalysis(AnalysisResultDto result) {
-        this.language = result.getLanguage();
         this.description = result.getDescription();
         this.githubLastUpdatedAt = result.getGithubLastUpdatedAt();
     }

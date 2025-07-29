@@ -50,6 +50,12 @@ public class User extends AuditedEntity {
         this.role = role;
     }
 
+    public User updateProfile(String name, String profileImage) {
+        this.name = name;
+        this.profileImage = profileImage;
+        return this; // 메소드 체이닝을 위해 this 반환
+    }
+
     // 회원 탈퇴 처리
     public void markAsDeleted() {
         this.deletedAt = LocalDateTime.now();

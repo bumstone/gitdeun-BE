@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
+import org.springframework.data.redis.core.index.Indexed;
 
 @Getter
 @AllArgsConstructor
@@ -18,7 +19,8 @@ public class RefreshToken {
     @Id
     private String refreshToken;
 
-    private String email;
+    @Indexed
+    private Long userId;
     private Long issuedAt;
 
     // Time to live (TTL) 설정, Redis에 만료 시간을 설정
