@@ -9,7 +9,7 @@ spring:
       client:
         registration:
           google:
-            redirect-uri: http://localhost:8080/login/oauth2/code/google  # /oauth2/authorization/google 로그인 시작 URL
+            redirect-uri: http://localhost:8080/login/oauth2/code/google
           github:
             client-id: ${GITHUB_DEV_CLIENT_ID}
             client-secret: ${GITHUB_DEV_CLIENT_SECRET}

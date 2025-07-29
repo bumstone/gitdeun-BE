@@ -19,7 +19,7 @@ public class UserSettingController {
     private final UserSettingService userSettingService;
 
     /**
-     * 현재 로그인된 사용자의 설정을 조회합니다.
+     * 현재 로그인된 사용자의 설정을 조회
      * @param userDetails 인증된 사용자 정보
      * @return 현재 설정 정보를 담은 응답
      */
@@ -32,12 +32,12 @@ public class UserSettingController {
     }
 
     /**
-     * 현재 로그인된 사용자의 설정을 변경합니다.
+     * 현재 로그인된 사용자의 설정을 변경
      * @param userDetails 인증된 사용자 정보
      * @param requestDto 변경할 설정 정보를 담은 요청 DTO
      * @return 변경된 설정 정보를 담은 응답
      */
-    @PatchMapping // 리소스의 일부만 변경하므로 PATCH가 더 적합합니다.
+    @PatchMapping
     public ResponseEntity<UserSettingResponseDto> updateUserSettings(
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @Valid @RequestBody UserSettingUpdateRequestDto requestDto

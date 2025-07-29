@@ -65,10 +65,10 @@ public class AuthService {
             .orElseThrow(() -> new GlobalException(ErrorCode.INVALID_REFRESH_TOKEN));
 
         // 토큰에서 email 정보 추출
-        String email = tokenDetails.getEmail();
+        Long userId = tokenDetails.getUserId();
 
-        // email로 사용자 정보 조회
-        User user = userService.findUserByEmail(email);
+        // userId로 사용자 정보 조회
+        User user = userService.findById(userId);
         Authentication authentication = createAuthentication(user);
 
         // 기존 리프레시 토큰은 DB에서 제거 (순환)
