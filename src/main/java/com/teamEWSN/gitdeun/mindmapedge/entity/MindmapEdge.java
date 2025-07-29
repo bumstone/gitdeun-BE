@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "Mindmap_Edge")
+@Table(name = "mindmap_edge")
 public class MindmapEdge extends AuditedEntity {
 
     @Id

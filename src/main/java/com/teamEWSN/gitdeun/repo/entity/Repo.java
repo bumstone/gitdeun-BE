@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "Repo")
+@Table(name = "repo")
 public class Repo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,6 +40,7 @@ public class Repo {
     }
 
     public void updateWithAnalysis(AnalysisResultDto result) {
+        this.defaultBranch = result.getDefaultBranch();
         this.description = result.getDescription();
         this.githubLastUpdatedAt = result.getGithubLastUpdatedAt();
     }

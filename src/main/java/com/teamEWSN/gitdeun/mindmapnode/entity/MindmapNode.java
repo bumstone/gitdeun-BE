@@ -11,7 +11,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "Mindmap_Node")
+@Table(name = "mindmap_node")
 public class MindmapNode extends AuditedEntity {
 
     @Id

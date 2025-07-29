@@ -4,17 +4,16 @@ import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
 import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "Mindmap")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "mindmap")
 public class Mindmap extends AuditedEntity {
 
     @Id
@@ -41,11 +40,13 @@ public class Mindmap extends AuditedEntity {
     private MindmapType type;
 
     @Column(name = "Field", length = 255, nullable = false)
-    @ColumnDefault("'확인용 (n)'")
     private String field;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "map_data", columnDefinition = "json", nullable = false)
     private String mapData;
 
+    public void updateMapData(String newMapData) {
+        this.mapData = newMapData;
+    }
 }

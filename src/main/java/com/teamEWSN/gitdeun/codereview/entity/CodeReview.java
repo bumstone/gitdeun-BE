@@ -12,7 +12,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "Code_Review")
+@Table(name = "code_review")
 public class CodeReview extends AuditedEntity {
 
     @Id

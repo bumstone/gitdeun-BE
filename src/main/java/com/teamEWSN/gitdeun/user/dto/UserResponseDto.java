@@ -8,7 +8,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class UserResponseDto {
-    private Long id;          // 사용자 ID
+    private Long userId;          // 사용자 ID
     private String name;        // 사용자 이름
     private String email;     // 이메일
     private String nickname;  // 닉네임
