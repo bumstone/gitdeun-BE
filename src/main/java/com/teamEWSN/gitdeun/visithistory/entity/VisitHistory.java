@@ -34,7 +34,7 @@ public class VisitHistory {
     private LocalDateTime lastVisitedAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "visit_history", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "visitHistory", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PinnedHistory> pinnedHistorys = new ArrayList<>();
 
 }
