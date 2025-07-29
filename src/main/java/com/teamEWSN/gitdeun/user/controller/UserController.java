@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
-    private final CustomOAuth2UserService customOAuth2UserService;
 
     // 개인 정보 조회
     @GetMapping

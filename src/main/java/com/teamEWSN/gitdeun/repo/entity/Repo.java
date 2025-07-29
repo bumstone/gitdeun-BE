@@ -40,6 +40,7 @@ public class Repo {
     }
 
     public void updateWithAnalysis(AnalysisResultDto result) {
+        this.defaultBranch = result.getDefaultBranch();
         this.description = result.getDescription();
         this.githubLastUpdatedAt = result.getGithubLastUpdatedAt();
     }

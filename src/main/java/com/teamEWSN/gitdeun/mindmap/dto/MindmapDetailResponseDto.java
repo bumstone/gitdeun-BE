@@ -10,10 +10,13 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 @AllArgsConstructor
-public class MindmapResponseDto {
+public class MindmapDetailResponseDto {
     private Long mindmapId;
-    private Long repoId;
+    private String field; // 제목 ("개발용", "확인용(n)" 등)
     private MindmapType type;
-    private String field;
+    private String branch;
+    private String prompt;
+    private String mapData; // 핵심 데이터인 마인드맵 JSON
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

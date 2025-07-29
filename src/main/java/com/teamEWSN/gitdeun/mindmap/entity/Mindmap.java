@@ -46,4 +46,7 @@ public class Mindmap extends AuditedEntity {
     @Column(name = "map_data", columnDefinition = "json", nullable = false)
     private String mapData;
 
+    public void updateMapData(String newMapData) {
+        this.mapData = newMapData;
+    }
 }

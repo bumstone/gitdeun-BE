@@ -38,6 +38,9 @@ public enum ErrorCode {
     REPO_NOT_FOUND_BY_ID(HttpStatus.NOT_FOUND, "REPO-001", "해당 ID로 요청한 리포지토리를 찾을 수 없습니다."),
     REPO_NOT_FOUND_BY_URL(HttpStatus.NOT_FOUND, "REPO-002", "해당 URL로 요청한 리포지토리를 찾을 수 없습니다."),
 
+    // 마인드맵 관련
+    MINDMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "MINDMAP-001", "요청한 마인드맵을 찾을 수 없습니다."),
+
     // S3 파일 관련
     // Client Errors (4xx)
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE-001", "요청한 파일을 찾을 수 없습니다."),

@@ -11,5 +11,5 @@ public class MindmapCreateRequest {
     private String prompt;
     private MindmapType type;
 
-    private String title;    // Optional, 'CHECK' 타입일 때 사용자가 입력하는 제목
+    private String field;    // Optional, 'CHECK' 타입일 때 사용자가 입력하는 제목
 }

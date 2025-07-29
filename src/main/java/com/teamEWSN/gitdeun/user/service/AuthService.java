@@ -13,7 +13,6 @@ import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,18 +35,6 @@ public class AuthService {
     private final CookieUtil cookieUtil;
     private final UserRepository userRepository;
     private final SocialConnectionRepository socialConnectionRepository;
-
-    @Value("${jwt.refresh-expired}")
-    private Long refreshTokenExpired;
-
-    @Value("${spring.security.oauth2.client.registration.github.client-id}")
-    private String githubClientId;
-
-    @Value("${spring.security.oauth2.client.registration.github.client-secret}")
-    private String githubClientSecret;
-
-    @Value("${spring.security.oauth2.client.registration.github.redirect-uri}")
-    private String githubRedirectUri;
 
     // 로그 아웃
     @Transactional
@@ -103,7 +90,6 @@ public class AuthService {
                     throw new GlobalException(ErrorCode.ACCOUNT_ALREADY_LINKED);
                 } else {
                     log.info("이미 현재 사용자와 연동된 GitHub 계정입니다: {}", providerId);
-                    return;
                 }
             });
 
