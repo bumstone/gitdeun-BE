@@ -4,7 +4,6 @@ import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.user.entity.User;
-import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import com.teamEWSN.gitdeun.user.service.UserService;
 import com.teamEWSN.gitdeun.visithistory.dto.VisitHistoryResponseDto;
 import com.teamEWSN.gitdeun.visithistory.entity.PinnedHistory;

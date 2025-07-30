@@ -1,6 +1,5 @@
 package com.teamEWSN.gitdeun.visithistory.mapper;
 
-import com.teamEWSN.gitdeun.user.dto.UserResponseDto;
 import com.teamEWSN.gitdeun.visithistory.dto.VisitHistoryResponseDto;
 import com.teamEWSN.gitdeun.visithistory.entity.VisitHistory;
 import org.mapstruct.Mapper;
