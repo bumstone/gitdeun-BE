@@ -41,6 +41,14 @@ public enum ErrorCode {
     // 마인드맵 관련
     MINDMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "MINDMAP-001", "요청한 마인드맵을 찾을 수 없습니다."),
 
+    // 방문기록 관련
+    HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "VISITHISTORY-001", "방문 기록을 찾을 수 없습니다."),
+
+    // 방문 기록 핀 고정 관련
+    USER_NOT_FOUND_FIX_PIN(HttpStatus.NOT_FOUND, "PINNEDHISTORY-001", "핀 고정한 유저를 찾을 수 없습니다."),
+    PINNEDHISTORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "PINNEDHISTORY-002", "이미 핀 고정한 기록입니다."),
+    PINNEDHISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PINNEDHISTORY-003", "핀 고정 기록을 찾을 수 없습니다."),
+
     // S3 파일 관련
     // Client Errors (4xx)
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE-001", "요청한 파일을 찾을 수 없습니다."),
