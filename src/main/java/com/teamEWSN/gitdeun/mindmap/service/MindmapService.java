@@ -13,9 +13,9 @@ import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
 import com.teamEWSN.gitdeun.repo.repository.RepoRepository;
-import com.teamEWSN.gitdeun.repo.service.RepoService;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
+import com.teamEWSN.gitdeun.visithistory.service.VisitHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class MindmapService {
-    private final RepoService repoService;
+    private final VisitHistoryService visitHistoryService;
     private final MindmapMapper mindmapMapper;
     private final MindmapRepository mindmapRepository;
     private final RepoRepository repoRepository;
@@ -73,6 +73,9 @@ public class MindmapService {
             .build();
 
         mindmapRepository.save(mindmap);
+
+        // 방문 기록 생성
+        visitHistoryService.createVisitHistory(user, mindmap);
 
         return mindmapMapper.toResponseDto(mindmap);
 
