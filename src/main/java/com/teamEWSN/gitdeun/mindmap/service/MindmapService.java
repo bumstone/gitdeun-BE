@@ -8,8 +8,11 @@ import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequest;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapResponseDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
+import com.teamEWSN.gitdeun.mindmap.entity.MindmapMember;
+import com.teamEWSN.gitdeun.mindmap.entity.MindmapRole;
 import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
 import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
+import com.teamEWSN.gitdeun.mindmap.repository.MindmapMemberRepository;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
 import com.teamEWSN.gitdeun.repo.repository.RepoRepository;
@@ -35,6 +38,7 @@ public class MindmapService {
     private final RepoService repoService;
     private final MindmapMapper mindmapMapper;
     private final MindmapRepository mindmapRepository;
+    private final MindmapMemberRepository mindmapMemberRepository;
     private final RepoRepository repoRepository;
     private final UserRepository userRepository;
     private final FastApiClient fastApiClient;
@@ -73,6 +77,11 @@ public class MindmapService {
             .build();
 
         mindmapRepository.save(mindmap);
+
+        // 마인드맵 소유자 등록
+        mindmapMemberRepository.save(
+            MindmapMember.of(mindmap, user, MindmapRole.OWNER)
+        );
 
         // 방문 기록 생성
         visitHistoryService.createVisitHistory(user, mindmap);
