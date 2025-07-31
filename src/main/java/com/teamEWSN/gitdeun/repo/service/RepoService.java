@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.repo.service;
 import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
+import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.repo.dto.RepoResponseDto;
 import com.teamEWSN.gitdeun.repo.dto.RepoUpdateCheckResponseDto;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
@@ -57,4 +58,17 @@ public class RepoService {
         return new RepoUpdateCheckResponseDto(isNeeded);
     }
 
+    // 마인드맵 생성 시 repo 생성 및 업데이트
+    @Transactional
+    public Repo createOrUpdate(String repoUrl, AnalysisResultDto dto) {
+        return repoRepository.findByGithubRepoUrl(repoUrl)
+            .map(r -> { r.updateWithAnalysis(dto); return r; })
+            .orElseGet(() -> {
+                Repo repo = Repo.builder()
+                    .githubRepoUrl(repoUrl)
+                    .build();
+                repo.updateWithAnalysis(dto);
+                return repo;
+            });
+    }
 }

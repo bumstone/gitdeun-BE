@@ -13,6 +13,7 @@ import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
 import com.teamEWSN.gitdeun.repo.repository.RepoRepository;
+import com.teamEWSN.gitdeun.repo.service.RepoService;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import com.teamEWSN.gitdeun.visithistory.service.VisitHistoryService;
@@ -29,7 +30,9 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class MindmapService {
+
     private final VisitHistoryService visitHistoryService;
+    private final RepoService repoService;
     private final MindmapMapper mindmapMapper;
     private final MindmapRepository mindmapRepository;
     private final RepoRepository repoRepository;
@@ -43,10 +46,7 @@ public class MindmapService {
 
         AnalysisResultDto dto = fastApiClient.analyze(req.getRepoUrl(), req.getPrompt(), req.getType());
 
-        Repo repo = repoRepository.findByGithubRepoUrl(req.getRepoUrl())
-            .orElseGet(() -> Repo.builder().githubRepoUrl(req.getRepoUrl()).build());
-
-        repo.updateWithAnalysis(dto);
+        Repo repo = repoService.createOrUpdate(req.getRepoUrl(), dto);
         repoRepository.save(repo);
 
         String field;

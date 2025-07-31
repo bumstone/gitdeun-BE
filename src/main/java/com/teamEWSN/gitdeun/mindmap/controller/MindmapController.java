@@ -13,14 +13,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
-@RestController
+@RestController("/api/mindmaps")
 @RequiredArgsConstructor
 public class MindmapController {
 
     private final MindmapService mindmapService;
 
 
-    // 마인드맵 생성
+    // 마인드맵 생성 (마인드맵에 한해서 owner 권한 얻음)
     @PostMapping
     public ResponseEntity<MindmapResponseDto> createMindmap(
         @RequestBody MindmapCreateRequest request,
@@ -30,7 +30,7 @@ public class MindmapController {
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
-    // 마인드맵 상세 조회(유저 인가 확인필요)
+    // 마인드맵 상세 조회 (유저 인가 확인필요?)
     @GetMapping("/{mapId}")
     public ResponseEntity<MindmapDetailResponseDto> getMindmap(
         @PathVariable Long mapId
@@ -49,7 +49,7 @@ public class MindmapController {
         return ResponseEntity.ok(responseDto);
     }
 
-    // 마인드맵 삭제
+    // 마인드맵 삭제 (owner만)
     @DeleteMapping("/{mapId}")
     public ResponseEntity<Void> deleteMindmap(
         @PathVariable Long mapId,
@@ -59,7 +59,5 @@ public class MindmapController {
         return ResponseEntity.ok().build(); // 성공 시 200 OK와 빈 body 반환
     }
 
-
-    // TODO: 마인드맵 방문 시 / 새로고침 시 업뎃 자동 확인 + 재동기화
 
 }
