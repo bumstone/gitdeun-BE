@@ -1,5 +1,50 @@
 package com.teamEWSN.gitdeun.visithistory.controller;
 
+import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
+import com.teamEWSN.gitdeun.visithistory.dto.VisitHistoryResponseDto;
+import com.teamEWSN.gitdeun.visithistory.service.VisitHistoryService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@Slf4j
+@RestController
+@RequestMapping("/api/history")
+@RequiredArgsConstructor
 public class VisitHistoryController {
-    
+
+    private final VisitHistoryService visitHistoryService;
+
+    // 핀 고정되지 않은 방문 기록 조회
+    @GetMapping("/visits")
+    public ResponseEntity<List<VisitHistoryResponseDto>> getVisitHistories(
+        @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<VisitHistoryResponseDto> histories = visitHistoryService.getVisitHistories(userDetails.getId());
+        return ResponseEntity.ok(histories);
+    }
+
+    // 핀 고정된 방문 기록 조회
+    @GetMapping("/pins")
+    public ResponseEntity<List<VisitHistoryResponseDto>> getPinnedHistories(
+        @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<VisitHistoryResponseDto> histories = visitHistoryService.getPinnedHistories(userDetails.getId());
+        return ResponseEntity.ok(histories);
+    }
+
+    // 방문 기록 삭제
+    @DeleteMapping("/visits/{historyId}")
+    public ResponseEntity<Void> deleteVisitHistory(
+        @PathVariable Long historyId,
+        @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        visitHistoryService.deleteVisitHistory(historyId, userDetails.getId());
+        return ResponseEntity.ok().build();
+    }
+
 }
