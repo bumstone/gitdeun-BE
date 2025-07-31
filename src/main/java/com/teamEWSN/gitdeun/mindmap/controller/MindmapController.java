@@ -1,7 +1,7 @@
 package com.teamEWSN.gitdeun.mindmap.controller;
 
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
-import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequest;
+import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapResponseDto;
 import com.teamEWSN.gitdeun.mindmap.service.MindmapService;
@@ -23,7 +23,7 @@ public class MindmapController {
     // 마인드맵 생성 (마인드맵에 한해서 owner 권한 얻음)
     @PostMapping
     public ResponseEntity<MindmapResponseDto> createMindmap(
-        @RequestBody MindmapCreateRequest request,
+        @RequestBody MindmapCreateRequestDto request,
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         MindmapResponseDto responseDto = mindmapService.createMindmap(request, userDetails.getId());

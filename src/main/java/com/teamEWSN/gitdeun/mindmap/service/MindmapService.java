@@ -4,15 +4,15 @@ import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
-import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequest;
+import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapResponseDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
-import com.teamEWSN.gitdeun.mindmap.entity.MindmapMember;
-import com.teamEWSN.gitdeun.mindmap.entity.MindmapRole;
+import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapMember;
+import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapRole;
 import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
 import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
-import com.teamEWSN.gitdeun.mindmap.repository.MindmapMemberRepository;
+import com.teamEWSN.gitdeun.mindmapmember.repository.MindmapMemberRepository;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
 import com.teamEWSN.gitdeun.repo.repository.RepoRepository;
@@ -44,7 +44,7 @@ public class MindmapService {
     private final FastApiClient fastApiClient;
 
     @Transactional
-    public MindmapResponseDto createMindmap(MindmapCreateRequest req, Long userId) {
+    public MindmapResponseDto createMindmap(MindmapCreateRequestDto req, Long userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 

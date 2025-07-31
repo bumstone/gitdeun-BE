@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class MindmapCreateRequest {
+public class MindmapCreateRequestDto {
     private String repoUrl;
     private String prompt;
     private MindmapType type;

@@ -1,12 +1,10 @@
-package com.teamEWSN.gitdeun.mindmap.entity;
+package com.teamEWSN.gitdeun.mindmapmember.entity;
 
 import com.teamEWSN.gitdeun.common.util.CreatedEntity;
-import com.teamEWSN.gitdeun.repo.entity.Repo;
+import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -36,7 +34,11 @@ public class MindmapMember extends CreatedEntity {
         MindmapMember member = new MindmapMember();
         member.mindmap = mindmap;
         member.user = user;
-        member.role = role;   // OWNER‧EDITOR‧VIEWER 등
+        member.role = role;   // OWNER‧EDITOR‧VIEWER
         return member;
+    }
+
+    public void updateRole(MindmapRole newRole) {
+        this.role = newRole;
     }
 }

@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.mindmap.entity;
+package com.teamEWSN.gitdeun.mindmapmember.entity;
 
 public enum MindmapRole {
     OWNER,   // 생성자
