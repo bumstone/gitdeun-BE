@@ -28,13 +28,6 @@ public class UserSetting {
     @ColumnDefault("'LIGHT'")
     private DisplayTheme theme = DisplayTheme.LIGHT;
 
-    // 사용자 모드 (GENERAL, DEVELOPER)
-    @Builder.Default
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    @ColumnDefault("'GENERAL'")
-    private UserMode mode = UserMode.GENERAL;
-
     @Builder.Default
     @Column(name = "email_notification", nullable = false)
     @ColumnDefault("true")
@@ -45,15 +38,10 @@ public class UserSetting {
         LIGHT, DARK
     }
 
-    public enum UserMode {
-        GENERAL, DEVELOPER
-    }
-
     @Builder
-    private UserSetting(User user, DisplayTheme theme, UserMode mode, boolean emailNotification) {
+    private UserSetting(User user, DisplayTheme theme, boolean emailNotification) {
         this.user = user;
         this.theme = theme;
-        this.mode = mode;
         this.emailNotification = emailNotification;
     }
 
@@ -65,7 +53,6 @@ public class UserSetting {
 
     public void update(UserSettingUpdateRequestDto dto) {
         this.theme = dto.getTheme();
-        this.mode = dto.getMode();
         this.emailNotification = dto.getEmailNotification();
     }
 }
