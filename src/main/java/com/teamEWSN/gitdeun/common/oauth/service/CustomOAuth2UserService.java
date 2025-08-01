@@ -125,7 +125,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .name(response.getName())   // GitHub의 경우 full name, Google의 경우 name
             .nickname(nickname)
             .profileImage(response.getProfileImageUrl())
-            .role(Role.ROLE_USER)
+            .role(Role.USER)
             .build();
 
         connectSocialAccount(newUser, provider, providerId, accessToken, refreshToken);

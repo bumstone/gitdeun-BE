@@ -44,7 +44,7 @@ public class SecurityConfig {
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
         .sessionManagement(session -> session
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))  // 필요한 경우 세션 요청
         .headers((headerConfig) -> headerConfig
             .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
 

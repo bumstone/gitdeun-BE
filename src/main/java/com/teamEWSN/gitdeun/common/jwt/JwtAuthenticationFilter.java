@@ -23,7 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String secretKey;
     private final JwtTokenProvider jwtTokenProvider;
     private final ObjectMapper objectMapper;
-    private static final String BEARER = "Bearer";
+    private static final String BEARER = "Bearer ";
 
 
     @Override

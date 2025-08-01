@@ -11,11 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
@@ -101,17 +104,16 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = jwtTokenParser.parseClaims(token);
         Long userId = Long.valueOf(claims.getSubject());
-        Role role   = Role.valueOf(claims.get("role", String.class));
-
+        String roleName = claims.get("role", String.class);
+        Role role = Role.valueOf(roleName);
         User user = userService.findById(userId);
 
-        CustomUserDetails userDetails =
-            new CustomUserDetails(user.getId(), user.getEmail(),
-                user.getNickname(), user.getProfileImage(),
-                role, user.getName());
+        CustomUserDetails userDetails = new CustomUserDetails(user.getId(), user.getEmail(),
+                user.getNickname(), user.getProfileImage(), role, user.getName());
 
-        return new UsernamePasswordAuthenticationToken(
-            userDetails, null, Collections.singletonList(role::name));
+        Collection<? extends GrantedAuthority> authorities = Collections.singletonList(role);
+
+        return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
     }
 
 //    // 토큰 생성 - 유저 정보 이용
