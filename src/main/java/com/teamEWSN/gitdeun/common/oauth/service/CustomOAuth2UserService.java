@@ -127,9 +127,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .profileImage(response.getProfileImageUrl())
             .role(Role.USER)
             .build();
+        User savedUser = userRepository.save(newUser);
 
-        connectSocialAccount(newUser, provider, providerId, accessToken, refreshToken);
-        return userRepository.save(newUser);
+        connectSocialAccount(savedUser, provider, providerId, accessToken, refreshToken);
+        return savedUser;
     }
 
     private void connectSocialAccount(User user, OauthProvider provider, String providerId, String accessToken, String refreshToken) {
