@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/settings")
+@RequestMapping("/api/users/me/settings")
 @RequiredArgsConstructor
 public class UserSettingController {
     private final UserSettingService userSettingService;
