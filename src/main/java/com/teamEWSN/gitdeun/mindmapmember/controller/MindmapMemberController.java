@@ -10,14 +10,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
-@RestController("/api/mindmaps")
+@RestController("/api/mindmaps/{mapId}/members/{memberId}")
 @RequiredArgsConstructor
 public class MindmapMemberController {
 
     private final MindmapMemberService memberService;
 
     // 마인드맵 멤버 권한 변경
-    @PatchMapping("/{mapId}/members/{memberId}/role")
+    @PatchMapping("/role")
     public ResponseEntity<Void> updateRole(
         @PathVariable Long mapId,
         @PathVariable Long memberId,
@@ -28,7 +28,7 @@ public class MindmapMemberController {
     }
 
     // 마인드맵 멤버 추방
-    @DeleteMapping("/{mapId}/members/{memberId}")
+    @DeleteMapping
     public ResponseEntity<Void> kickMember(
         @PathVariable Long mapId,
         @PathVariable Long memberId,

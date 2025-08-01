@@ -15,12 +15,12 @@ public class MindmapAuthService {
 
     /** OWNER 확인 */
     public boolean isOwner(Long mapId, Long userId) {
-        return memberRepo.existsByMindmapIdAndUserIdAndType(mapId, userId, MindmapRole.OWNER);
+        return memberRepo.existsByMindmapIdAndUserIdAndRole(mapId, userId, MindmapRole.OWNER);
     }
 
     /** 수정 권한(OWNER, EDITOR) */
     public boolean hasEdit(Long mapId, Long userId) {
-        return memberRepo.existsByMindmapIdAndUserIdAndTypeIn(
+        return memberRepo.existsByMindmapIdAndUserIdAndRoleIn(
             mapId, userId, List.of(MindmapRole.OWNER, MindmapRole.EDITOR));
     }
 
