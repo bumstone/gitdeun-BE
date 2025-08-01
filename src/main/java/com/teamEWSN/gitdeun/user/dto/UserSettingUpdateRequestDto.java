@@ -12,8 +12,6 @@ public class UserSettingUpdateRequestDto {
     @NotNull(message = "테마를 선택해주세요.")
     private UserSetting.DisplayTheme theme;
 
-    @NotNull(message = "모드를 선택해주세요.")
-    private UserSetting.UserMode mode;
 
     @NotNull(message = "이메일 수신 여부를 선택해주세요.")
     private Boolean emailNotification;

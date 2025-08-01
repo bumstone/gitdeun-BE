@@ -4,7 +4,7 @@ import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.oauth.entity.OauthProvider;
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
-import com.teamEWSN.gitdeun.common.oauth.record.GoogleTokenResponse;
+import com.teamEWSN.gitdeun.common.oauth.dto.GoogleTokenResponse;
 import com.teamEWSN.gitdeun.common.oauth.repository.SocialConnectionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

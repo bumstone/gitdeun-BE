@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -74,7 +75,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     // OAuth2 공급자로부터 받은 사용자 정보를 기반으로 OAuth2ResponseDto를 생성(인스턴스 메서드)
     private OAuth2ResponseDto getOAuth2ResponseDto(OAuth2User oAuth2User, OAuth2UserRequest userRequest) {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
-        Map<String, Object> attr = oAuth2User.getAttributes();
+
+        Map<String, Object> attr = new HashMap<>(oAuth2User.getAttributes());
 
         if (registrationId.equalsIgnoreCase("google")) {
             return new GoogleResponseDto(attr);
@@ -90,10 +92,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                         .findFirst().map(GitHubEmailDto::getEmail).orElse(null));
             }
             return new GitHubResponseDto(attr);
-        } else {
-            // 지원하지 않는 소셜 로그인 제공자
-            throw new GlobalException(ErrorCode.UNSUPPORTED_OAUTH_PROVIDER);
         }
+        // 지원하지 않는 소셜 로그인 제공자
+        throw new GlobalException(ErrorCode.UNSUPPORTED_OAUTH_PROVIDER);
     }
 
     /**
@@ -125,11 +126,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .name(response.getName())   // GitHub의 경우 full name, Google의 경우 name
             .nickname(nickname)
             .profileImage(response.getProfileImageUrl())
-            .role(Role.ROLE_USER)
+            .role(Role.USER)
             .build();
+        User savedUser = userRepository.save(newUser);
 
-        connectSocialAccount(newUser, provider, providerId, accessToken, refreshToken);
-        return userRepository.save(newUser);
+        connectSocialAccount(savedUser, provider, providerId, accessToken, refreshToken);
+        return savedUser;
     }
 
     private void connectSocialAccount(User user, OauthProvider provider, String providerId, String accessToken, String refreshToken) {

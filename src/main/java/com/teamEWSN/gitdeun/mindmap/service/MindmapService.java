@@ -4,15 +4,19 @@ import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
-import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequest;
+import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapResponseDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
+import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapMember;
+import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapRole;
 import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
 import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
+import com.teamEWSN.gitdeun.mindmapmember.repository.MindmapMemberRepository;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
 import com.teamEWSN.gitdeun.repo.repository.RepoRepository;
+import com.teamEWSN.gitdeun.repo.service.RepoService;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import com.teamEWSN.gitdeun.visithistory.service.VisitHistoryService;
@@ -29,24 +33,24 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class MindmapService {
+
     private final VisitHistoryService visitHistoryService;
+    private final RepoService repoService;
     private final MindmapMapper mindmapMapper;
     private final MindmapRepository mindmapRepository;
+    private final MindmapMemberRepository mindmapMemberRepository;
     private final RepoRepository repoRepository;
     private final UserRepository userRepository;
     private final FastApiClient fastApiClient;
 
     @Transactional
-    public MindmapResponseDto createMindmap(MindmapCreateRequest req, Long userId) {
+    public MindmapResponseDto createMindmap(MindmapCreateRequestDto req, Long userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
         AnalysisResultDto dto = fastApiClient.analyze(req.getRepoUrl(), req.getPrompt(), req.getType());
 
-        Repo repo = repoRepository.findByGithubRepoUrl(req.getRepoUrl())
-            .orElseGet(() -> Repo.builder().githubRepoUrl(req.getRepoUrl()).build());
-
-        repo.updateWithAnalysis(dto);
+        Repo repo = repoService.createOrUpdate(req.getRepoUrl(), dto);
         repoRepository.save(repo);
 
         String field;
@@ -73,6 +77,11 @@ public class MindmapService {
             .build();
 
         mindmapRepository.save(mindmap);
+
+        // 마인드맵 소유자 등록
+        mindmapMemberRepository.save(
+            MindmapMember.of(mindmap, user, MindmapRole.OWNER)
+        );
 
         // 방문 기록 생성
         visitHistoryService.createVisitHistory(user, mindmap);

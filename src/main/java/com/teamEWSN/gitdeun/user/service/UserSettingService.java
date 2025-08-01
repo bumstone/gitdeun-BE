@@ -47,7 +47,7 @@ public class UserSettingService {
      * @param requestDto 업데이트할 설정 내용
      * @return 업데이트된 사용자의 설정 정보 DTO
      */
-    @Transactional // 쓰기 작업을 위한 @Transactional
+    @Transactional
     public UserSettingResponseDto updateSettings(Long userId, UserSettingUpdateRequestDto requestDto) {
         UserSetting userSetting = userSettingRepository.findByUserId(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_SETTING_NOT_FOUND_BY_ID));

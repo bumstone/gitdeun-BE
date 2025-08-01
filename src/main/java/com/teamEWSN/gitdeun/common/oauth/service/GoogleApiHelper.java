@@ -2,7 +2,7 @@ package com.teamEWSN.gitdeun.common.oauth.service;
 
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
-import com.teamEWSN.gitdeun.common.oauth.record.GoogleTokenResponse;
+import com.teamEWSN.gitdeun.common.oauth.dto.GoogleTokenResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;

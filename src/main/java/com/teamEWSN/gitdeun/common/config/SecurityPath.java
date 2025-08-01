@@ -5,7 +5,7 @@ public class SecurityPath {
 
   // permitAll
   public static final String[] PUBLIC_ENDPOINTS = {
-      "/api/token/refresh",
+      "/api/auth/token/refresh",
       "/api/auth/oauth/refresh/*",
       "/",
 
@@ -16,8 +16,11 @@ public class SecurityPath {
       "/api/auth/connect/github/state",
       "/api/users/me",
       "/api/users/me/**",
-      "/api/logout",
-      "/api/repos/**"
+      "/api/auth/logout",
+      "/api/repos",
+      "/api/repos/**",
+      "/api/mindmaps/**",
+      "/api/history/**"
   };
 
   // hasRole("ADMIN")

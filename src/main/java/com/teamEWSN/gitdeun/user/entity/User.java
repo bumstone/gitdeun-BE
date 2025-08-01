@@ -37,7 +37,7 @@ public class User extends AuditedEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SocialConnection> socialConnections = new ArrayList<>();
 
-    @Column(name = "deleted_at", columnDefinition = "DATETIME(0) DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
 

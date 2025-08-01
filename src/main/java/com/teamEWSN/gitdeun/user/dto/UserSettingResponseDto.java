@@ -12,6 +12,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserSettingResponseDto {
     private UserSetting.DisplayTheme theme;
-    private UserSetting.UserMode mode;
     private boolean emailNotification;
 }

@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.common.oauth.record;
+package com.teamEWSN.gitdeun.common.oauth.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
