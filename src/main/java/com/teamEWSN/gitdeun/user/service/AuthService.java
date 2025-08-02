@@ -6,6 +6,7 @@ import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.cookie.CookieUtil;
 import com.teamEWSN.gitdeun.common.jwt.*;
+import com.teamEWSN.gitdeun.common.oauth.dto.SocialConnectionResponseDto;
 import com.teamEWSN.gitdeun.common.oauth.entity.OauthProvider;
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
 import com.teamEWSN.gitdeun.common.oauth.repository.SocialConnectionRepository;
@@ -20,7 +21,9 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -106,4 +109,18 @@ public class AuthService {
         socialConnectionRepository.save(connection);
     }
 
+    // 사용자의 모든 소셜 연동 정보를 조회
+    @Transactional(readOnly = true)
+    public SocialConnectionResponseDto getConnectedProviders(Long userId) {
+        // userId로 사용자를 조회
+        User user = userService.findById(userId);
+
+        // 사용자의 SocialConnection 리스트에서 Provider 정보만 추출하여 리스트 생성
+        List<OauthProvider> providers = user.getSocialConnections().stream()
+            .map(SocialConnection::getProvider)
+            .collect(Collectors.toList());
+
+        // DTO에 담아 반환 변환
+        return new SocialConnectionResponseDto(providers);
+    }
 }

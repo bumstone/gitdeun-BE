@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.user.controller;
 import com.teamEWSN.gitdeun.common.cookie.CookieUtil;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import com.teamEWSN.gitdeun.common.jwt.JwtToken;
+import com.teamEWSN.gitdeun.common.oauth.dto.SocialConnectionResponseDto;
 import com.teamEWSN.gitdeun.common.oauth.entity.OauthProvider;
 import com.teamEWSN.gitdeun.common.oauth.service.OAuthStateService;
 import com.teamEWSN.gitdeun.common.oauth.service.SocialTokenRefreshService;
@@ -78,4 +79,14 @@ public class AuthController {
         socialTokenRefreshService.refreshSocialToken(user.getId(), provider);
         return ResponseEntity.noContent().build();
     }
+
+    // socialconnection 확인용
+    @GetMapping("/social")
+    public ResponseEntity<SocialConnectionResponseDto> getSocialConnections(
+        @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        SocialConnectionResponseDto response = authService.getConnectedProviders(user.getId());
+        return ResponseEntity.ok(response);
+    }
+
 }
