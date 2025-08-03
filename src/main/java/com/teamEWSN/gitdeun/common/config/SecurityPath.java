@@ -14,13 +14,15 @@ public class SecurityPath {
   // hasRole("USER")
   public static final String[] USER_ENDPOINTS = {
       "/api/auth/connect/github/state",
+      "/api/auth/logout",
+      "/api/auth/social",
       "/api/users/me",
       "/api/users/me/**",
-      "/api/auth/logout",
       "/api/repos",
       "/api/repos/**",
       "/api/mindmaps/**",
-      "/api/history/**"
+      "/api/history/**",
+      "/api/s3/bucket/**"
   };
 
   // hasRole("ADMIN")

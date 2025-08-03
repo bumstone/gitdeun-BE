@@ -14,6 +14,7 @@ import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
 import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
 import com.teamEWSN.gitdeun.mindmapmember.repository.MindmapMemberRepository;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
+import com.teamEWSN.gitdeun.mindmapmember.service.MindmapAuthService;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
 import com.teamEWSN.gitdeun.repo.repository.RepoRepository;
 import com.teamEWSN.gitdeun.repo.service.RepoService;
@@ -36,6 +37,8 @@ public class MindmapService {
 
     private final VisitHistoryService visitHistoryService;
     private final RepoService repoService;
+    private final MindmapSseService mindmapSseService;
+    private final MindmapAuthService mindmapAuthService;
     private final MindmapMapper mindmapMapper;
     private final MindmapRepository mindmapRepository;
     private final MindmapMemberRepository mindmapMemberRepository;
@@ -117,9 +120,15 @@ public class MindmapService {
 
     /**
      * 마인드맵 상세 정보 조회
+     * 저장소 업데이트는 Fast API Webhook 알림
+     * 마인드맵 변경이나 리뷰 생성 시 SSE 적용을 통한 실시간 업데이트 (새로고침 x)
      */
     @Transactional
-    public MindmapDetailResponseDto getMindmap(Long mapId) {
+    public MindmapDetailResponseDto getMindmap(Long mapId, Long userId) {
+        if (!mindmapAuthService.hasView(mapId, userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS); // 멤버 권한 확인
+        }
+
         Mindmap mindmap = mindmapRepository.findById(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
@@ -148,9 +157,14 @@ public class MindmapService {
 
         // 데이터 최신화
         mindmap.getRepo().updateWithAnalysis(dto);
-        mindmap.updateMapData(dto.getMapData()); // Mindmap 엔티티에 편의 메서드 추가 필요
+        mindmap.updateMapData(dto.getMapData());
 
-        return mindmapMapper.toDetailResponseDto(mindmap);
+        MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
+
+        // 업데이트된 마인드맵 정보를 모든 구독자에게 방송
+        mindmapSseService.broadcastUpdate(mapId, responseDto);
+
+        return responseDto;
     }
 
     /**
