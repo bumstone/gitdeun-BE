@@ -36,6 +36,7 @@ public class MindmapService {
 
     private final VisitHistoryService visitHistoryService;
     private final RepoService repoService;
+    private final MindmapSseService mindmapSseService;
     private final MindmapMapper mindmapMapper;
     private final MindmapRepository mindmapRepository;
     private final MindmapMemberRepository mindmapMemberRepository;
@@ -117,6 +118,8 @@ public class MindmapService {
 
     /**
      * 마인드맵 상세 정보 조회
+     * 저장소 업데이트는 Fast API Webhook 알림
+     * 마인드맵 변경이나 리뷰 생성 시 SSE 적용을 통한 실시간 업데이트 (새로고침 x)
      */
     @Transactional
     public MindmapDetailResponseDto getMindmap(Long mapId) {
@@ -148,9 +151,14 @@ public class MindmapService {
 
         // 데이터 최신화
         mindmap.getRepo().updateWithAnalysis(dto);
-        mindmap.updateMapData(dto.getMapData()); // Mindmap 엔티티에 편의 메서드 추가 필요
+        mindmap.updateMapData(dto.getMapData());
 
-        return mindmapMapper.toDetailResponseDto(mindmap);
+        MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
+
+        // 업데이트된 마인드맵 정보를 모든 구독자에게 방송
+        mindmapSseService.broadcastUpdate(mapId, responseDto);
+
+        return responseDto;
     }
 
     /**
