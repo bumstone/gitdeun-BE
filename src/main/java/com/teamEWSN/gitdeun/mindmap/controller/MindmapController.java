@@ -33,9 +33,10 @@ public class MindmapController {
     // 마인드맵 상세 조회 (유저 인가 확인필요?)
     @GetMapping("/{mapId}")
     public ResponseEntity<MindmapDetailResponseDto> getMindmap(
-        @PathVariable Long mapId
+        @PathVariable Long mapId,
+        @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId);
+        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId());
         return ResponseEntity.ok(responseDto);
     }
 
