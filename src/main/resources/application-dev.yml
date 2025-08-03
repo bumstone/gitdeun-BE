@@ -4,12 +4,33 @@ spring:
   data:
     redis:
       host: localhost
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: http://localhost:8080/login/oauth2/code/google
+          github:
+            client-id: ${GITHUB_DEV_CLIENT_ID}
+            client-secret: ${GITHUB_DEV_CLIENT_SECRET}
+            redirect-uri: http://localhost:8080/login/oauth2/code/github
+#      provider:
+#        google:
+#          authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+#          token-uri: https://oauth2.googleapis.com/token
+#          user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+#          user-name-attribute: sub
+
 
 jwt:
   access-expired: 28800  # 8시간
   refresh-expired: 86400  # 1일
 
 app:
+  front-url: http://localhost:5173
   cookie:
     secure: false
     same-site: Lax
+
+fastapi:
+  base-url: http://localhost:8000  # 내 PC에서 개발할 때의 주소
