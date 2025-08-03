@@ -27,7 +27,7 @@ jwt:
   refresh-expired: 86400  # 1일
 
 app:
-  front-url: http://localhost:3000
+  front-url: http://localhost:5173
   cookie:
     secure: false
     same-site: Lax

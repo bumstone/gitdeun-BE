@@ -102,7 +102,7 @@ public class SecurityConfig {
 
   private static CorsConfiguration getCorsConfiguration() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.addAllowedOrigin("http://localhost:3000"); // 개발 환경
+    configuration.addAllowedOrigin("http://localhost:5173"); // 개발 환경
     configuration.addAllowedOrigin("https://gitdeun.netlify.app");
     configuration.addAllowedOrigin("https://gitdeun.site"); // 혜택온 도메인
     configuration.addAllowedOrigin("https://www.gitdeun.site");
