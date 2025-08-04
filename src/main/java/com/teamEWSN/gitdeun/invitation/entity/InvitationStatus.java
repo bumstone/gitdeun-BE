@@ -1,6 +1,7 @@
 package com.teamEWSN.gitdeun.invitation.entity;
 
 public enum InvitationStatus {
-    READ_ONLY,
-    EDIT_ALLOWED
+    PENDING,  // 초대 승인 대기중
+    ACCEPTED, // 수락
+    REJECTED  // 거절
 }
