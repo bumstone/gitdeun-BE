@@ -14,11 +14,9 @@ public interface MindmapMemberRepository extends JpaRepository<MindmapMember, Lo
     /* OWNER/EDITOR/VIEWER 여부 */
     boolean existsByMindmapIdAndUserId(Long mindmapId, Long userId);
 
-    boolean existsByMindmapIdAndUserIdAndRole(
-        Long mindmapId, Long userId, MindmapRole role);
+    boolean existsByMindmapIdAndUserIdAndRole(Long mindmapId, Long userId, MindmapRole role);
 
-    boolean existsByMindmapIdAndUserIdAndRoleIn(
-        Long mindmapId, Long userId, Collection<MindmapRole> roles);
+    boolean existsByMindmapIdAndUserIdAndRoleIn(Long mindmapId, Long userId, Collection<MindmapRole> roles);
 
     // 권한 변경
     Optional<MindmapMember> findByIdAndMindmapId(Long memberId, Long mindmapId);

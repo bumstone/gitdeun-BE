@@ -61,6 +61,7 @@ public class RepoService {
     // 마인드맵 생성 시 repo 생성 및 업데이트
     @Transactional
     public Repo createOrUpdate(String repoUrl, AnalysisResultDto dto) {
+        // github repository url 일치 여부에 따라
         return repoRepository.findByGithubRepoUrl(repoUrl)
             .map(r -> { r.updateWithAnalysis(dto); return r; })
             .orElseGet(() -> {

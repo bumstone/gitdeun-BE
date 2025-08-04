@@ -21,6 +21,12 @@ public class Repo {
     @Column(name = "github_repo_url", length = 512, nullable = false, unique = true)
     private String githubRepoUrl;
 
+//    @Column(name="repo_name", length = 255, nullable = false)
+//    private String repoName;
+//
+//    @Column(length = 100)
+//    private String language;
+
     @Column(name = "default_branch", length = 100)
     private String defaultBranch;   // 기본 브랜치
 
