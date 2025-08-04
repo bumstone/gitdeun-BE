@@ -30,7 +30,7 @@ public class InvitationController {
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         invitationService.inviteUserByEmail(mapId, requestDto, userDetails.getId());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     // 특정 마인드맵의 전체 초대 목록 조회 (페이지네이션 적용)
@@ -50,7 +50,7 @@ public class InvitationController {
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         invitationService.acceptInvitation(invitationId, userDetails.getId());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     // 초대 거절
@@ -60,7 +60,7 @@ public class InvitationController {
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         invitationService.rejectInvitation(invitationId, userDetails.getId());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
 
@@ -80,7 +80,7 @@ public class InvitationController {
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         invitationService.acceptInvitationByLink(token, userDetails.getId());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     // Owner가 링크 초대 승인
