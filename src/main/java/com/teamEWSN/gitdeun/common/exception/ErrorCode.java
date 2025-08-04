@@ -43,7 +43,15 @@ public enum ErrorCode {
 
     // 멤버 관련
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER-001", "해당 멤버를 찾을 수 없습니다."),
+    MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "MEMBER-002", "이미 마인드맵에 등록된 멤버입니다."),
 
+    // 초대 관련
+    INVITATION_NOT_FOUND(HttpStatus.NOT_FOUND, "INVITE-001", "초대 정보를 찾을 수 없습니다."),
+    INVITATION_EXPIRED(HttpStatus.BAD_REQUEST, "INVITE-002", "만료된 초대입니다."),
+    INVITATION_ALREADY_EXISTS(HttpStatus.CONFLICT, "INVITE-003", "이미 초대 대기 중인 사용자입니다."),
+    CANNOT_INVITE_SELF(HttpStatus.BAD_REQUEST, "INVITE-004", "자기 자신을 초대할 수 없습니다."),
+    INVITATION_REJECTED_USER(HttpStatus.FORBIDDEN, "INVITE-005", "초대를 거절한 사용자이므로 초대할 수 없습니다."),
+    
     // 방문기록 관련
     HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "VISITHISTORY-001", "방문 기록을 찾을 수 없습니다."),
 

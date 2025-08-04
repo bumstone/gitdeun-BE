@@ -1,5 +1,256 @@
 package com.teamEWSN.gitdeun.invitation.service;
 
+import com.teamEWSN.gitdeun.common.exception.ErrorCode;
+import com.teamEWSN.gitdeun.common.exception.GlobalException;
+import com.teamEWSN.gitdeun.invitation.dto.InvitationActionResponseDto;
+import com.teamEWSN.gitdeun.invitation.dto.InvitationResponseDto;
+import com.teamEWSN.gitdeun.invitation.dto.InviteRequestDto;
+import com.teamEWSN.gitdeun.invitation.dto.LinkResponseDto;
+import com.teamEWSN.gitdeun.invitation.entity.Invitation;
+import com.teamEWSN.gitdeun.invitation.entity.InvitationStatus;
+import com.teamEWSN.gitdeun.invitation.mapper.InvitationMapper;
+import com.teamEWSN.gitdeun.invitation.repository.InvitationRepository;
+import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
+import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
+import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapMember;
+import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapRole;
+import com.teamEWSN.gitdeun.mindmapmember.repository.MindmapMemberRepository;
+import com.teamEWSN.gitdeun.mindmapmember.service.MindmapAuthService;
+import com.teamEWSN.gitdeun.user.entity.User;
+import com.teamEWSN.gitdeun.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
 public class InvitationService {
-    
+
+    private final InvitationRepository invitationRepository;
+    private final UserRepository userRepository;
+    private final MindmapRepository mindmapRepository;
+    private final MindmapMemberRepository mindmapMemberRepository;
+    private final MindmapAuthService mindmapAuthService;
+    // private final NotificationService notificationService;
+    private final InvitationMapper invitationMapper;
+
+    private static final String INVITATION_BASE_URL = "http://localhost:8080/invitations/";
+    // private static final String INVITATION_BASE_URL = "https://gitdeun.site/invitations/";
+
+    // 초대 전송(이메일 + 알림)
+    @Transactional
+    public void inviteUserByEmail(Long mapId, InviteRequestDto requestDto, Long inviterId) {
+        // 마인드맵 소유자만 초대 가능
+        if (!mindmapAuthService.isOwner(mapId, inviterId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        User invitee = userRepository.findByEmailAndDeletedAtIsNull(requestDto.getEmail())
+            .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
+
+        // 본인 초대 불가
+        if (inviterId.equals(invitee.getId())) {
+            throw new GlobalException(ErrorCode.CANNOT_INVITE_SELF);
+        }
+
+        // 기존 멤버 여부 확인
+        if (mindmapMemberRepository.existsByMindmapIdAndUserId(mapId, invitee.getId())) {
+            throw new GlobalException(ErrorCode.MEMBER_ALREADY_EXISTS);
+        }
+
+        // 이미 초대 거절한 사용자 확인
+        if (invitationRepository.existsByMindmapIdAndInviteeIdAndStatus(mapId, invitee.getId(), InvitationStatus.REJECTED)) {
+            throw new GlobalException(ErrorCode.INVITATION_REJECTED_USER);
+        }
+
+        // 이미 초대했는지 확인 (만료 체크)
+        if (invitationRepository.existsByMindmapIdAndInviteeIdAndStatusAndExpiresAtAfter(mapId, invitee.getId(), InvitationStatus.PENDING, LocalDateTime.now())) {
+            throw new GlobalException(ErrorCode.INVITATION_ALREADY_EXISTS);
+        }
+
+        Mindmap mindmap = mindmapRepository.findById(mapId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+        User inviter = userRepository.findById(inviterId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
+
+        Invitation invitation = Invitation.builder()
+            .mindmap(mindmap)
+            .inviter(inviter)
+            .invitee(invitee)
+            .token(UUID.randomUUID().toString())
+            .role(requestDto.getRole())
+            .status(InvitationStatus.PENDING)
+            .expiresAt(LocalDateTime.now().plusDays(1))
+            .build();
+        invitationRepository.save(invitation);
+
+        // 알림 전송 + 이메일 전송
+        // notificationService.sendInvitation(invitation);
+    }
+
+    // 초대한 목록 조회(member)
+    @Transactional(readOnly = true)
+    public Page<InvitationResponseDto> getInvitationsByMindmap(Long mapId, Long userId, Pageable pageable) {
+        if (!mindmapAuthService.hasView(mapId, userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        Page<Invitation> invitations = invitationRepository.findByMindmapId(mapId, pageable);
+
+        return invitations.map(invitationMapper::toResponseDto);
+    }
+
+    // 초대 수락
+    @Transactional
+    public void acceptInvitation(Long invitationId, Long userId) {
+        Invitation invitation = invitationRepository.findById(invitationId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
+
+        // 초대 중복 여부
+        if (!invitation.getInvitee().getId().equals(userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 초대시간 만료
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
+        }
+
+        Invitation newInvitation = invitation.accept();
+        MindmapMember newMember = MindmapMember.of(newInvitation.getMindmap(), newInvitation.getInvitee(), newInvitation.getRole());
+        mindmapMemberRepository.save(newMember);
+
+        // notificationService.sendAcceptance(invitation);
+    }
+
+    // 초대 거절
+    @Transactional
+    public void rejectInvitation(Long invitationId, Long userId) {
+        Invitation invitation = invitationRepository.findById(invitationId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
+
+        if (!invitation.getInvitee().getId().equals(userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 초대 시간 만료
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
+        }
+
+        invitation.reject();
+        // notificationService.sendRejection(invitation);
+    }
+
+    // 초대 링크 생성(owner)
+    @Transactional
+    public LinkResponseDto createInvitationLink(Long mapId, Long inviterId) {
+        if (!mindmapAuthService.isOwner(mapId, inviterId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        Mindmap mindmap = mindmapRepository.findById(mapId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+        User inviter = userRepository.findById(inviterId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
+
+        Invitation invitation = Invitation.builder()
+            .mindmap(mindmap)
+            .inviter(inviter)
+            .invitee(null) // 링크 초대는 처음엔 초대받는 사람이 없음
+            .token(UUID.randomUUID().toString())
+            .role(MindmapRole.VIEWER) // 링크 초대는 기본적으로 가장 낮은 권한 부여
+            .status(InvitationStatus.PENDING) // 링크 자체는 PENDING 상태
+            .expiresAt(LocalDateTime.now().plusDays(1))
+            .build();
+        invitationRepository.save(invitation);
+
+        return new LinkResponseDto(INVITATION_BASE_URL + invitation.getToken());
+    }
+
+    // 초대 링크 접근
+    @Transactional
+    public void acceptInvitationByLink(String token, Long userId) {
+        Invitation invitation = invitationRepository.findByToken(token)
+            .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
+
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
+        }
+
+        // 이미 초대 거절한 사용자 확인
+        if (invitationRepository.existsByMindmapIdAndInviteeIdAndStatus(invitation.getMindmap().getId(), userId, InvitationStatus.REJECTED)) {
+            throw new GlobalException(ErrorCode.INVITATION_REJECTED_USER);
+        }
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
+
+        Invitation updatedInvitation = invitation.toBuilder()
+            .invitee(user)
+            .status(InvitationStatus.PENDING)
+            .build();
+        invitationRepository.save(updatedInvitation);
+
+        // notificationService.sendLinkApprovalRequest(invitation);
+    }
+
+    // 초대 링크 수락(owner)
+    @Transactional
+    public InvitationActionResponseDto approveLinkInvitation(Long invitationId, Long ownerId) {
+        Invitation invitation = invitationRepository.findById(invitationId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
+
+        // owner 확인
+        if (!invitation.getMindmap().getUser().getId().equals(ownerId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 만료 시간 확인
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
+        }
+
+        // 입장 사용자 확인
+        if (invitation.getInvitee() == null) {
+            throw new GlobalException(ErrorCode.INVITATION_NOT_FOUND);
+        }
+
+        Invitation newInvitation = invitation.accept();
+        MindmapMember newMember = MindmapMember.of(newInvitation.getMindmap(), newInvitation.getInvitee(), newInvitation.getRole());
+        mindmapMemberRepository.save(newMember);
+
+        return new InvitationActionResponseDto("초대 요청이 승인되었습니다.");
+    }
+
+    // Owner의 링크 초대 요청 거절 메서드
+    @Transactional
+    public InvitationActionResponseDto rejectLinkApproval(Long invitationId, Long ownerId) {
+        Invitation invitation = invitationRepository.findById(invitationId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
+
+        // owner 확인
+        if (!invitation.getMindmap().getUser().getId().equals(ownerId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 만료 시간 확인
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
+        }
+
+        // 입장 사용자 확인
+        if (invitation.getInvitee() == null) {
+            throw new GlobalException(ErrorCode.INVITATION_NOT_FOUND);
+        }
+
+        invitation.reject();
+
+        return new InvitationActionResponseDto("초대 요청이 거부되었습니다.");
+    }
 }
