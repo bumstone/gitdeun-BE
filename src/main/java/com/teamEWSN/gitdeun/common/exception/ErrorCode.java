@@ -51,7 +51,11 @@ public enum ErrorCode {
     INVITATION_ALREADY_EXISTS(HttpStatus.CONFLICT, "INVITE-003", "이미 초대 대기 중인 사용자입니다."),
     CANNOT_INVITE_SELF(HttpStatus.BAD_REQUEST, "INVITE-004", "자기 자신을 초대할 수 없습니다."),
     INVITATION_REJECTED_USER(HttpStatus.FORBIDDEN, "INVITE-005", "초대를 거절한 사용자이므로 초대할 수 없습니다."),
-    
+
+    // 알림 관련
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION-001", "알림을 찾을 수 없습니다."),
+    CANNOT_ACCESS_NOTIFICATION(HttpStatus.FORBIDDEN, "NOTIFICATION-002", "해당 알림에 접근할 권한이 없습니다.");
+
     // 방문기록 관련
     HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "VISITHISTORY-001", "방문 기록을 찾을 수 없습니다."),
 
