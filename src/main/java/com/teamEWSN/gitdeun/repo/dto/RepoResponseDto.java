@@ -11,8 +11,8 @@ public class RepoResponseDto {
 
     private final Long repoId;
     private final String githubRepoUrl;
+    private final String language;
     private final String defaultBranch;
-    private final String description;
     private final LocalDateTime githubLastUpdatedAt;
 
 }

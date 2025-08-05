@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 @Getter
 public class AnalysisResultDto {
     // FastAPI가 반환하는 Repo 관련 정보
+    private String language;
     private String defaultBranch;
-    private String description;
     private LocalDateTime githubLastUpdatedAt;
 
     // FastAPI가 반환하는 Mindmap 관련 정보
