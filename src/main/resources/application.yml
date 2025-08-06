@@ -35,6 +35,17 @@ spring:
             scope: openid, email, profile
           github:
             scope: user:email, repo
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USERNAME}         # 실제 Gmail 계정
+    password: ${GMAIL_APP_PASSWORD}    # Gmail 앱 비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   profiles:
     active: dev, s3Bucket  # logback-spring SpringProfile 설정 및 AWS S3 Bucket 설정
 

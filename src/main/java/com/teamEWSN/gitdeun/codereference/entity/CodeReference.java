@@ -1,6 +1,6 @@
 package com.teamEWSN.gitdeun.codereference.entity;
 
-import com.teamEWSN.gitdeun.mindmapnode.entity.MindmapNode;
+import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -17,8 +17,8 @@ public class CodeReference {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "node_id", nullable = false)
-    private MindmapNode node;
+    @JoinColumn(name = "mindmap_id", nullable = false)
+    private Mindmap mindmap;
 
     @Column(name = "file_path", columnDefinition = "TEXT", nullable = false)
     private String filePath;

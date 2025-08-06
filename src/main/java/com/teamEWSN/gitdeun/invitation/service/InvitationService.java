@@ -16,6 +16,7 @@ import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapMember;
 import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapRole;
 import com.teamEWSN.gitdeun.mindmapmember.repository.MindmapMemberRepository;
 import com.teamEWSN.gitdeun.mindmapmember.service.MindmapAuthService;
+import com.teamEWSN.gitdeun.notification.service.NotificationService;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,7 @@ public class InvitationService {
     private final MindmapRepository mindmapRepository;
     private final MindmapMemberRepository mindmapMemberRepository;
     private final MindmapAuthService mindmapAuthService;
-    // private final NotificationService notificationService;
+    private final NotificationService notificationService;
     private final InvitationMapper invitationMapper;
 
     private static final String INVITATION_BASE_URL = "http://localhost:8080/invitations/";
@@ -90,7 +91,7 @@ public class InvitationService {
         invitationRepository.save(invitation);
 
         // 알림 전송 + 이메일 전송
-        // notificationService.sendInvitation(invitation);
+        notificationService.notifyInvitation(invitation);
     }
 
     // 초대한 목록 조회(member)
@@ -125,7 +126,7 @@ public class InvitationService {
         MindmapMember newMember = MindmapMember.of(newInvitation.getMindmap(), newInvitation.getInvitee(), newInvitation.getRole());
         mindmapMemberRepository.save(newMember);
 
-        // notificationService.sendAcceptance(invitation);
+        notificationService.notifyAcceptance(invitation);
     }
 
     // 초대 거절
@@ -144,7 +145,6 @@ public class InvitationService {
         }
 
         invitation.reject();
-        // notificationService.sendRejection(invitation);
     }
 
     // 초대 링크 생성(owner)
@@ -197,7 +197,7 @@ public class InvitationService {
             .build();
         invitationRepository.save(updatedInvitation);
 
-        // notificationService.sendLinkApprovalRequest(invitation);
+        notificationService.notifyLinkApprovalRequest(invitation);
     }
 
     // 초대 링크 수락(owner)

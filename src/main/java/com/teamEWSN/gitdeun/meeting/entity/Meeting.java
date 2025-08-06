@@ -1,7 +1,7 @@
 package com.teamEWSN.gitdeun.meeting.entity;
 
 import com.teamEWSN.gitdeun.common.util.CreatedEntity;
-import com.teamEWSN.gitdeun.mindmapnode.entity.MindmapNode;
+import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -21,8 +21,8 @@ public class Meeting extends CreatedEntity {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "node_id", nullable = false)
-    private MindmapNode node;
+    @JoinColumn(name = "mindmap_id", nullable = false)
+    private Mindmap mindmap;
 
     @Column(name = "room_name", length = 255, nullable = false)
     private String roomName;
