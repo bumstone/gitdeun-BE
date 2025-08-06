@@ -12,7 +12,12 @@ import org.hibernate.annotations.ColumnDefault;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "notification")
+@Table(name = "notification", indexes = {
+    // 사용자별 알림을 최신순으로 조회하는 쿼리 최적화용 인덱스
+    @Index(name = "idx_notification_user_created_at", columnList = "user_id, createdAt DESC"),
+    // 사용자의 읽지 않은 알림을 조회하는 쿼리 최적화용 인덱스
+    @Index(name = "idx_notification_user_read", columnList = "user_id, is_read")
+})
 public class Notification extends CreatedEntity {
 
     @Id

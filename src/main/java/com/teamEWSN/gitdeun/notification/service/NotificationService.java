@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class NotificationService {
 
+    private final NotificationSseService notificationSseService;
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final NotificationMapper notificationMapper;
@@ -82,6 +83,9 @@ public class NotificationService {
 
         // 이메일 발송 (비동기 처리)
         sendEmailNotification(user.getEmail(), "[Gitdeun] 새로운 알림이 도착했습니다.", message);
+
+        int unreadCount = notificationRepository.countByUserAndReadFalse(user);
+        notificationSseService.sendUnreadCount(user.getId(), unreadCount);
     }
 
     /**
@@ -113,7 +117,14 @@ public class NotificationService {
         Notification notification = notificationRepository.findByIdAndUser(notificationId, user)
             .orElseThrow(() -> new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
-        notification.markAsRead();
+        // 아직 읽지 않은 알림일 경우에만 처리
+        if (!notification.isRead()) {
+            notification.markAsRead();
+
+            // 읽음 처리 후, 변경된 '읽지 않은 알림 개수'를 실시간으로 전송
+            int unreadCount = notificationRepository.countByUserAndReadFalse(user);
+            notificationSseService.sendUnreadCount(user.getId(), unreadCount);
+        }
     }
 
     /**
@@ -125,7 +136,15 @@ public class NotificationService {
         Notification notification = notificationRepository.findByIdAndUser(notificationId, user)
             .orElseThrow(() -> new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
+        boolean wasUnread = !notification.isRead();
+
         notificationRepository.delete(notification);
+
+        // 만약 삭제된 알림이 '읽지 않은' 상태인 경우, 개수 조정 후전송
+        if (wasUnread) {
+            int unreadCount = notificationRepository.countByUserAndReadFalse(user);
+            notificationSseService.sendUnreadCount(user.getId(), unreadCount);
+        }
     }
 
     // 사용자 조회 편의 메서드

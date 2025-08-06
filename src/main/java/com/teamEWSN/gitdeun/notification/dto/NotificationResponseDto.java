@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class NotificationResponseDto {
     private Long notificationId;
     private String message;
-    private boolean isRead;
+    private boolean read;
     private NotificationType notificationType;
     private LocalDateTime createdAt;
 }
