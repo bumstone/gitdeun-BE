@@ -12,12 +12,12 @@ import com.teamEWSN.gitdeun.visithistory.mapper.VisitHistoryMapper;
 import com.teamEWSN.gitdeun.visithistory.repository.PinnedHistoryRepository;
 import com.teamEWSN.gitdeun.visithistory.repository.VisitHistoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,22 +41,18 @@ public class VisitHistoryService {
 
     //  핀 고정되지 않은 방문 기록 조회
     @Transactional(readOnly = true)
-    public List<VisitHistoryResponseDto> getVisitHistories(Long userId) {
+    public Page<VisitHistoryResponseDto> getVisitHistories(Long userId, Pageable pageable) {
         User user = userService.findById(userId);
-        List<VisitHistory> histories = visitHistoryRepository.findUnpinnedHistoriesByUser(user);
-        return histories.stream()
-            .map(visitHistoryMapper::toResponseDto)
-            .collect(Collectors.toList());
+        Page<VisitHistory> histories = visitHistoryRepository.findUnpinnedHistoriesByUser(user, pageable);
+        return histories.map(visitHistoryMapper::toResponseDto);
     }
 
     // 핀 고정된 방문 기록 조회
     @Transactional(readOnly = true)
-    public List<VisitHistoryResponseDto> getPinnedHistories(Long userId) {
+    public Page<VisitHistoryResponseDto> getPinnedHistories(Long userId, Pageable pageable) {
         User user = userService.findById(userId);
-        List<PinnedHistory> pinnedHistories = pinnedHistoryRepository.findByUserOrderByCreatedAtDesc(user);
-        return pinnedHistories.stream()
-            .map(pinned -> visitHistoryMapper.toResponseDto(pinned.getVisitHistory()))
-            .collect(Collectors.toList());
+        Page<PinnedHistory> pinnedHistories = pinnedHistoryRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+        return pinnedHistories.map(pinned -> visitHistoryMapper.toResponseDto(pinned.getVisitHistory()));
     }
 
     // 방문 기록 삭제

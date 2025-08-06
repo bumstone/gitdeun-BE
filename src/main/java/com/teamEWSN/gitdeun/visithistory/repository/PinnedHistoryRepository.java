@@ -2,6 +2,8 @@ package com.teamEWSN.gitdeun.visithistory.repository;
 
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.visithistory.entity.PinnedHistory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,5 +18,5 @@ public interface PinnedHistoryRepository extends JpaRepository<PinnedHistory, Lo
     Optional<PinnedHistory> findByUserIdAndVisitHistoryId(Long userId, Long historyId);
 
     // 사용자의 핀 고정 기록 최신순 조회
-    List<PinnedHistory> findByUserOrderByCreatedAtDesc(User user);
+    Page<PinnedHistory> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 }

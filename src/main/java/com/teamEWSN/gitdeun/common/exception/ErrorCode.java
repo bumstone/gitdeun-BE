@@ -54,7 +54,7 @@ public enum ErrorCode {
 
     // 알림 관련
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION-001", "알림을 찾을 수 없습니다."),
-    CANNOT_ACCESS_NOTIFICATION(HttpStatus.FORBIDDEN, "NOTIFICATION-002", "해당 알림에 접근할 권한이 없습니다.");
+    CANNOT_ACCESS_NOTIFICATION(HttpStatus.FORBIDDEN, "NOTIFICATION-002", "해당 알림에 접근할 권한이 없습니다."),
 
     // 방문기록 관련
     HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "VISITHISTORY-001", "방문 기록을 찾을 수 없습니다."),
