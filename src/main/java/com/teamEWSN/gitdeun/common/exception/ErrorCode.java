@@ -63,6 +63,7 @@ public enum ErrorCode {
     USER_NOT_FOUND_FIX_PIN(HttpStatus.NOT_FOUND, "PINNEDHISTORY-001", "핀 고정한 유저를 찾을 수 없습니다."),
     PINNEDHISTORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "PINNEDHISTORY-002", "이미 핀 고정한 기록입니다."),
     PINNEDHISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PINNEDHISTORY-003", "핀 고정 기록을 찾을 수 없습니다."),
+    PINNED_HISTORY_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "PINNEDHISTORY-004", "최대 8개까지만 핀으로 고정할 수 있습니다."),
 
     // S3 파일 관련
     // Client Errors (4xx)

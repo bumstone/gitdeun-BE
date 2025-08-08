@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -47,12 +49,17 @@ public class VisitHistoryService {
         return histories.map(visitHistoryMapper::toResponseDto);
     }
 
-    // 핀 고정된 방문 기록 조회
+    // 핀 고정된 방문 기록 조회(8개 제한)
     @Transactional(readOnly = true)
-    public Page<VisitHistoryResponseDto> getPinnedHistories(Long userId, Pageable pageable) {
+    public List<VisitHistoryResponseDto> getPinnedHistories(Long userId) {
         User user = userService.findById(userId);
-        Page<PinnedHistory> pinnedHistories = pinnedHistoryRepository.findByUserOrderByCreatedAtDesc(user, pageable);
-        return pinnedHistories.map(pinned -> visitHistoryMapper.toResponseDto(pinned.getVisitHistory()));
+        // 핀 고정 횟수에 제한이 있지만, 명시적으로 상위 8개만 조회
+        List<PinnedHistory> pinnedHistories = pinnedHistoryRepository.findTop8ByUserOrderByCreatedAtDesc(user);
+
+        // List를 스트림으로 변환하여 매핑
+        return pinnedHistories.stream()
+            .map(pinned -> visitHistoryMapper.toResponseDto(pinned.getVisitHistory()))
+            .collect(Collectors.toList());
     }
 
     // 방문 기록 삭제

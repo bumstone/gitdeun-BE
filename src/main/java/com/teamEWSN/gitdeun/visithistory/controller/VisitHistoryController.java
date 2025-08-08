@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @Slf4j
 @RestController
@@ -33,11 +35,10 @@ public class VisitHistoryController {
 
     // 핀 고정된 방문 기록 조회
     @GetMapping("/pins")
-    public ResponseEntity<Page<VisitHistoryResponseDto>> getPinnedHistories(
-        @AuthenticationPrincipal CustomUserDetails userDetails,
-        @PageableDefault(size = 10, sort = "createdAt,desc") Pageable pageable
+    public ResponseEntity<List<VisitHistoryResponseDto>> getPinnedHistories(
+        @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        Page<VisitHistoryResponseDto> histories = visitHistoryService.getPinnedHistories(userDetails.getId(), pageable);
+        List<VisitHistoryResponseDto> histories = visitHistoryService.getPinnedHistories(userDetails.getId());
         return ResponseEntity.ok(histories);
     }
 

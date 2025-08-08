@@ -15,8 +15,10 @@ public interface PinnedHistoryRepository extends JpaRepository<PinnedHistory, Lo
 
     boolean existsByUserIdAndVisitHistoryId(Long userId, Long historyId);
 
+    long countByUser(User user);
+
     Optional<PinnedHistory> findByUserIdAndVisitHistoryId(Long userId, Long historyId);
 
     // 사용자의 핀 고정 기록 최신순 조회
-    Page<PinnedHistory> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
+    List<PinnedHistory> findTop8ByUserOrderByCreatedAtDesc(User user);
 }
