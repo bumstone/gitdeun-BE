@@ -51,7 +51,11 @@ public enum ErrorCode {
     INVITATION_ALREADY_EXISTS(HttpStatus.CONFLICT, "INVITE-003", "이미 초대 대기 중인 사용자입니다."),
     CANNOT_INVITE_SELF(HttpStatus.BAD_REQUEST, "INVITE-004", "자기 자신을 초대할 수 없습니다."),
     INVITATION_REJECTED_USER(HttpStatus.FORBIDDEN, "INVITE-005", "초대를 거절한 사용자이므로 초대할 수 없습니다."),
-    
+
+    // 알림 관련
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION-001", "알림을 찾을 수 없습니다."),
+    CANNOT_ACCESS_NOTIFICATION(HttpStatus.FORBIDDEN, "NOTIFICATION-002", "해당 알림에 접근할 권한이 없습니다."),
+
     // 방문기록 관련
     HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "VISITHISTORY-001", "방문 기록을 찾을 수 없습니다."),
 
@@ -59,6 +63,7 @@ public enum ErrorCode {
     USER_NOT_FOUND_FIX_PIN(HttpStatus.NOT_FOUND, "PINNEDHISTORY-001", "핀 고정한 유저를 찾을 수 없습니다."),
     PINNEDHISTORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "PINNEDHISTORY-002", "이미 핀 고정한 기록입니다."),
     PINNEDHISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PINNEDHISTORY-003", "핀 고정 기록을 찾을 수 없습니다."),
+    PINNED_HISTORY_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "PINNEDHISTORY-004", "최대 8개까지만 핀으로 고정할 수 있습니다."),
 
     // S3 파일 관련
     // Client Errors (4xx)

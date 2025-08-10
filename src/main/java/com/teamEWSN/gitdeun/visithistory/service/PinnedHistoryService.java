@@ -29,6 +29,12 @@ public class PinnedHistoryService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new GlobalException(USER_NOT_FOUND_FIX_PIN));
 
+        // 현재 사용자의 핀 개수를 확인
+        long currentPinCount = pinnedHistoryRepository.countByUser(user);
+        if (currentPinCount >= 8) {
+            throw new GlobalException(PINNED_HISTORY_LIMIT_EXCEEDED);
+        }
+
         VisitHistory visitHistory = visitHistoryRepository.findById(historyId)
             .orElseThrow(() -> new GlobalException(HISTORY_NOT_FOUND));
 

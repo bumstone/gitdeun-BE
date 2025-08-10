@@ -2,6 +2,8 @@ package com.teamEWSN.gitdeun.visithistory.repository;
 
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.visithistory.entity.VisitHistory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,5 +18,5 @@ public interface VisitHistoryRepository extends JpaRepository<VisitHistory, Long
     @Query("SELECT v FROM VisitHistory v LEFT JOIN v.pinnedHistorys p " +
         "WHERE v.user = :user AND p IS NULL " +
         "ORDER BY v.lastVisitedAt DESC")
-    List<VisitHistory> findUnpinnedHistoriesByUser(@Param("user") User user);
+    Page<VisitHistory> findUnpinnedHistoriesByUser(@Param("user") User user, Pageable pageable);
 }

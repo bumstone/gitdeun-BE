@@ -1,7 +1,7 @@
 package com.teamEWSN.gitdeun.codereview.entity;
 
 import com.teamEWSN.gitdeun.common.util.AuditedEntity;
-import com.teamEWSN.gitdeun.mindmapnode.entity.MindmapNode;
+import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -23,9 +23,9 @@ public class CodeReview extends AuditedEntity {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "node_id", nullable = false)
-    private MindmapNode node;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mindmap_id", nullable = false)
+    private Mindmap mindmap;
 
     @Column(name = "ref_id")
     private Long refId;

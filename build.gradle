@@ -103,6 +103,9 @@ dependencies {
 	// Reactive 웹 프레임워크 WebFlux
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
+	// Email
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
 	// test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

@@ -12,6 +12,8 @@ import com.teamEWSN.gitdeun.visithistory.mapper.VisitHistoryMapper;
 import com.teamEWSN.gitdeun.visithistory.repository.PinnedHistoryRepository;
 import com.teamEWSN.gitdeun.visithistory.repository.VisitHistoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,19 +43,20 @@ public class VisitHistoryService {
 
     //  핀 고정되지 않은 방문 기록 조회
     @Transactional(readOnly = true)
-    public List<VisitHistoryResponseDto> getVisitHistories(Long userId) {
+    public Page<VisitHistoryResponseDto> getVisitHistories(Long userId, Pageable pageable) {
         User user = userService.findById(userId);
-        List<VisitHistory> histories = visitHistoryRepository.findUnpinnedHistoriesByUser(user);
-        return histories.stream()
-            .map(visitHistoryMapper::toResponseDto)
-            .collect(Collectors.toList());
+        Page<VisitHistory> histories = visitHistoryRepository.findUnpinnedHistoriesByUser(user, pageable);
+        return histories.map(visitHistoryMapper::toResponseDto);
     }
 
-    // 핀 고정된 방문 기록 조회
+    // 핀 고정된 방문 기록 조회(8개 제한)
     @Transactional(readOnly = true)
     public List<VisitHistoryResponseDto> getPinnedHistories(Long userId) {
         User user = userService.findById(userId);
-        List<PinnedHistory> pinnedHistories = pinnedHistoryRepository.findByUserOrderByCreatedAtDesc(user);
+        // 핀 고정 횟수에 제한이 있지만, 명시적으로 상위 8개만 조회
+        List<PinnedHistory> pinnedHistories = pinnedHistoryRepository.findTop8ByUserOrderByCreatedAtDesc(user);
+
+        // List를 스트림으로 변환하여 매핑
         return pinnedHistories.stream()
             .map(pinned -> visitHistoryMapper.toResponseDto(pinned.getVisitHistory()))
             .collect(Collectors.toList());

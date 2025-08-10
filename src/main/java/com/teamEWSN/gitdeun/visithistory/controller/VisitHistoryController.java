@@ -5,11 +5,15 @@ import com.teamEWSN.gitdeun.visithistory.dto.VisitHistoryResponseDto;
 import com.teamEWSN.gitdeun.visithistory.service.VisitHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 
 @Slf4j
 @RestController
@@ -21,10 +25,11 @@ public class VisitHistoryController {
 
     // 핀 고정되지 않은 방문 기록 조회
     @GetMapping("/visits")
-    public ResponseEntity<List<VisitHistoryResponseDto>> getVisitHistories(
-        @AuthenticationPrincipal CustomUserDetails userDetails
+    public ResponseEntity<Page<VisitHistoryResponseDto>> getVisitHistories(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @PageableDefault(size = 10, sort = "lastVisitedAt,desc") Pageable pageable
     ) {
-        List<VisitHistoryResponseDto> histories = visitHistoryService.getVisitHistories(userDetails.getId());
+        Page<VisitHistoryResponseDto> histories = visitHistoryService.getVisitHistories(userDetails.getId(), pageable);
         return ResponseEntity.ok(histories);
     }
 
