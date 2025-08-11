@@ -1,60 +1,60 @@
-  services:
-    app:
-      build:
-        context: src
-        dockerfile: Dockerfile
-      image: gitdeun:latest
-      container_name: gitdeun
-      ports:
-        - "8080:8080"
-      restart: always
-      env_file:
-        - ./.env
-      environment:
-        SPRING_PROFILES_ACTIVE: dev,s3Bucket
-        TZ: Asia/Seoul
-      volumes:
-        - /data/logs/spring:/app/logs # 로그 마운트
-      depends_on:
-        redis:
-          condition: service_healthy
-      networks:
-        - app-network
-  
-    redis:
-      image: redis:latest
-      container_name: gitdeun-redis
-      ports:
-        - "6379:6379"
-      volumes:
-        - redis-data:/data  # 데이터 지속성을 위한 볼륨 추가
-      command: redis-server --appendonly yes
-      restart: unless-stopped
-      healthcheck:
-        test: ["CMD", "redis-cli", "ping"]
-        interval: 30s
-        timeout: 10s
-        retries: 3
-        start_period: 10s
-      networks:
-        - app-network
+services:
+  app:
+    build:
+      context: src
+      dockerfile: Dockerfile
+    image: gitdeun:latest
+    container_name: gitdeun
+    ports:
+      - "8080:8080"
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      SPRING_PROFILES_ACTIVE: dev,s3Bucket
+      TZ: Asia/Seoul
+    volumes:
+      - /data/logs/spring:/app/logs # 로그 마운트
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
 
-    nginx:
-      image: nginx:latest
-      container_name: gitdeun-nginx
-      ports:
-        - "80:80"
-        - "443:443"
-      volumes:
-        - /data/nginx/conf.d:/etc/nginx/conf.d
-        - /data/nginx/ssl:/etc/nginx/ssl
-        - /data/logs/nginx:/var/log/nginx
-      depends_on:
-        - app
-      networks:
-        - app-network
+  redis:
+    image: redis:latest
+    container_name: gitdeun-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data  # 데이터 지속성을 위한 볼륨 추가
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    container_name: gitdeun-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /data/nginx/conf.d:/etc/nginx/conf.d
+      - /data/nginx/ssl:/etc/nginx/ssl
+      - /data/logs/nginx:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - app-network
 
 
-  networks:
-    app-network:
-      name: gitdeun-network
+networks:
+  app-network:
+    name: gitdeun-network
