@@ -19,8 +19,8 @@ public class MindmapController {
 
     private final MindmapService mindmapService;
 
-
-    // 마인드맵 생성 (마인드맵에 한해서 owner 권한 얻음)
+    // FastApiController로 생성
+    /*// 마인드맵 생성 (마인드맵에 한해서 owner 권한 얻음)
     @PostMapping
     public ResponseEntity<MindmapResponseDto> createMindmap(
         @RequestBody MindmapCreateRequestDto request,
@@ -28,7 +28,7 @@ public class MindmapController {
     ) {
         MindmapResponseDto responseDto = mindmapService.createMindmap(request, userDetails.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
-    }
+    }*/
 
     // 마인드맵 상세 조회 (유저 인가 확인필요?)
     @GetMapping("/{mapId}")

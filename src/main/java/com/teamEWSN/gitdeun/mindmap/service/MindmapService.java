@@ -47,11 +47,9 @@ public class MindmapService {
     private final FastApiClient fastApiClient;
 
     @Transactional
-    public MindmapResponseDto createMindmap(MindmapCreateRequestDto req, Long userId) {
+    public MindmapResponseDto createMindmapFromAnalysis(MindmapCreateRequestDto req, AnalysisResultDto dto, Long userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
-
-        AnalysisResultDto dto = fastApiClient.analyze(req.getRepoUrl(), req.getPrompt(), req.getType());
 
         Repo repo = repoService.createOrUpdate(req.getRepoUrl(), dto);
         repoRepository.save(repo);
