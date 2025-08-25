@@ -1,7 +1,6 @@
 package com.teamEWSN.gitdeun.repo.controller;
 
 import com.teamEWSN.gitdeun.repo.dto.RepoResponseDto;
-import com.teamEWSN.gitdeun.repo.dto.RepoUpdateCheckResponseDto;
 import com.teamEWSN.gitdeun.repo.service.RepoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,15 +26,6 @@ public class RepoController {
     @GetMapping("/{repoId}")
     public ResponseEntity<RepoResponseDto> getRepoInfo(@PathVariable Long repoId) {
         RepoResponseDto response = repoService.findRepoById(repoId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * 특정 리포지토리에 대한 업데이트 필요 여부 확인
-     */
-    @GetMapping("/{repoId}/status")
-    public ResponseEntity<RepoUpdateCheckResponseDto> getRepoUpdateStatus(@PathVariable Long repoId) {
-        RepoUpdateCheckResponseDto response = repoService.checkUpdateNeeded(repoId);
         return ResponseEntity.ok(response);
     }
 

@@ -137,7 +137,7 @@ public class MindmapService {
      * 마인드맵 새로고침
      */
     @Transactional
-    public MindmapDetailResponseDto refreshMindmap(Long mapId, Long userId) {
+    public MindmapDetailResponseDto refreshMindmap(Long mapId, Long userId, String authorizationHeader) {
         Mindmap mindmap = mindmapRepository.findById(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
@@ -150,7 +150,8 @@ public class MindmapService {
         AnalysisResultDto dto = fastApiClient.analyze(
             mindmap.getRepo().getGithubRepoUrl(),
             mindmap.getPrompt(),
-            mindmap.getType()
+            mindmap.getType(),
+            authorizationHeader
         );
 
         // 데이터 최신화

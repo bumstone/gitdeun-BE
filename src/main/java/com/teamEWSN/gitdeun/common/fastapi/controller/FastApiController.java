@@ -9,10 +9,7 @@ import com.teamEWSN.gitdeun.mindmap.service.MindmapService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/proxy")
@@ -28,6 +25,7 @@ public class FastApiController {
      */
     @PostMapping("/mindmaps")
     public ResponseEntity<MindmapResponseDto> createMindmapViaProxy(
+        @RequestHeader("Authorization") String authorizationHeader,
         @RequestBody MindmapCreateRequestDto request,
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
@@ -35,7 +33,8 @@ public class FastApiController {
         AnalysisResultDto analysisResult = fastApiClient.analyze(
             request.getRepoUrl(),
             request.getPrompt(),
-            request.getType()
+            request.getType(),
+            authorizationHeader
         );
 
         // 2. FastAPI로부터 받은 분석 결과를 MindmapService로 전달하여 마인드맵 생성

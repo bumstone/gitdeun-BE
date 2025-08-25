@@ -44,9 +44,10 @@ public class MindmapController {
     @PostMapping("/{mapId}/refresh")
     public ResponseEntity<MindmapDetailResponseDto> refreshMindmap(
         @PathVariable Long mapId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestHeader("Authorization") String authorizationHeader
     ) {
-        MindmapDetailResponseDto responseDto = mindmapService.refreshMindmap(mapId, userDetails.getId());
+        MindmapDetailResponseDto responseDto = mindmapService.refreshMindmap(mapId, userDetails.getId(), authorizationHeader);
         return ResponseEntity.ok(responseDto);
     }
 
