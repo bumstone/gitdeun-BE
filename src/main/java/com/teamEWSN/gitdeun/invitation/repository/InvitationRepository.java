@@ -17,13 +17,13 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     // 특정 마인드맵의 모든 초대 목록을 페이징하여 조회
     Page<Invitation> findByMindmapId(Long mindmapId, Pageable pageable);
 
+    // 특정 마인드맵의 특정 상태 초대 목록 조회
+    List<Invitation> findByMindmapIdAndStatus(Long mindmapId, InvitationStatus status);
+
     // 특정 마인드맵에 특정 유저가 이미 초대 대기중인지 확인
     boolean existsByMindmapIdAndInviteeIdAndStatusAndExpiresAtAfter(Long mindmapId, Long inviteeId, InvitationStatus status, LocalDateTime now);
 
     boolean existsByMindmapIdAndInviteeIdAndStatus(Long mindmapId, Long inviteeId, InvitationStatus status);
-
-    // 사용자가 받은 모든 초대 목록 조회
-    List<Invitation> findByInviteeIdAndStatus(Long inviteeId, InvitationStatus status);
 
     // 고유 토큰으로 초대 정보 조회
     Optional<Invitation> findByToken(String token);
