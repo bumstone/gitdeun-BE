@@ -147,7 +147,7 @@ public class NotificationService {
         }
     }
 
-    // 사용자 조회 편의 메서드
+    // 사용자 조회 - 편의 메서드
     private User getUserById(Long userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
