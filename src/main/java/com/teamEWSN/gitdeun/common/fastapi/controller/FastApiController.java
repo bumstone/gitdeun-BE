@@ -41,7 +41,8 @@ public class FastApiController {
         MindmapResponseDto responseDto = mindmapService.createMindmapFromAnalysis(
             request,
             analysisResult,
-            userDetails.getId()
+            userDetails.getId(),
+            authorizationHeader
         );
 
         return ResponseEntity.ok(responseDto);

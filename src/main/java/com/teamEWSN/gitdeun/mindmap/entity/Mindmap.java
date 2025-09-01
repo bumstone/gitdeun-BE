@@ -46,7 +46,19 @@ public class Mindmap extends AuditedEntity {
     @Column(name = "map_data", columnDefinition = "json", nullable = false)
     private String mapData;
 
+    // TODO: 멤버수 제한 기능 (유료?)
+    @Builder.Default
+    @Column(name = "member_count", nullable = false)
+    private Integer memberCount = 1;
+
+    // TODO: Graph RAG 조회 및 데이터 연결
+    @Column(name = "arangodb_key", length = 255)
+    private String arangodbKey;
+
     public void updateMapData(String newMapData) {
         this.mapData = newMapData;
     }
+
+    public void updateArangodbKey(String arangodbKey) { this.arangodbKey = arangodbKey; }
+
 }

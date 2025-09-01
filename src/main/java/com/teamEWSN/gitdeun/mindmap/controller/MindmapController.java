@@ -1,13 +1,10 @@
 package com.teamEWSN.gitdeun.mindmap.controller;
 
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
-import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
-import com.teamEWSN.gitdeun.mindmap.dto.MindmapResponseDto;
 import com.teamEWSN.gitdeun.mindmap.service.MindmapService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -34,9 +31,10 @@ public class MindmapController {
     @GetMapping("/{mapId}")
     public ResponseEntity<MindmapDetailResponseDto> getMindmap(
         @PathVariable Long mapId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestHeader("Authorization") String authorizationHeader
     ) {
-        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId());
+        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId(), authorizationHeader);
         return ResponseEntity.ok(responseDto);
     }
 

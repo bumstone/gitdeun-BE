@@ -1,6 +1,7 @@
 package com.teamEWSN.gitdeun.common.fastapi;
 
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
+import com.teamEWSN.gitdeun.common.fastapi.dto.ArangoDataDto;
 import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -34,7 +35,51 @@ public class FastApiClient {
             .block(); // 비동기 처리를 동기적으로 대기
     }
 
+    // ArangoDB에서 마인드맵 데이터를 조회
+    public ArangoDataDto getArangoData(String arangodbKey, String authorizationHeader) {
+        return webClient.get()
+            .uri("/arango/data/{key}", arangodbKey) // ArangoDB 데이터 조회 엔드포인트
+            .header("Authorization", authorizationHeader)
+            .retrieve()
+            .bodyToMono(ArangoDataDto.class)
+            .block();
+    }
 
+    // ArangoDB에 마인드맵 데이터를 저장하고 키를 반환
+    public String saveArangoData(String repoUrl, String mapData, String authorizationHeader) {
+        ArangoSaveRequest requestBody = new ArangoSaveRequest(repoUrl, mapData);
+
+        return webClient.post()
+            .uri("/arango/save") // ArangoDB 데이터 저장 엔드포인트
+            .header("Authorization", authorizationHeader)
+            .body(Mono.just(requestBody), ArangoSaveRequest.class)
+            .retrieve()
+            .bodyToMono(ArangoSaveResponse.class)
+            .map(ArangoSaveResponse::getArangodbKey)
+            .block();
+    }
+
+    // ArangoDB에서 마인드맵 데이터를 업데이트
+    public ArangoDataDto updateArangoData(String arangodbKey, String mapData, String authorizationHeader) {
+        ArangoUpdateRequest requestBody = new ArangoUpdateRequest(mapData);
+
+        return webClient.put()
+            .uri("/arango/data/{key}", arangodbKey) // ArangoDB 데이터 업데이트 엔드포인트
+            .header("Authorization", authorizationHeader)
+            .body(Mono.just(requestBody), ArangoUpdateRequest.class)
+            .retrieve()
+            .bodyToMono(ArangoDataDto.class)
+            .block();
+    }
+
+    // ArangoDB에서 마인드맵 데이터를 삭제 (기존 메소드 - 이미 있다고 가정)
+    public void deleteAnalysisData(String arangodbKey) {
+        webClient.delete()
+            .uri("/arango/data/{key}", arangodbKey) // ArangoDB 데이터 삭제 엔드포인트
+            .retrieve()
+            .bodyToMono(Void.class)
+            .block();
+    }
 
     @Getter
     @AllArgsConstructor
@@ -42,5 +87,25 @@ public class FastApiClient {
         private String url;
         private String prompt;
         private MindmapType type;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class ArangoSaveRequest {
+        private String repoUrl;
+        private String mapData;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class ArangoUpdateRequest {
+        private String mapData;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class ArangoSaveResponse {
+        private String arangodbKey;
+        private String status;
     }
 }
