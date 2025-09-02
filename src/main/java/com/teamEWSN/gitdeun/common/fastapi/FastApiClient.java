@@ -72,7 +72,7 @@ public class FastApiClient {
             .block();
     }
 
-    // ArangoDB에서 마인드맵 데이터를 삭제 (기존 메소드 - 이미 있다고 가정)
+    // ArangoDB에서 마인드맵 데이터를 삭제
     public void deleteAnalysisData(String arangodbKey) {
         webClient.delete()
             .uri("/arango/data/{key}", arangodbKey) // ArangoDB 데이터 삭제 엔드포인트

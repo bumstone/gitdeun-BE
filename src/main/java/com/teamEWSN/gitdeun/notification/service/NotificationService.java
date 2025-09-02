@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.notification.service;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.invitation.entity.Invitation;
+import com.teamEWSN.gitdeun.notification.dto.NotificationCreateDto;
 import com.teamEWSN.gitdeun.notification.dto.NotificationResponseDto;
 import com.teamEWSN.gitdeun.notification.dto.UnreadNotificationCountDto;
 import com.teamEWSN.gitdeun.notification.entity.Notification;
@@ -41,7 +42,14 @@ public class NotificationService {
         String message = String.format("'%s'님이 '%s' 마인드맵으로 초대했습니다.",
             invitation.getInviter().getName(),
             invitation.getMindmap().getField());
-        createAndSendNotification(invitee, NotificationType.INVITE_MINDMAP, message);
+
+        createAndSendNotification(NotificationCreateDto.actionable(
+            invitee,
+            NotificationType.INVITE_MINDMAP,
+            message,
+            invitation.getId(),
+            invitation.getExpiresAt()
+        ));
     }
 
     /**
@@ -53,7 +61,14 @@ public class NotificationService {
         String message = String.format("'%s'님이 '%s' 마인드맵 초대를 수락했습니다.",
             invitation.getInvitee().getName(),
             invitation.getMindmap().getField());
-        createAndSendNotification(inviter, NotificationType.INVITE_MINDMAP, message);
+
+        createAndSendNotification(NotificationCreateDto.actionable(
+            inviter,
+            NotificationType.INVITE_MINDMAP,
+            message,
+            invitation.getId(),
+            invitation.getExpiresAt()
+        ));
     }
 
     /**
@@ -65,19 +80,31 @@ public class NotificationService {
         String message = String.format("'%s'님이 링크를 통해 '%s' 마인드맵 참여를 요청했습니다.",
             invitation.getInvitee().getName(),
             invitation.getMindmap().getField());
-        createAndSendNotification(owner, NotificationType.INVITE_MINDMAP, message);
+
+        createAndSendNotification(NotificationCreateDto.actionable(
+            owner,
+            NotificationType.INVITE_MINDMAP,
+            message,
+            invitation.getId(),
+            invitation.getExpiresAt()
+        ));
     }
 
 
     /**
-     * 알림 생성 및 발송 (다른 서비스에서 호출)
+     * 알림 생성 및 발송 (공통 호출)
      */
     @Transactional
-    public void createAndSendNotification(User user, NotificationType type, String message) {
+    public void createAndSendNotification(NotificationCreateDto dto) {
+        User user = dto.getUser();
+        String message = dto.getMessage();
+
         Notification notification = Notification.builder()
             .user(user)
-            .notificationType(type)
+            .notificationType(dto.getType())
             .message(message)
+            .referenceId(dto.getReferenceId())
+            .expiresAt(dto.getExpiresAt())
             .build();
         notificationRepository.save(notification);
 
@@ -86,6 +113,10 @@ public class NotificationService {
 
         int unreadCount = notificationRepository.countByUserAndReadFalse(user);
         notificationSseService.sendUnreadCount(user.getId(), unreadCount);
+
+        // 새 알림 전송
+        notificationSseService.sendNewNotification(dto.getUser().getId(),
+            notificationMapper.toResponseDto(notification));
     }
 
     /**

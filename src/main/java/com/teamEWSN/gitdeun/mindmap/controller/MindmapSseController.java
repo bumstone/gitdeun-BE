@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
-@RequestMapping("/api/mindmaps/{mapId}")
+@RequestMapping("/api/mindmaps/{mapId}/sse")
 @RequiredArgsConstructor
 public class MindmapSseController {
 
     private final MindmapSseService mindmapSseService;
 
     // 클라이언트의 특정 마인드맵의 업데이트를 구독
-    @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribeToMindmapUpdates(@PathVariable Long mapId) {
         return mindmapSseService.subscribe(mapId);
     }
