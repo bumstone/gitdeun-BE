@@ -20,7 +20,8 @@ public enum DeveloperSkillEnum {
     DART("Dart", "LANGUAGE"),
     PHP("PHP", "LANGUAGE"),
     RUBY("Ruby", "LANGUAGE"),
-    R("R", "LANGUAGE");
+    R("R", "LANGUAGE"),
+    OTHER("기타", "LANGUAGE");
 
 //    // 프레임워크/라이브러리
 //    SPRING("Spring", "FRAMEWORK"),
@@ -33,30 +34,13 @@ public enum DeveloperSkillEnum {
 //    DJANGO("Django", "FRAMEWORK"),
 //    FLASK("Flask", "FRAMEWORK"),
 //    FASTAPI("FastAPI", "FRAMEWORK"),
-//
-//    // 데이터베이스
-//    MYSQL("MySQL", "DATABASE"),
-//    POSTGRESQL("PostgreSQL", "DATABASE"),
-//    MONGODB("MongoDB", "DATABASE"),
-//    REDIS("Redis", "DATABASE"),
-//    ORACLE("Oracle", "DATABASE"),
-//
-//    // 클라우드/인프라
-//    AWS("AWS", "CLOUD"),
-//    GCP("Google Cloud", "CLOUD"),
-//    AZURE("Azure", "CLOUD"),
-//    DOCKER("Docker", "DEVOPS"),
-//    KUBERNETES("Kubernetes", "DEVOPS"),
-//
-//    // 개발 분야
-//    BACKEND("백엔드", "FIELD"),
-//    FRONTEND("프론트엔드", "FIELD"),
-//    FULLSTACK("풀스택", "FIELD"),
-//    MOBILE("모바일", "FIELD"),
-//    AI_ML("AI/ML", "FIELD"),
-//    DATA_ENGINEERING("데이터 엔지니어링", "FIELD"),
-//    DEVOPS_FIELD("DevOps", "FIELD"),
-//    GAME_DEV("게임 개발", "FIELD");
+//    FLUTTER("Flutter", "FRAMEWORK"),
+//    SINATRA("sinatra", "FRAMEWORK"),
+//    RAILS("Rails", "FRAMEWORK"),
+//    SWIFTUI("SwiftUI", "FRAMEWORK"),
+//    LARAVEL("Laravel", "FRAMEWORK"),
+//    GIN("Gin", "FRAMEWORK"),
+//    OTHER("기타", "FRAMEWORK");
 
     private final String displayName;
     private final String category;
