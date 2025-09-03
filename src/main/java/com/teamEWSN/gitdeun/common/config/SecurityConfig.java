@@ -67,8 +67,8 @@ public class SecurityConfig {
     // 경로별 인가 작업
     http
         .authorizeHttpRequests((auth) -> auth
-            // 내부 통신 API
-            .requestMatchers("/api/internal/**").permitAll()
+            // 내부 webhook 통신 API
+            .requestMatchers("/api/webhook/**").permitAll()
             // 외부 공개 API(클라이언트 - JWT)
             .requestMatchers(SecurityPath.ADMIN_ENDPOINTS).hasRole("ADMIN")
             .requestMatchers(SecurityPath.USER_ENDPOINTS).hasAnyRole("USER", "ADMIN")
