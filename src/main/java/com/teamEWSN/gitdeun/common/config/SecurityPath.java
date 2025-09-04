@@ -24,8 +24,11 @@ public class SecurityPath {
       "/api/history/**",
       "/api/invitations/**",
       "/api/notifications/**",
+      "/api/skills/**",
+      "/api/recruitments/**",
+      "/api/applications/**",
       "/api/s3/bucket/**",
-      "/api/proxy/**"
+      "/api/webhook/**"
   };
 
   // hasRole("ADMIN")
