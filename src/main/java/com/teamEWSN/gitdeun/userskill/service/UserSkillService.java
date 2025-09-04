@@ -6,7 +6,7 @@ import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import com.teamEWSN.gitdeun.userskill.dto.CategorizedSkillsWithSelectionDto;
 import com.teamEWSN.gitdeun.userskill.dto.DeveloperSkillDto;
-import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkillEnum;
+import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import com.teamEWSN.gitdeun.userskill.entity.UserSkill;
 import com.teamEWSN.gitdeun.userskill.repository.UserSkillRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,9 +47,9 @@ public class UserSkillService {
 
         // 카테고리별로 모든 기술을 분류하고 선택 여부 표시
         Map<String, List<DeveloperSkillDto>> categorizedSkills =
-            Arrays.stream(DeveloperSkillEnum.values())
+            Arrays.stream(DeveloperSkill.values())
                 .collect(Collectors.groupingBy(
-                    DeveloperSkillEnum::getCategory,
+                    DeveloperSkill::getCategory,
                     LinkedHashMap::new,  // 순서 보장
                     Collectors.mapping(
                         skillEnum -> new DeveloperSkillDto(
@@ -114,8 +114,8 @@ public class UserSkillService {
         }
 
         // 유효한 기술인지 검증 (Set으로 변환하여 검색 성능 향상)
-        Set<String> validSkills = Arrays.stream(DeveloperSkillEnum.values())
-            .map(DeveloperSkillEnum::getDisplayName)
+        Set<String> validSkills = Arrays.stream(DeveloperSkill.values())
+            .map(DeveloperSkill::getDisplayName)
             .collect(Collectors.toSet());
 
         // 유효하지 않은 기술 리스트 확인

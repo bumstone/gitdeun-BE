@@ -4,7 +4,7 @@ import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import com.teamEWSN.gitdeun.userskill.dto.CategorizedSkillsResponseDto;
 import com.teamEWSN.gitdeun.userskill.dto.CategorizedSkillsWithSelectionDto;
 import com.teamEWSN.gitdeun.userskill.dto.SkillSelectionRequestDto;
-import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkillEnum;
+import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import com.teamEWSN.gitdeun.userskill.service.UserSkillService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,10 +28,10 @@ public class UserSkillController {
     @GetMapping
     public ResponseEntity<CategorizedSkillsResponseDto> getAvailableInterests() {
         // Enum에서 카테고리별 displayName 값 추출
-        Map<String, List<String>> categorizedInterests = Arrays.stream(DeveloperSkillEnum.values())
+        Map<String, List<String>> categorizedInterests = Arrays.stream(DeveloperSkill.values())
             .collect(Collectors.groupingBy(
-                DeveloperSkillEnum::getCategory,
-                Collectors.mapping(DeveloperSkillEnum::getDisplayName, Collectors.toList())
+                DeveloperSkill::getCategory,
+                Collectors.mapping(DeveloperSkill::getDisplayName, Collectors.toList())
             ));
         return ResponseEntity.ok(new CategorizedSkillsResponseDto(categorizedInterests));
     }
