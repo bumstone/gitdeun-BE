@@ -34,7 +34,7 @@ spring:
             client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: openid, email, profile
           github:
-            scope: user:email, repo
+            scope: user:email, repo, admin:repo_hook
   mail:
     host: smtp.gmail.com
     port: 587

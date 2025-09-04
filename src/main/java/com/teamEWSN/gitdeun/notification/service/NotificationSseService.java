@@ -1,55 +1,86 @@
 package com.teamEWSN.gitdeun.notification.service;
 
-import com.teamEWSN.gitdeun.notification.dto.UnreadNotificationCountDto;
+import com.teamEWSN.gitdeun.notification.dto.NotificationResponseDto;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class NotificationSseService {
 
-    // 스레드 안전한 자료구조를 사용하여 사용자별 Emitter를 관리 (Key: userId, Value: SseEmitter)
-    private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
+    // 한 사용자에 대해 여러 탭/기기의 연결을 허용
+    private final Map<Long, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
 
-    // 클라이언트가 구독을 요청할 때 호출
+    // 1시간
+    private static final long TIMEOUT_MS = 60L * 60L * 1000L;
+
+    /** 클라이언트 구독 */
     public SseEmitter subscribe(Long userId) {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE); // 타임아웃을 매우 길게 설정
-        emitters.put(userId, emitter);
+        SseEmitter emitter = new SseEmitter(TIMEOUT_MS);
 
-        // 연결 종료 시 Emitter 제거
-        emitter.onCompletion(() -> emitters.remove(userId));
-        emitter.onTimeout(() -> emitters.remove(userId));
-        emitter.onError(e -> emitters.remove(userId));
+        // 사용자별 리스트에 emitter 추가 (동시성 안전)
+        emitters.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(emitter);
 
+        // 연결 종료/에러 시 정리
+        emitter.onCompletion(() -> removeEmitter(userId, emitter));
+        emitter.onTimeout(() -> removeEmitter(userId, emitter));
+        emitter.onError(e -> removeEmitter(userId, emitter));
 
-        // 연결 성공을 알리는 더미 이벤트 전송
-        try {
-            emitter.send(SseEmitter.event().name("connect").data("Connected to notification stream."));
-        } catch (IOException e) {
-            log.error("SSE 연결 중 오류 발생, userId={}", userId, e);
-        }
-
+        // 헬스체크/연결 확인
+        sendToEmitter(emitter, "connect", "connected");
         return emitter;
     }
 
-    // 특정 사용자에게 읽지 않은 알림 개수 전송
+    /** 읽지 않은 알림 개수 전송 */
     public void sendUnreadCount(Long userId, int count) {
-        SseEmitter emitter = emitters.get(userId);
-        if (emitter != null) {
+        sendToUser(userId, "unreadCount", count);
+    }
+
+    /** 새 알림 전송 */
+    public void sendNewNotification(Long userId, NotificationResponseDto notification) {
+        sendToUser(userId, "newNotification", notification);
+    }
+
+    /** 사용자에게 이벤트 전송 */
+    private void sendToUser(Long userId, String eventName, Object data) {
+        List<SseEmitter> userEmitters = emitters.getOrDefault(userId, Collections.emptyList());
+        if (userEmitters.isEmpty()) return;
+
+        List<SseEmitter> dead = new ArrayList<>();
+        for (SseEmitter emitter : userEmitters) {
             try {
-                emitter.send(SseEmitter.event()
-                    .name("unread-count") // 이벤트 이름 지정
-                    .data(new UnreadNotificationCountDto(count))); // 데이터 전송
-            } catch (IOException e) {
-                log.error("SSE 데이터 전송 중 오류 발생, userId={}", userId, e);
-                // 오류 발생 시 해당 Emitter 제거
-                emitters.remove(userId);
+                sendToEmitter(emitter, eventName, data);
+            } catch (Exception e) {
+                dead.add(emitter);
+                log.warn("Failed to send SSE (userId={}): {}", userId, e.toString());
             }
         }
+        // 죽은 emitter 정리
+        dead.forEach(em -> removeEmitter(userId, em));
+    }
+
+    /** 개별 emitter에게 전송 */
+    private void sendToEmitter(SseEmitter emitter, String eventName, Object data) {
+        try {
+            emitter.send(SseEmitter.event().name(eventName).data(data));
+        } catch (IOException e) {
+            throw new RuntimeException("SSE 전송 실패", e);
+        }
+    }
+
+    /** emitter 제거(리스트가 비면 맵에서도 제거) */
+    private void removeEmitter(Long userId, SseEmitter emitter) {
+        List<SseEmitter> list = emitters.get(userId);
+        if (list == null) return;
+        list.remove(emitter);
+        if (list.isEmpty()) emitters.remove(userId);
     }
 }

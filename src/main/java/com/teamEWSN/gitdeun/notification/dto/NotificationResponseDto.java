@@ -14,4 +14,11 @@ public class NotificationResponseDto {
     private boolean read;
     private NotificationType notificationType;
     private LocalDateTime createdAt;
+
+    private Long referenceId;
+    private LocalDateTime expiresAt;
+
+    public boolean isActionAvailable() {
+        return expiresAt != null && expiresAt.isAfter(LocalDateTime.now());
+    }
 }

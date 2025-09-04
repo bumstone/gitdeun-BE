@@ -26,7 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +42,7 @@ public class InvitationService {
     private final NotificationService notificationService;
     private final InvitationMapper invitationMapper;
 
+    // TODO: 배포 시 이메일 주소 변경
     private static final String INVITATION_BASE_URL = "http://localhost:8080/invitations/";
     // private static final String INVITATION_BASE_URL = "https://gitdeun.site/invitations/";
 
@@ -104,6 +107,41 @@ public class InvitationService {
         Page<Invitation> invitations = invitationRepository.findByMindmapId(mapId, pageable);
 
         return invitations.map(invitationMapper::toResponseDto);
+    }
+
+    // 초대 수락 목록 조회
+    @Transactional(readOnly = true)
+    public List<InvitationResponseDto> getAcceptedInvitationsByMindmap(Long mapId, Long userId) {
+        // 권한 검증 - 최소 조회 권한이 있어야 함
+        if (!mindmapAuthService.hasView(mapId, userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // ACCEPTED 상태의 초대 목록 조회
+        List<Invitation> acceptedInvitations = invitationRepository.findByMindmapIdAndStatus(
+            mapId, InvitationStatus.ACCEPTED);
+
+        // 엔티티를 DTO로 변환하여 반환
+        return acceptedInvitations.stream()
+            .map(invitationMapper::toResponseDto)
+            .collect(Collectors.toList());
+    }
+
+    // 초대 보류 목록 조회
+    @Transactional(readOnly = true)
+    public List<InvitationResponseDto> getPendingInvitationsByMindmap(Long mapId, Long userId) {
+        // 권한 검증 - 최소 조회 권한이 있어야 함
+        if (!mindmapAuthService.hasView(mapId, userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        List<Invitation> pendingInvitations = invitationRepository.findByMindmapIdAndStatus(
+            mapId, InvitationStatus.PENDING);
+
+        // 엔티티를 DTO로 변환하여 반환
+        return pendingInvitations.stream()
+            .map(invitationMapper::toResponseDto)
+            .collect(Collectors.toList());
     }
 
     // 초대 수락

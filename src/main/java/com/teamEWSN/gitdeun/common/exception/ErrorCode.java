@@ -25,6 +25,10 @@ public enum ErrorCode {
     SOCIAL_CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOUNT-004", "연동된 소셜 계정 정보를 찾을 수 없습니다."),
     USER_SETTING_NOT_FOUND_BY_ID(HttpStatus.NOT_FOUND, "ACCOUNT-005", "해당 아이디의 설정을 찾을 수 없습니다."),
 
+    // 개발 기술 관련
+    SKILL_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "SKILL-001", "최대 10개까지만 선택 가능합니다."),
+    INVALID_SKILL(HttpStatus.BAD_REQUEST, "SKILL-002", "유효하지 않은 기술입니다."),
+
     // 소셜 로그인 관련
     OAUTH_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH-001", "소셜 로그인 처리 중 오류가 발생했습니다."),
     UNSUPPORTED_OAUTH_PROVIDER(HttpStatus.BAD_REQUEST, "OAUTH-002", "지원하지 않는 소셜 로그인 제공자입니다."),
@@ -44,6 +48,7 @@ public enum ErrorCode {
     // 멤버 관련
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER-001", "해당 멤버를 찾을 수 없습니다."),
     MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "MEMBER-002", "이미 마인드맵에 등록된 멤버입니다."),
+    OWNER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER-003", "해당 소유자를 찾을 수 없습니다."),
 
     // 초대 관련
     INVITATION_NOT_FOUND(HttpStatus.NOT_FOUND, "INVITE-001", "초대 정보를 찾을 수 없습니다."),

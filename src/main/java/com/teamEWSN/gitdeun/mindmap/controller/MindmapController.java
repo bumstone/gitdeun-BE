@@ -1,5 +1,7 @@
 package com.teamEWSN.gitdeun.mindmap.controller;
 
+import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
+import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
@@ -18,25 +20,42 @@ import org.springframework.web.bind.annotation.*;
 public class MindmapController {
 
     private final MindmapService mindmapService;
+    private final FastApiClient fastApiClient;
 
-    // FastApiController로 생성
-    /*// 마인드맵 생성 (마인드맵에 한해서 owner 권한 얻음)
+    // 마인드맵 생성 (FastAPI 분석 기반)
     @PostMapping
     public ResponseEntity<MindmapResponseDto> createMindmap(
+        @RequestHeader("Authorization") String authorizationHeader,
         @RequestBody MindmapCreateRequestDto request,
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        MindmapResponseDto responseDto = mindmapService.createMindmap(request, userDetails.getId());
+        // 1. FastAPI로 분석 요청
+        AnalysisResultDto analysisResult = fastApiClient.analyze(
+            request.getRepoUrl(),
+            request.getPrompt(),
+            request.getType(),
+            authorizationHeader
+        );
+
+        // 2. 분석 결과로 마인드맵 생성
+        MindmapResponseDto responseDto = mindmapService.createMindmapFromAnalysis(
+            request,
+            analysisResult,
+            userDetails.getId(),
+            authorizationHeader
+        );
+
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
-    }*/
+    }
 
     // 마인드맵 상세 조회 (유저 인가 확인필요?)
     @GetMapping("/{mapId}")
     public ResponseEntity<MindmapDetailResponseDto> getMindmap(
         @PathVariable Long mapId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestHeader("Authorization") String authorizationHeader
     ) {
-        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId());
+        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId(), authorizationHeader);
         return ResponseEntity.ok(responseDto);
     }
 
