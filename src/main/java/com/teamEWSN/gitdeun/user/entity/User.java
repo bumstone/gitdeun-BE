@@ -2,12 +2,14 @@ package com.teamEWSN.gitdeun.user.entity;
 
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
 import com.teamEWSN.gitdeun.common.util.AuditedEntity;
+import com.teamEWSN.gitdeun.userskill.entity.UserSkill;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -37,6 +39,10 @@ public class User extends AuditedEntity {
     // 소셜 연동
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SocialConnection> socialConnections = new ArrayList<>();
+
+    // 사용자 기술
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserSkill> skills;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
