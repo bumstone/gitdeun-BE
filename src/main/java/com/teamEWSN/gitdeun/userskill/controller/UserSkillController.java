@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserSkillController {
 
-    UserSkillService userSkillService;
+    private final UserSkillService userSkillService;
 
     // 선택할 개발 기술 목록 조회
     @GetMapping
