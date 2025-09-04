@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -35,12 +37,30 @@ public class InvitationController {
 
     // 특정 마인드맵의 전체 초대 목록 조회 (페이지네이션 적용)
     @GetMapping("/mindmaps/{mapId}")
-    public ResponseEntity<Page< InvitationResponseDto>> getInvitations(
+    public ResponseEntity<Page<InvitationResponseDto>> getInvitations(
         @PathVariable Long mapId,
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @PageableDefault(size = 10, sort = "createdAt,desc") Pageable pageable
     ) {
         return ResponseEntity.ok(invitationService.getInvitationsByMindmap(mapId, userDetails.getId(), pageable));
+    }
+
+    // ACCEPTED 상태의 초대 목록 조회
+    @GetMapping("/mindmaps/{mapId}/accepted")
+    public ResponseEntity<List<InvitationResponseDto>> getAcceptedInvitations(
+        @PathVariable Long mapId,
+        @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(invitationService.getAcceptedInvitationsByMindmap(mapId, userDetails.getId()));
+    }
+
+    // PENDING 상태의 초대 목록 조회
+    @GetMapping("/mindmaps/{mapId}/pending")
+    public ResponseEntity<List<InvitationResponseDto>> getPendingInvitations(
+        @PathVariable Long mapId,
+        @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(invitationService.getPendingInvitationsByMindmap(mapId, userDetails.getId()));
     }
 
     // 초대 수락

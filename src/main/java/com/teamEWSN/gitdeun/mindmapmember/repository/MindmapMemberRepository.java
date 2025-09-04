@@ -23,4 +23,6 @@ public interface MindmapMemberRepository extends JpaRepository<MindmapMember, Lo
 
     // OWNER가 멤버 추방
     void deleteByIdAndMindmapId(Long memberId, Long mindmapId);
+
+    Optional<MindmapMember> findByMindmapIdAndRole(Long mapId, MindmapRole mindmapRole);
 }

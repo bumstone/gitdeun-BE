@@ -106,6 +106,9 @@ dependencies {
 	// Email
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+	// Github Webhook
+	implementation 'org.kohsuke:github-api:1.327'
+
 	// test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

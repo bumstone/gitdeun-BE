@@ -34,6 +34,7 @@ public class User extends AuditedEntity {
     @Column(nullable = false)
     private Role role;
 
+    // 소셜 연동
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SocialConnection> socialConnections = new ArrayList<>();
 

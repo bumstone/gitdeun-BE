@@ -1,6 +1,8 @@
 package com.teamEWSN.gitdeun.repo.entity;
 
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
+import com.teamEWSN.gitdeun.common.webhook.dto.WebhookUpdateDto;
+import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -8,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -33,6 +37,8 @@ public class Repo {
     @Column(name = "github_last_updated_at")
     private LocalDateTime githubLastUpdatedAt; // GitHub 브랜치 최신 커밋 시간 (commit.committer.date)
 
+    @OneToMany(mappedBy = "repo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Mindmap> mindmaps = new ArrayList<>();
 
     @Builder
     public Repo(String githubRepoUrl, String language, String defaultBranch, LocalDateTime githubLastUpdatedAt) {
@@ -46,5 +52,11 @@ public class Repo {
         this.language = result.getLanguage();
         this.defaultBranch = result.getDefaultBranch();
         this.githubLastUpdatedAt = result.getGithubLastUpdatedAt();
+    }
+
+    public void updateWithWebhookData(WebhookUpdateDto dto) {
+        this.language = dto.getLanguage();
+        this.defaultBranch = dto.getDefaultBranch();
+        this.githubLastUpdatedAt = dto.getGithubLastUpdatedAt();
     }
 }

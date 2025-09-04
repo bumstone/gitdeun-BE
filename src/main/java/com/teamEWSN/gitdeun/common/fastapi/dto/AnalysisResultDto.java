@@ -7,12 +7,12 @@ import java.time.LocalDateTime;
 
 @Getter
 public class AnalysisResultDto {
-    // FastAPI가 반환하는 Repo 관련 정보
+    // Repo 관련 정보
     private String language;
     private String defaultBranch;
     private LocalDateTime githubLastUpdatedAt;
 
-    // FastAPI가 반환하는 Mindmap 관련 정보
+    // Mindmap 관련 정보
     private String mapData;     // JSON 형태의 마인드맵 데이터
     private MindmapType type;
     private String prompt;

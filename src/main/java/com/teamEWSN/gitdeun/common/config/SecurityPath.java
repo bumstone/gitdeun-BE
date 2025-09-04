@@ -22,7 +22,10 @@ public class SecurityPath {
       "/api/repos/**",
       "/api/mindmaps/**",
       "/api/history/**",
-      "/api/s3/bucket/**"
+      "/api/invitations/**",
+      "/api/notifications/**",
+      "/api/s3/bucket/**",
+      "/api/proxy/**"
   };
 
   // hasRole("ADMIN")

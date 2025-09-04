@@ -9,6 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -38,11 +40,21 @@ public class Notification extends CreatedEntity {
     @Column(name = "notification_type", nullable = false)
     private NotificationType notificationType; // 알림 종류
 
+    @Column(name = "reference_id")
+    private Long referenceId; // Invitation ID, Comment ID, Mindmap ID 등
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt; // 액션 가능 만료 시간
+
     @Builder
-    public Notification(User user, String message, NotificationType notificationType) {
+    public Notification(User user, NotificationType notificationType,
+                        String message, Long referenceId,
+                        LocalDateTime expiresAt) {
         this.user = user;
         this.message = message;
         this.notificationType = notificationType;
+        this.referenceId = referenceId;
+        this.expiresAt = expiresAt;
         this.read = false;
     }
 
