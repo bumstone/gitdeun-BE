@@ -1,6 +1,6 @@
 package com.teamEWSN.gitdeun.Recruitment.entity;
 
-import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkillEnum;
+import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,7 +28,7 @@ public class RecruitmentRequiredSkill {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 64)
-    private DeveloperSkillEnum skill;
+    private DeveloperSkill skill;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)

@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum DeveloperSkillEnum {
+public enum DeveloperSkill {
     // 프로그래밍 언어
     JAVASCRIPT("JavaScript", "LANGUAGE"),
     TYPESCRIPT("TypeScript", "LANGUAGE"),

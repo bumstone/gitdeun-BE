@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.Application.entity;
 import com.teamEWSN.gitdeun.Recruitment.entity.Recruitment;
 import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
 import com.teamEWSN.gitdeun.common.util.AuditedEntity;
+import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,13 +35,16 @@ public class Application extends AuditedEntity {
     @JoinColumn(name = "recruitment_id", nullable = false)
     private Recruitment recruitment;
 
-    /** 신청 사용자 (User.id) */
-    @Column(name = "applicant_id", nullable = false)
-    private Long applicantId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+        name = "applicant_id", nullable = false,
+        foreignKey = @ForeignKey(name = "fk_applicant_user")  // 외래키 값 명시
+    )
+    private User applicant;
 
     /** 지원 분야 (작성자의 모집 분야 중에서 선택) */
     @Enumerated(EnumType.STRING)
-    @Column(name = "applied_field", nullable = false, length = 32)
+    @Column(name = "applied_field", length = 32)
     private RecruitmentField appliedField;
 
     /** 지원 메세지 */
