@@ -1,5 +1,7 @@
 package com.teamEWSN.gitdeun.Recruitment.entity;
 
+import com.teamEWSN.gitdeun.Application.entity.Application;
+import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import jakarta.persistence.*;
@@ -23,7 +25,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Recruitment {
+public class Recruitment extends AuditedEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -96,17 +98,37 @@ public class Recruitment {
     @OneToMany(mappedBy = "recruitment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecruitmentImage> recruitmentImages = new ArrayList<>();
 
-    /*// 지원 신청 리스트
+    // 지원 신청 리스트
     @OneToMany(mappedBy = "recruitment", fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Application> applications = new ArrayList<>();*/
+    private List<Application> applications = new ArrayList<>();
 
     // 추천 가중치용 요구 기술(언어/프레임워크/툴 등, 선택)
-    @OneToMany(mappedBy = "recruitment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "recruitment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private Set<RecruitmentRequiredSkill> requiredSkills = new HashSet<>();
 
+    /**
+     * 모집 인원을 1 감소시키고, 인원이 0이 되면 상태를 COMPLETED로 변경
+     */
+    public void decreaseQuota() {
+        if (this.recruitQuota > 0) {
+            this.recruitQuota--;
+            if (this.recruitQuota == 0) {
+                this.status = RecruitmentStatus.COMPLETED;
+            }
+        }
+    }
 
+    /**
+     * 모집 인원을 1 증가시키고, 상태가 COMPLETED였다면 RECRUITING으로 변경
+     */
+    public void increaseQuota() {
+        this.recruitQuota++;
+        if (this.status == RecruitmentStatus.COMPLETED && LocalDateTime.now().isBefore(this.endAt)) {
+            this.status = RecruitmentStatus.RECRUITING;
+        }
+    }
 
     public void increaseView() { this.views++; }
 }

@@ -70,6 +70,13 @@ public enum ErrorCode {
     PINNEDHISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PINNEDHISTORY-003", "핀 고정 기록을 찾을 수 없습니다."),
     PINNED_HISTORY_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "PINNEDHISTORY-004", "최대 8개까지만 핀으로 고정할 수 있습니다."),
 
+    // 모집 공고 관련
+    RECRUITMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "RECRUIT-001", "모집 공고를 찾을 수 없습니다."),
+    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "RECRUIT-002", "시작일은 마감일보다 빠를 수 없습니다."),
+    END_DATE_IN_PAST(HttpStatus.BAD_REQUEST, "RECRUIT-003", "마감일은 현재보다 미래여야 합니다."),
+    QUOTA_FILLED(HttpStatus.BAD_REQUEST, "RECRUIT-004", "모집 인원이 모두 충원되었습니다."),
+
+
     // S3 파일 관련
     // Client Errors (4xx)
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE-001", "요청한 파일을 찾을 수 없습니다."),
