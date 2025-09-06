@@ -5,6 +5,7 @@ import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentStatus;
 import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.With;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -14,6 +15,8 @@ import java.util.Set;
 public class RecruitmentListResponseDto {
     private Long id;
     private String title;
+
+    @With
     private String thumbnailUrl;   // 썸네일 이미지(이미지 리스트 중 맨 앞)
     private RecruitmentStatus status;
 
@@ -28,5 +31,6 @@ public class RecruitmentListResponseDto {
 
     // private String recruiterNickname;
 
+    @With
     private Double matchScore;
 }

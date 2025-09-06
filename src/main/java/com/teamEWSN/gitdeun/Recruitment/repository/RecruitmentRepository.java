@@ -20,7 +20,6 @@ public interface RecruitmentRepository extends JpaRepository<Recruitment, Long>,
     // 내 공고 목록 조회
     Page<Recruitment> findByRecruiterId(Long recruiterId, Pageable pageable);
 
-    // 공고 추천을 위한
-    @Query("SELECT r FROM Recruitment r LEFT JOIN FETCH r.requiredSkills rs " + "WHERE r.status = :status")
-    List<Recruitment> findAllByStatusWithRequiredSkills(RecruitmentStatus status);
+    // 상태 기반 조회(추천 시)
+    List<Recruitment> findAllByStatusIn(List<RecruitmentStatus> statuses);
 }
