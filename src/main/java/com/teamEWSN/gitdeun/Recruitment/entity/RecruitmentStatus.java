@@ -1,7 +1,8 @@
 package com.teamEWSN.gitdeun.Recruitment.entity;
 
 public enum RecruitmentStatus {
-    Forthcoming,    // 모집 예정
-    RECRUITING,  // 모집 중
-    CLOSED,      // 마감
+    FORTHCOMING,    // 모집 예정
+    RECRUITING,     // 모집 중
+    CLOSED,         // 마감 (기간 종료)
+    COMPLETED       // 완료 (인원 충족)
 }

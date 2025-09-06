@@ -32,7 +32,7 @@ public class RecruitmentRequiredSkill {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
-    private SkillCategory category; // 추천은 LANGUAGE만 사용
+    private SkillCategory category; // 추천은 현재 LANGUAGE만 사용
 
     @Column(nullable = false)
     @Builder.Default
