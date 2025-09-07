@@ -27,7 +27,7 @@ public class S3BucketService {
     private final S3Template s3Template;
     private final Tika tika = new Tika();
 
-    @Value("${cloud.aws.s3.bucket.name}")
+    @Value("${s3.bucket}")
     private String bucketName;
 
     // 이미지 및 파일 업로드 제약 조건

@@ -1,7 +1,5 @@
 package com.teamEWSN.gitdeun.common.s3.controller;
 
-import com.teamEWSN.gitdeun.common.exception.ErrorCode;
-import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.s3.service.S3BucketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
