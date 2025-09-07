@@ -75,12 +75,6 @@ public class ApplicationService {
             throw new GlobalException(ErrorCode.ALREADY_APPLIED);
         }
 
-        // 지원 분야가 공고의 모집 분야에 포함되는지 확인
-        if (!recruitment.getFieldTags().contains(requestDto.getAppliedField())) {
-            log.warn("Invalid field application: {} not in {}", requestDto.getAppliedField(), recruitment.getFieldTags());
-            throw new GlobalException(ErrorCode.INVALID_APPLICATION_FIELD);
-        }
-
         // 모집 인원 확인
         if (recruitment.getRecruitQuota() <= 0) {
             log.warn("Application to full recruitment: {}", recruitmentId);
@@ -99,8 +93,6 @@ public class ApplicationService {
 
         Application savedApplication = applicationRepository.save(application);
 
-        // 모집 인원 감소
-        recruitment.setRecruitQuota(recruitment.getRecruitQuota() - 1);
 
         // 모집자에게 알림 전송
         String notificationMessage = String.format(
@@ -118,10 +110,7 @@ public class ApplicationService {
                 null
             )
         );
-
-        log.info("Application created successfully - ID: {}, User: {}, Recruitment: {}",
-            savedApplication.getId(), userId, recruitmentId);
-
+        
         return applicationMapper.toResponseDto(savedApplication);
     }
 
@@ -193,26 +182,34 @@ public class ApplicationService {
 
         // 이미 철회된 지원인지 확인
         if (!application.isActive()) {
-            log.warn("Attempt to withdraw already withdrawn application: {}", applicationId);
             throw new GlobalException(ErrorCode.APPLICATION_ALREADY_WITHDRAWN);
         }
 
-        // ACCEPTED 상태는 철회 불가
-        if (application.getStatus() == ApplicationStatus.ACCEPTED) {
-            log.warn("Attempt to withdraw accepted application: {}", applicationId);
-            throw new GlobalException(ErrorCode.CANNOT_WITHDRAW_ACCEPTED);
+        // 만약 '수락'된 상태의 지원을 철회하는 경우
+        boolean wasAccepted = application.getStatus() == ApplicationStatus.ACCEPTED;
+        if (wasAccepted) {
+            Recruitment recruitment = application.getRecruitment();
+            recruitment.increaseQuota();
+
+            // 철회 알림
+            String notificationMessage = String.format(
+                "'%s'님이 '%s' 공고의 수락을 철회했습니다.",
+                application.getApplicant().getName(),
+                application.getRecruitment().getTitle()
+            );
+
+            notificationService.createAndSendNotification(
+                NotificationCreateDto.simple(
+                    application.getRecruitment().getRecruiter(),
+                    NotificationType.APPLICATION_WITHDRAWN_AFTER_ACCEPTANCE,
+                    notificationMessage
+                )
+            );
         }
 
         // 지원 철회 처리
         application.withdraw();
 
-        // 모집 인원 복구 (PENDING 상태였던 경우만)
-        if (application.getStatus() == ApplicationStatus.PENDING) {
-            Recruitment recruitment = application.getRecruitment();
-            recruitment.setRecruitQuota(recruitment.getRecruitQuota() + 1);
-        }
-
-        log.info("Application withdrawn - ID: {}, User: {}", applicationId, userId);
     }
 
     /**
@@ -239,6 +236,10 @@ public class ApplicationService {
         // 수락 처리
         application.accept();
 
+        // 모집 인원 감소
+        Recruitment recruitment = application.getRecruitment();
+        recruitment.decreaseQuota();
+
         // 지원자에게 알림 전송
         String notificationMessage = String.format(
             "'%s' 공고 지원이 수락되었습니다!",
@@ -252,8 +253,6 @@ public class ApplicationService {
                 notificationMessage
             )
         );
-
-        log.info("Application accepted - ID: {}, Recruiter: {}", applicationId, userId);
 
         return applicationMapper.toResponseDto(application);
     }
@@ -284,10 +283,6 @@ public class ApplicationService {
         // 거절 처리
         application.reject(updateDto.getRejectReason());
 
-        // 모집 인원 복구
-        Recruitment recruitment = application.getRecruitment();
-        recruitment.setRecruitQuota(recruitment.getRecruitQuota() + 1);
-
         // 지원자에게 알림 전송
         String notificationMessage = String.format(
             "'%s' 공고 지원이 거절되었습니다.",
@@ -305,8 +300,6 @@ public class ApplicationService {
                 notificationMessage
             )
         );
-
-        log.info("Application rejected - ID: {}, Recruiter: {}", applicationId, userId);
 
         return applicationMapper.toResponseDto(application);
     }
