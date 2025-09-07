@@ -4,10 +4,8 @@ import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
 import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -39,6 +37,4 @@ public class RecruitmentCreateRequestDto {
     private Set<RecruitmentField> fieldTags;
 
     private Set<DeveloperSkill> languageTags;
-
-    private List<MultipartFile> images;
 }

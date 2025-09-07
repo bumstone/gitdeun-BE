@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -29,15 +30,17 @@ public class RecruitmentController {
      * 신규 모집 공고 생성 API
      *
      * @param userDetails 현재 로그인한 사용자 정보
-     * @param requestDto  생성할 공고 정보
+     * @param requestDto  생성할 공고 정보 (JSON)
+     * @param images      업로드할 이미지 파일 목록
      * @return 생성된 공고의 상세 정보
      */
-    @PostMapping(value = "/recruitments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/recruitments", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<RecruitmentDetailResponseDto> createRecruitment(
         @AuthenticationPrincipal CustomUserDetails userDetails,
-        @Valid @ModelAttribute RecruitmentCreateRequestDto requestDto
+        @Valid @RequestPart("requestDto") RecruitmentCreateRequestDto requestDto,
+        @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) {
-        RecruitmentDetailResponseDto responseDto = recruitmentService.createRecruitment(userDetails.getId(), requestDto);
+        RecruitmentDetailResponseDto responseDto = recruitmentService.createRecruitment(userDetails.getId(), requestDto, images);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
@@ -92,16 +95,18 @@ public class RecruitmentController {
      *
      * @param recruitmentId 수정할 공고 ID
      * @param userDetails   현재 로그인한 사용자 정보
-     * @param requestDto    수정할 공고 정보
+     * @param requestDto    수정할 공고 정보 (JSON)
+     * @param newImages     새로 추가할 이미지 파일 목록
      * @return 수정된 공고 상세 정보
      */
-    @PutMapping(value = "/recruitments/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/recruitments/{id}", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<RecruitmentDetailResponseDto> updateRecruitment(
         @PathVariable("id") Long recruitmentId,
         @AuthenticationPrincipal CustomUserDetails userDetails,
-        @Valid @ModelAttribute RecruitmentUpdateRequestDto requestDto
+        @Valid @RequestPart("requestDto") RecruitmentUpdateRequestDto requestDto,
+        @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages
     ) {
-        RecruitmentDetailResponseDto responseDto = recruitmentService.updateRecruitment(recruitmentId, userDetails.getId(), requestDto);
+        RecruitmentDetailResponseDto responseDto = recruitmentService.updateRecruitment(recruitmentId, userDetails.getId(), requestDto, newImages);
         return ResponseEntity.ok(responseDto);
     }
 
@@ -122,7 +127,7 @@ public class RecruitmentController {
     }
 
     /**
-     * 사용자 맞춤 추천 공고 목록 조회 API (가중치 기반)
+     * 사용자 맞춤 추천 공고 목록 조회 API
      *
      * @param userDetails 현재 로그인한 사용자 정보
      * @param pageable    페이징 정보

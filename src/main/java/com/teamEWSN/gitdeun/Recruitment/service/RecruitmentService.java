@@ -43,27 +43,23 @@ public class RecruitmentService {
      * @return 생성된 공고의 상세 정보 DTO
      */
     @Transactional
-    public RecruitmentDetailResponseDto createRecruitment(Long userId, RecruitmentCreateRequestDto requestDto) {
+    public RecruitmentDetailResponseDto createRecruitment(Long userId, RecruitmentCreateRequestDto requestDto, List<MultipartFile> images) {
         User recruiter = userRepository.findById(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
         validateRecruitmentDates(requestDto.getStartAt(), requestDto.getEndAt());
 
-        // DTO를 엔티티로 변환
         Recruitment recruitment = recruitmentMapper.toEntity(requestDto);
         recruitment.setRecruiter(recruiter);
 
-        // 상태 설정 (시작일이 현재보다 미래면 모집 예정, 아니면 모집 중)
         RecruitmentStatus initialStatus = requestDto.getStartAt().isAfter(LocalDateTime.now()) ?
             RecruitmentStatus.FORTHCOMING : RecruitmentStatus.RECRUITING;
         recruitment.setStatus(initialStatus);
 
-        // Recruitment 엔티티를 먼저 저장 (ID 생성을 위해)
         Recruitment savedRecruitment = recruitmentRepository.save(recruitment);
 
-        // 이미지 파일 처리
-        if (!CollectionUtils.isEmpty(requestDto.getImages())) {
-            List<RecruitmentImage> savedImages = uploadAndSaveImages(savedRecruitment, requestDto.getImages());
+        if (!CollectionUtils.isEmpty(images)) {
+            List<RecruitmentImage> savedImages = uploadAndSaveImages(savedRecruitment, images);
             savedRecruitment.setRecruitmentImages(savedImages);
         }
 
@@ -132,10 +128,11 @@ public class RecruitmentService {
      * @param recruitmentId 수정할 공고의 ID
      * @param userId 요청한 사용자의 ID
      * @param requestDto 수정할 공고의 정보가 담긴 DTO
+     * @param newImages 새로 추가할 이미지 파일 목록
      * @return 수정된 공고의 상세 정보 DTO
      */
     @Transactional
-    public RecruitmentDetailResponseDto updateRecruitment(Long recruitmentId, Long userId, RecruitmentUpdateRequestDto requestDto) {
+    public RecruitmentDetailResponseDto updateRecruitment(Long recruitmentId, Long userId, RecruitmentUpdateRequestDto requestDto, List<MultipartFile> newImages) {
         Recruitment recruitment = recruitmentRepository.findById(recruitmentId)
             .orElseThrow(() -> new GlobalException(ErrorCode.RECRUITMENT_NOT_FOUND));
 
@@ -143,15 +140,18 @@ public class RecruitmentService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        validateRecruitmentDates(recruitment.getStartAt(), requestDto.getEndAt());
+        // DTO에 endAt이 제공된 경우에만 날짜 유효성 검사
+        if (requestDto.getEndAt() != null) {
+            validateRecruitmentDates(recruitment.getStartAt(), requestDto.getEndAt());
+        }
 
         recruitmentMapper.updateRecruitmentFromDto(requestDto, recruitment);
 
         // 이미지 업데이트 - 삭제 후 새 이미지 추가
         deleteUnusedImages(recruitment, requestDto.getKeepImageIds());
 
-        if (!CollectionUtils.isEmpty(requestDto.getNewImages())) {
-            uploadAndSaveImages(recruitment, requestDto.getNewImages());
+        if (!CollectionUtils.isEmpty(newImages)) {
+            uploadAndSaveImages(recruitment, newImages);
         }
 
         return recruitmentMapper.toDetailResponseDto(recruitment);
@@ -260,7 +260,7 @@ public class RecruitmentService {
             .startAt(dto.getStartAt())
             .endAt(dto.getEndAt())
             .recruitQuota(dto.getRecruitQuota())
-            .views(dto.getViews())
+            .viewCount(dto.getViewCount())
             .matchScore(matchScore)
             .build();
     }
@@ -279,7 +279,7 @@ public class RecruitmentService {
             .startAt(dto.getStartAt())
             .endAt(dto.getEndAt())
             .recruitQuota(dto.getRecruitQuota())
-            .views(dto.getViews())
+            .viewCount(dto.getViewCount())
             .matchScore(dto.getMatchScore())
             .build();
     }

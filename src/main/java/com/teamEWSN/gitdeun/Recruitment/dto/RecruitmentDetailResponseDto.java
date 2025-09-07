@@ -24,7 +24,7 @@ public class RecruitmentDetailResponseDto {
 
     private int teamSizeTotal;
     private int recruitQuota;
-    private int views;
+    private int viewCount;
 
     private String recruiterNickname;
     private String recruiterProfileImage;

@@ -26,7 +26,7 @@ public class RecruitmentListResponseDto {
     private LocalDateTime startAt;  // 모집 기간
     private LocalDateTime endAt;
 
-    private Integer views;
+    private Integer viewCount;
     private Integer recruitQuota;
 
     // private String recruiterNickname;

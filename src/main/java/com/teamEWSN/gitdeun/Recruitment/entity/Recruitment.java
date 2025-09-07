@@ -89,9 +89,9 @@ public class Recruitment extends AuditedEntity {
     private RecruitmentStatus status;
 
     // 조회수
-    @Column(name = "views", nullable = false)
+    @Column(name = "view_count", nullable = false)
     @Builder.Default
-    private int views = 0;
+    private int viewCount = 0;
 
     // 모집 공고 이미지 (선택)
     @Builder.Default
@@ -130,5 +130,5 @@ public class Recruitment extends AuditedEntity {
         }
     }
 
-    public void increaseView() { this.views++; }
+    public void increaseView() { this.viewCount++; }
 }

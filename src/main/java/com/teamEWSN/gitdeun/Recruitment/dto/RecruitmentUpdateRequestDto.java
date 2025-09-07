@@ -37,6 +37,5 @@ public class RecruitmentUpdateRequestDto {
     private Set<DeveloperSkill> languageTags;
 
     private List<Long> keepImageIds;                 // 유지할 기존 이미지 ID
-    private List<MultipartFile> newImages;           // 새로 추가할 이미지
 }
 
