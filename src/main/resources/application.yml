@@ -46,6 +46,10 @@ spring:
           auth: true
           starttls:
             enable: true
+      # 발신자 정보 추가
+      from:
+        name: "Gitdeun"
+        email: ${GMAIL_USERNAME}
   profiles:
     active: dev, s3Bucket  # logback-spring SpringProfile 설정 및 AWS S3 Bucket 설정
   servlet:

@@ -7,5 +7,5 @@ public enum NotificationType {
     APPLICATION_ACCEPTED,   // 지원 수락
     APPLICATION_REJECTED,   // 지원 거절
     APPLICATION_WITHDRAWN_AFTER_ACCEPTANCE,     // 지원 수락 철회
-    SYSTEM_UPDATE;       // 시스템 업데이트(webhook)
+    SYSTEM_UPDATE       // 시스템 업데이트(webhook)
 }

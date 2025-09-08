@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +46,7 @@ public class ApplicationController {
      */
     @GetMapping("/users/me/applications")
     public ResponseEntity<Page<ApplicationListResponseDto>> getMyApplications(
-        @PageableDefault(size = 10, sort = "createdAt,desc") Pageable pageable,
+        @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         log.info("Getting applications for user: {}", userDetails.getId());
@@ -61,7 +62,7 @@ public class ApplicationController {
     @GetMapping("/recruitments/{recruitmentId}/applications")
     public ResponseEntity<Page<ApplicationListResponseDto>> getRecruitmentApplications(
         @PathVariable Long recruitmentId,
-        @PageableDefault(size = 10, sort = "createdAt,desc") Pageable pageable,
+        @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Page<ApplicationListResponseDto> applications = applicationService.getRecruitmentApplications(
