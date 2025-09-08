@@ -69,7 +69,7 @@ public class Recruitment extends AuditedEntity {
 
     // 개발 분야 태그 (선택 필요) - BACKEND/FRONTEND/AI 등
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "recruitment_field_tags", joinColumns = @JoinColumn(name = "recruitment_id"))
+    @CollectionTable(name = "recruitment_field_tags")
     @Column(name = "field", nullable = false, length = 32)
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -77,7 +77,7 @@ public class Recruitment extends AuditedEntity {
 
     // 개발 언어 태그 (선택 필요) - 화면 필터/표시용
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "recruitment_language_tags", joinColumns = @JoinColumn(name = "recruitment_id"))
+    @CollectionTable(name = "recruitment_language_tags")
     @Column(name = "language", nullable = false, length = 64)
     @Enumerated(EnumType.STRING)
     @Builder.Default

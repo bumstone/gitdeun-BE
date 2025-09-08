@@ -111,15 +111,7 @@ public class RecruitmentService {
      */
     @Transactional(readOnly = true)
     public Page<RecruitmentListResponseDto> searchRecruitments(RecruitmentStatus status, List<RecruitmentField> fields, Pageable pageable) {
-        return recruitmentRepository.searchRecruitments(status, fields, pageable)
-            .map(dto -> {
-                // 썸네일 URL이 없는 경우에만 조회
-                if (dto.getThumbnailUrl() == null) {
-                    List<RecruitmentImage> images = recruitmentImageRepository.findByRecruitmentIdAndDeletedAtIsNull(dto.getId());
-                    return addThumbnailUrl(dto, images);
-                }
-                return dto;
-            });
+        return recruitmentRepository.searchRecruitments(status, fields, pageable).map(recruitmentMapper::toListResponseDto);
     }
 
     /**

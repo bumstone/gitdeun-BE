@@ -3,15 +3,15 @@ package com.teamEWSN.gitdeun.Recruitment.dto;
 import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
 import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentStatus;
 import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.With;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RecruitmentListResponseDto {
     private Long id;
     private String title;
