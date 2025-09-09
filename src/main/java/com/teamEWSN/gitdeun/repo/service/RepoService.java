@@ -22,7 +22,6 @@ public class RepoService {
 
     private final RepoRepository repoRepository;
     private final RepoMapper repoMapper;
-    private final FastApiClient fastApiClient;
 
     // 레포지토리 ID로 정보 조회
     public RepoResponseDto findRepoById(Long repoId) {
