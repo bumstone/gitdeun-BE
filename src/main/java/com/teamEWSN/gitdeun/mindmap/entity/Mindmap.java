@@ -51,14 +51,8 @@ public class Mindmap extends AuditedEntity {
     @Column(name = "member_count", nullable = false)
     private Integer memberCount = 1;
 
-    // TODO: Graph RAG 조회 및 데이터 연결
-    @Column(name = "arangodb_key", length = 255)
-    private String arangodbKey;
-
     public void updateMapData(String newMapData) {
         this.mapData = newMapData;
     }
-
-    public void updateArangodbKey(String arangodbKey) { this.arangodbKey = arangodbKey; }
 
 }

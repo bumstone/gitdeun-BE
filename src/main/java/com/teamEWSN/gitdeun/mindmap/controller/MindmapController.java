@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 public class MindmapController {
 
     private final MindmapService mindmapService;
-    private final FastApiClient fastApiClient;
 
     // 마인드맵 생성 (FastAPI 분석 기반)
     @PostMapping
@@ -29,18 +28,8 @@ public class MindmapController {
         @RequestBody MindmapCreateRequestDto request,
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        // 1. FastAPI로 분석 요청
-        AnalysisResultDto analysisResult = fastApiClient.analyze(
-            request.getRepoUrl(),
-            request.getPrompt(),
-            request.getType(),
-            authorizationHeader
-        );
-
-        // 2. 분석 결과로 마인드맵 생성
         MindmapResponseDto responseDto = mindmapService.createMindmapFromAnalysis(
             request,
-            analysisResult,
             userDetails.getId(),
             authorizationHeader
         );
@@ -74,9 +63,10 @@ public class MindmapController {
     @DeleteMapping("/{mapId}")
     public ResponseEntity<Void> deleteMindmap(
         @PathVariable Long mapId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestHeader("Authorization") String authorizationHeader
     ) {
-        mindmapService.deleteMindmap(mapId, userDetails.getId());
+        mindmapService.deleteMindmap(mapId, userDetails.getId(), authorizationHeader);
         return ResponseEntity.ok().build(); // 성공 시 200 OK와 빈 body 반환
     }
 

@@ -28,9 +28,6 @@ public class Repo {
 //    @Column(name="file_name", length = 256, nullable = false)
 //    private String fileName;
 
-    @Column(length = 100)
-    private String language;
-
     @Column(name = "default_branch", length = 100)
     private String defaultBranch;   // 기본 브랜치
 
@@ -41,21 +38,18 @@ public class Repo {
     private List<Mindmap> mindmaps = new ArrayList<>();
 
     @Builder
-    public Repo(String githubRepoUrl, String language, String defaultBranch, LocalDateTime githubLastUpdatedAt) {
+    public Repo(String githubRepoUrl, String defaultBranch, LocalDateTime githubLastUpdatedAt) {
         this.githubRepoUrl = githubRepoUrl;
-        this.language = language;
         this.defaultBranch = defaultBranch;
         this.githubLastUpdatedAt = githubLastUpdatedAt;
     }
 
     public void updateWithAnalysis(AnalysisResultDto result) {
-        this.language = result.getLanguage();
         this.defaultBranch = result.getDefaultBranch();
         this.githubLastUpdatedAt = result.getGithubLastUpdatedAt();
     }
 
     public void updateWithWebhookData(WebhookUpdateDto dto) {
-        this.language = dto.getLanguage();
         this.defaultBranch = dto.getDefaultBranch();
         this.githubLastUpdatedAt = dto.getGithubLastUpdatedAt();
     }

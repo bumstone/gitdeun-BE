@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Getter
 public class AnalysisResultDto {
     // Repo 관련 정보
-    private String language;
     private String defaultBranch;
     private LocalDateTime githubLastUpdatedAt;
 
