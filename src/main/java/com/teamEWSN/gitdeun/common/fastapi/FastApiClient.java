@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+
 @Component
 public class FastApiClient {
 
@@ -19,7 +21,25 @@ public class FastApiClient {
         this.webClient = webClient;
     }
 
-    // FastAPI 서버에 리포지토리 분석을 요청 (AI 기반)
+    /**
+     * GitHub 저장소의 최신 커밋 시간 조회
+     */
+    public LocalDateTime getRepositoryLastCommitTime(String repoUrl, String authorizationHeader) {
+        return webClient.get()
+            .uri(uriBuilder -> uriBuilder
+                .path("/github/repos/last-commit")
+                .queryParam("repo_url", repoUrl)
+                .build())
+            .header("Authorization", authorizationHeader)
+            .retrieve()
+            .bodyToMono(RepositoryCommitInfo.class)
+            .map(RepositoryCommitInfo::getLastCommitTime)
+            .block();
+    }
+
+    /**
+     * FastAPI 서버에 리포지토리 분석을 요청 (AI 기반)
+     */
     public AnalysisResultDto analyzeWithAi(String repoUrl, String prompt, MindmapType type, String authorizationHeader) {
         AnalysisRequest requestBody = new AnalysisRequest(repoUrl, prompt, type);
         return webClient.post()
@@ -31,7 +51,9 @@ public class FastApiClient {
             .block();
     }
 
-    // ArangoDB에서 마인드맵 그래프 데이터를 조회
+    /**
+     * ArangoDB에서 마인드맵 그래프 데이터를 조회
+     */
     public MindmapGraphDto getMindmapGraph(String repoUrl, String authorizationHeader) {
         return webClient.get()
             .uri(uriBuilder -> uriBuilder
@@ -44,7 +66,9 @@ public class FastApiClient {
             .block();
     }
 
-    // GitHub 저장소 정보 저장을 요청
+    /**
+     * GitHub 저장소 정보 저장을 요청
+     */
     public void saveRepoInfo(String repoUrl, String authorizationHeader) {
         webClient.post()
             .uri("/repo/github/repo-info")
@@ -55,7 +79,9 @@ public class FastApiClient {
             .block();
     }
 
-    // GitHub ZIP을 ArangoDB에 저장을 요청
+    /**
+     * GitHub ZIP을 ArangoDB에 저장을 요청
+     */
     public void fetchRepo(String repoUrl, String authorizationHeader) {
         webClient.post()
             .uri("/github/repos/fetch")
@@ -66,7 +92,9 @@ public class FastApiClient {
             .block();
     }
 
-    // ArangoDB에서 repo_url 기반으로 마인드맵 데이터를 삭제
+    /**
+     * ArangoDB에서 repo_url 기반으로 마인드맵 데이터를 삭제
+     */
     public void deleteMindmapData(String repoUrl, String authorizationHeader) {
         webClient.delete()
             .uri(uriBuilder -> uriBuilder
@@ -78,6 +106,8 @@ public class FastApiClient {
             .bodyToMono(Void.class)
             .block();
     }
+
+    // === Inner Classes ===
 
     @Getter
     @AllArgsConstructor
@@ -91,5 +121,12 @@ public class FastApiClient {
     @AllArgsConstructor
     private static class GitRepoRequest {
         private String repo_url;
+    }
+
+    @Getter
+    public static class RepositoryCommitInfo {
+        private LocalDateTime lastCommitTime;
+        private String lastCommitSha;
+        private String defaultBranch;
     }
 }
