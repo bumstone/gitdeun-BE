@@ -17,6 +17,9 @@ public class RecruitmentUpdateRequestDto {
 
     private String content;
 
+    @Email(message = "유효한 이메일 형식이 아닙니다.")
+    private String contactEmail;
+
     @Future(message = "마감일은 현재보다 미래여야 합니다.")
     private LocalDateTime endAt;
 

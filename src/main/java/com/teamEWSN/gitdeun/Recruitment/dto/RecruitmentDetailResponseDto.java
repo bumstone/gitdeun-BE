@@ -17,6 +17,7 @@ public class RecruitmentDetailResponseDto {
     private Long id;
     private String title;
     private String content;
+    private String contactEmail;
     private RecruitmentStatus status;
 
     private LocalDateTime startAt;

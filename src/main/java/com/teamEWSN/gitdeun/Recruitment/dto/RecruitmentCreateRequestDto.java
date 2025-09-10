@@ -18,6 +18,9 @@ public class RecruitmentCreateRequestDto {
     @NotBlank(message = "내용을 입력해주세요.")
     private String content;
 
+    @Email(message = "유효한 이메일 형식이 아닙니다.")
+    private String contactEmail;
+
     @NotNull(message = "모집 시작일을 입력해주세요.")
     private LocalDateTime startAt;
 

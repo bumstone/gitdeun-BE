@@ -13,7 +13,8 @@ public class AnalysisResultDto {
 
     // Mindmap 관련 정보
     private String mapData;     // JSON 형태의 마인드맵 데이터
-    private MindmapType type;
-    private String prompt;
+    private String field;
+//    private MindmapType mode;
+//    private String prompt;
     // TODO: FastAPI 응답에 맞춰 필드 정의
 }
