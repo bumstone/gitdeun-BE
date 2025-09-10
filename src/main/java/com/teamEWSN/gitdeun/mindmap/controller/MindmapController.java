@@ -15,7 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
-@RestController("/api/mindmaps")
+@RestController
+@RequestMapping("/api/mindmaps")
 @RequiredArgsConstructor
 public class MindmapController {
 
