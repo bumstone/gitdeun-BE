@@ -9,5 +9,5 @@ import lombok.Getter;
 public class MindmapCreationResultDto {
     private final Repo repo;
     private final String mapData;
-    private final String field;
+    private final String title;
 }

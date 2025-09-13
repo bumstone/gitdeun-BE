@@ -7,21 +7,17 @@ import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.common.fastapi.dto.MindmapGraphDto;
 import com.teamEWSN.gitdeun.common.webhook.dto.WebhookUpdateDto;
-import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreateRequestDto;
-import com.teamEWSN.gitdeun.mindmap.dto.MindmapCreationResultDto;
-import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
-import com.teamEWSN.gitdeun.mindmap.dto.MindmapResponseDto;
+import com.teamEWSN.gitdeun.mindmap.dto.*;
+import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptHistoryResponseDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
+import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
 import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapMember;
 import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapRole;
-import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
-import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
 import com.teamEWSN.gitdeun.mindmapmember.repository.MindmapMemberRepository;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
 import com.teamEWSN.gitdeun.mindmapmember.service.MindmapAuthService;
 import com.teamEWSN.gitdeun.repo.entity.Repo;
 import com.teamEWSN.gitdeun.repo.repository.RepoRepository;
-import com.teamEWSN.gitdeun.repo.service.RepoService;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import com.teamEWSN.gitdeun.visithistory.service.VisitHistoryService;
@@ -34,8 +30,6 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -45,53 +39,53 @@ public class MindmapService {
     private final VisitHistoryService visitHistoryService;
     private final MindmapSseService mindmapSseService;
     private final MindmapAuthService mindmapAuthService;
+    private final PromptHistoryService promptHistoryService;
     private final MindmapMapper mindmapMapper;
     private final MindmapRepository mindmapRepository;
     private final MindmapMemberRepository mindmapMemberRepository;
     private final RepoRepository repoRepository;
     private final UserRepository userRepository;
     private final FastApiClient fastApiClient;
-    private final ObjectMapper objectMapper;    // JSON 직렬화
+    private final ObjectMapper objectMapper;
 
-
+    // 마인드맵 생성
     @Transactional
-    public MindmapResponseDto createMindmapFromAnalysis(MindmapCreateRequestDto req, Long userId, String authorizationHeader) {
+    public MindmapResponseDto createMindmap(MindmapCreateRequestDto req, Long userId, String authorizationHeader) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
-        // 입력 검증
-        if (req.getType() == MindmapType.DEV && !StringUtils.hasText(req.getPrompt())) {
-            throw new IllegalArgumentException("DEV 타입 마인드맵은 프롬프트가 필수입니다.");
-        }
-
         String normalizedUrl = normalizeRepoUrl(req.getRepoUrl());
 
-        // 타입별 처리
-        MindmapCreationResultDto result;
-        if (req.getType() == MindmapType.DEV) {
-            result = createDevMindmap(normalizedUrl, req.getPrompt(), authorizationHeader);
-        } else {
-            result = createCheckMindmap(normalizedUrl, req.getField(), user, authorizationHeader);
-        }
+        // 1. Repository 처리
+        Repo repo = processRepository(normalizedUrl, authorizationHeader);
 
-        // 마인드맵 엔티티 생성
+        // 2. FastAPI를 통해 분석 수행 및 AI 생성 제목과 맵 데이터 획득
+        AnalysisResultDto analysisResult = generateMapDataWithAnalysis(normalizedUrl, req.getPrompt(), authorizationHeader);
+
+        // 3. AI가 생성한 제목 사용, 실패 시 기본 제목
+        String title = determineAIGeneratedTitle(analysisResult, user);
+
+        // 4. 마인드맵 엔티티 생성
         Mindmap mindmap = Mindmap.builder()
-            .repo(result.getRepo())
+            .repo(repo)
             .user(user)
-            .prompt(req.getType() == MindmapType.DEV ? req.getPrompt() : null)
-            .branch(result.getRepo().getDefaultBranch())
-            .type(req.getType())
-            .field(result.getField())
-            .mapData(result.getMapData())
+            .branch(repo.getDefaultBranch())
+            .title(title)
+            .mapData(analysisResult.getMapData())
             .build();
 
         mindmapRepository.save(mindmap);
 
-        // 소유자 등록 및 방문 기록
+        // 5. 초기 프롬프트 히스토리 생성 (프롬프트가 있는 경우)
+        if (StringUtils.hasText(req.getPrompt())) {
+            promptHistoryService.createInitialPromptHistory(mindmap, req.getPrompt(), analysisResult.getMapData());
+        }
+
+        // 6. 소유자 등록 및 방문 기록
         mindmapMemberRepository.save(MindmapMember.of(mindmap, user, MindmapRole.OWNER));
         visitHistoryService.createVisitHistory(user, mindmap);
 
-        log.info("마인드맵 생성 완료 - ID: {}, Type: {}, Field: {}", mindmap.getId(), req.getType(), result.getField());
+        log.info("마인드맵 생성 완료 - ID: {}, AI 생성 제목: {}", mindmap.getId(), title);
         return mindmapMapper.toResponseDto(mindmap);
     }
 
@@ -104,195 +98,218 @@ public class MindmapService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        Mindmap mindmap = mindmapRepository.findById(mapId)
+        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
-        // ArangoDB와 동기화하여 최신 데이터 반영
         syncWithArangoDB(mindmap, authorizationHeader);
 
-        return mindmapMapper.toDetailResponseDto(mindmap);
+        return buildDetailResponseDtoWithSeparatedMappers(mindmap);
     }
 
     /**
-     * 마인드맵 새로고침
+     * 마인드맵 제목 수정 - EDIT 권한 필요
      */
     @Transactional
-    public MindmapDetailResponseDto refreshMindmap(Long mapId, Long userId, String authorizationHeader) {
-        Mindmap mindmap = mindmapRepository.findById(mapId)
-            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
-
-        if (!mindmap.getUser().getId().equals(userId)) {
+    public MindmapDetailResponseDto updateMindmapTitle(Long mapId, Long userId, MindmapTitleUpdateDto req) {
+        if (!mindmapAuthService.hasEdit(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
+        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+
+        mindmap.updateTitle(req.getTitle());
+
+        // 분리된 매퍼 활용
+        MindmapDetailResponseDto responseDto = buildDetailResponseDtoWithSeparatedMappers(mindmap);
+
+        // 제목 변경만 별도 브로드캐스트
+        mindmapSseService.broadcastTitleChanged(mapId, req.getTitle());
+
+        log.info("마인드맵 제목 수정 완료 - ID: {}, 새 제목: {}", mapId, req.getTitle());
+        return responseDto;
+    }
+
+    /**
+     * 마인드맵 새로고침 - EDIT 권한 필요
+     */
+    @Transactional
+    public MindmapDetailResponseDto refreshMindmap(Long mapId, Long userId, String authorizationHeader) {
+        if (!mindmapAuthService.hasEdit(mapId, userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
-        String newMapData;
 
         try {
             // 저장소 최신 설정
             fastApiClient.saveRepoInfo(repoUrl, authorizationHeader);
             fastApiClient.fetchRepo(repoUrl, authorizationHeader);
 
-            // 타입별 재분석
-            if (mindmap.getType() == MindmapType.DEV) {
-                AnalysisResultDto analysisResult = fastApiClient.analyzeWithAi(repoUrl, mindmap.getPrompt(), MindmapType.DEV, authorizationHeader);
-                mindmap.getRepo().updateWithAnalysis(analysisResult);
-                newMapData = analysisResult.getMapData();
+            // 현재 적용된 프롬프트 확인
+            String latestPrompt = getLatestAppliedPrompt(mindmap);
+            AnalysisResultDto analysisResult;
+
+            if (StringUtils.hasText(latestPrompt)) {
+                analysisResult = fastApiClient.analyzeWithPrompt(repoUrl, latestPrompt, authorizationHeader);
             } else {
-                AnalysisResultDto analysisResult = fastApiClient.analyzeWithAi(repoUrl, null, MindmapType.CHECK, authorizationHeader);
-                mindmap.getRepo().updateWithAnalysis(analysisResult);
-                newMapData = analysisResult.getMapData();
+                analysisResult = fastApiClient.analyzeDefault(repoUrl, authorizationHeader);
             }
 
-            mindmap.updateMapData(newMapData);
+            mindmap.getRepo().updateWithAnalysis(analysisResult);
+            mindmap.updateMapData(analysisResult.getMapData());
+
+            MindmapDetailResponseDto responseDto = buildDetailResponseDtoWithSeparatedMappers(mindmap);
+            mindmapSseService.broadcastUpdate(mapId, responseDto);
+
+            return responseDto;
 
         } catch (Exception e) {
             log.error("마인드맵 새로고침 실패: {}", e.getMessage(), e);
             throw new RuntimeException("마인드맵 새로고침 중 오류가 발생했습니다: " + e.getMessage());
         }
-
-        MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
-        mindmapSseService.broadcastUpdate(mapId, responseDto);
-        return responseDto;
     }
 
-    // TODO: webhook을 통한 업데이트
+    /**
+     * 마인드맵 소프트 삭제 - OWNER만 가능
+     */
+    @Transactional
+    public void deleteMindmap(Long mapId, Long userId, String authorizationHeader) {
+        if (!mindmapAuthService.isOwner(mapId, userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+
+        try {
+            fastApiClient.deleteMindmapData(mindmap.getRepo().getGithubRepoUrl(), authorizationHeader);
+            log.info("ArangoDB 데이터 삭제 완료: {}", mindmap.getRepo().getGithubRepoUrl());
+        } catch (Exception e) {
+            log.error("ArangoDB 데이터 삭제 실패, 마인드맵 소프트 삭제는 계속 진행: {}", e.getMessage());
+        }
+
+        // 소프트 삭제 수행
+        mindmap.softDelete();
+        log.info("마인드맵 소프트 삭제 완료: {}", mapId);
+    }
+
+    /**
+     * Webhook을 통한 마인드맵 업데이트
+     */
     @Transactional
     public void updateMindmapFromWebhook(WebhookUpdateDto dto, String authorizationHeader) {
         Repo repo = repoRepository.findByGithubRepoUrl(dto.getRepoUrl())
             .orElseThrow(() -> new GlobalException(ErrorCode.REPO_NOT_FOUND_BY_URL));
 
-        List<Mindmap> mindmapsToUpdate = repo.getMindmaps();
+        // 삭제되지 않은 마인드맵만 업데이트
+        List<Mindmap> mindmapsToUpdate = repo.getMindmaps().stream()
+            .filter(mindmap -> !mindmap.isDeleted())
+            .toList();
 
         repo.updateWithWebhookData(dto);
 
         for (Mindmap mindmap : mindmapsToUpdate) {
             mindmap.updateMapData(dto.getMapData());
-            MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
+            MindmapDetailResponseDto responseDto = buildDetailResponseDtoWithSeparatedMappers(mindmap);
             mindmapSseService.broadcastUpdate(mindmap.getId(), responseDto);
 
             log.info("Webhook으로 마인드맵 ID {} 업데이트 및 SSE 전송 완료", mindmap.getId());
         }
     }
 
-    /**
-     * 마인드맵 삭제 - ArangoDB 데이터도 함께 삭제
-     */
-    @Transactional
-    public void deleteMindmap(Long mapId, Long userId, String authorizationHeader) {
-        Mindmap mindmap = mindmapRepository.findById(mapId)
-            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
-
-        if (!mindmap.getUser().getId().equals(userId)) {
-            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
-        }
-
-        try {
-            fastApiClient.deleteMindmapData(mindmap.getRepo().getGithubRepoUrl(), authorizationHeader);
-            log.info("ArangoDB 데이터 삭제 완료: {}", mindmap.getRepo().getGithubRepoUrl());
-        } catch (Exception e) {
-            log.error("ArangoDB 데이터 삭제 실패, MySQL 삭제는 계속 진행: {}", e.getMessage());
-        }
-
-        mindmapRepository.delete(mindmap);
-        log.info("마인드맵 삭제 완료: {}", mapId);
-    }
-
-
 // === Private Helper Methods ===
 
     /**
-     * DEV 타입 마인드맵 생성 - FastAPI에서 프롬프트 기반 제목도 생성
+     * 분리된 매퍼들을 조합하여 상세 응답 DTO 생성
      */
-    private MindmapCreationResultDto createDevMindmap(String repoUrl, String prompt, String authorizationHeader) {
-        log.info("DEV 타입 마인드맵 생성 시작 - repoUrl: {}, prompt: {}", repoUrl, prompt);
+    private MindmapDetailResponseDto buildDetailResponseDtoWithSeparatedMappers(Mindmap mindmap) {
+        // PromptHistoryService를 통해 프롬프트 히스토리 조회 (이미 매퍼 적용됨)
+        List<PromptHistoryResponseDto> historyDtos = promptHistoryService.getPromptHistories(
+            mindmap.getId(), mindmap.getUser().getId());
 
+        // 현재 적용된 프롬프트 히스토리 조회 (이미 매퍼 적용됨)
+        PromptHistoryResponseDto appliedHistory = promptHistoryService.getAppliedPromptHistory(mindmap.getId());
+
+        // MindmapMapper를 사용하여 조합
+        return mindmapMapper.toDetailResponseDtoWithHistory(mindmap, historyDtos, appliedHistory);
+    }
+
+    private Repo processRepository(String repoUrl, String authHeader) {
         Optional<Repo> existingRepo = repoRepository.findByGithubRepoUrl(repoUrl);
         Repo repo;
 
         if (existingRepo.isPresent()) {
             repo = existingRepo.get();
-            log.info("기존 저장소 발견 (DEV): {}", repoUrl);
+            log.info("기존 저장소 발견: {}", repoUrl);
 
-            if (shouldUpdateRepo(repo, authorizationHeader)) {
-                log.info("저장소 업데이트 필요 (DEV): {}", repoUrl);
-                fastApiClient.saveRepoInfo(repoUrl, authorizationHeader);
-                fastApiClient.fetchRepo(repoUrl, authorizationHeader);
+            if (shouldUpdateRepo(repo, authHeader)) {
+                log.info("저장소 업데이트 필요: {}", repoUrl);
+                fastApiClient.saveRepoInfo(repoUrl, authHeader);
+                fastApiClient.fetchRepo(repoUrl, authHeader);
             }
         } else {
-            log.info("새 저장소 (DEV): {}", repoUrl);
+            log.info("새 저장소: {}", repoUrl);
             repo = Repo.builder().githubRepoUrl(repoUrl).build();
-            fastApiClient.saveRepoInfo(repoUrl, authorizationHeader);
-            fastApiClient.fetchRepo(repoUrl, authorizationHeader);
+            fastApiClient.saveRepoInfo(repoUrl, authHeader);
+            fastApiClient.fetchRepo(repoUrl, authHeader);
         }
 
+        return repo;
+    }
+
+    /**
+     * FastAPI를 통한 분석 수행 및 AI 생성 제목과 맵 데이터 획득
+     */
+    private AnalysisResultDto generateMapDataWithAnalysis(String repoUrl, String prompt, String authHeader) {
         try {
-            // DEV 전용 분석 - FastAPI에서 프롬프트를 요약한 제목까지 반환받음
-            AnalysisResultDto analysisResult = fastApiClient.analyzeWithAi(repoUrl, prompt, MindmapType.DEV, authorizationHeader);
-            repo.updateWithAnalysis(analysisResult);
-            repoRepository.save(repo);
+            AnalysisResultDto analysisResult;
+            if (StringUtils.hasText(prompt)) {
+                // 프롬프트가 있는 경우 - AI가 맞춤형 분석 및 제목 생성
+                analysisResult = fastApiClient.analyzeWithPrompt(repoUrl, prompt, authHeader);
+                log.info("프롬프트 기반 AI 분석 완료 - 생성된 제목: {}", analysisResult.getTitle());
+            } else {
+                // 프롬프트가 없는 경우 - 기본 분석 (제목 생성 안됨)
+                analysisResult = fastApiClient.analyzeDefault(repoUrl, authHeader);
+                log.info("기본 분석 완료 - AI 제목 생성 없음");
+            }
 
-            // FastAPI에서 생성한 제목 사용
-            return new MindmapCreationResultDto(repo, analysisResult.getMapData(), analysisResult.getField());
-
+            return analysisResult;
         } catch (Exception e) {
-            log.error("DEV 분석 실패: {}", e.getMessage(), e);
-            throw new RuntimeException("개발 방향성 분석 중 오류가 발생했습니다: " + e.getMessage());
+            log.error("마인드맵 데이터 생성 실패: {}", e.getMessage(), e);
+
+            // 분석 실패 시 예외를 다시 던져서 상위에서 처리하도록 함
+            // 에러 메시지는 로그와 예외로만 관리
+            throw new RuntimeException("FastAPI 분석 실패: " + e.getMessage(), e);
         }
     }
 
     /**
-     * CHECK 타입 마인드맵 생성
+     * AI 생성 제목 결정 로직
+     * 1. 프롬프트 있고 AI 제목 생성 성공 → AI 제목 사용
+     * 2. 프롬프트 없거나 AI 제목 생성 실패 → 자동 번호 제목
      */
-    private MindmapCreationResultDto createCheckMindmap(String repoUrl, String userField, User user, String authorizationHeader) {
-        log.info("CHECK 타입 마인드맵 생성 시작 - repoUrl: {}, field: {}", repoUrl, userField);
-
-        Optional<Repo> existingRepo = repoRepository.findByGithubRepoUrl(repoUrl);
-        Repo repo;
-        String mapData;
-
-        if (existingRepo.isPresent()) {
-            repo = existingRepo.get();
-            log.info("기존 저장소 발견 (CHECK): {}", repoUrl);
-
-            if (shouldUpdateRepo(repo, authorizationHeader)) {
-                log.info("저장소 업데이트 필요 (CHECK): {}", repoUrl);
-                fastApiClient.saveRepoInfo(repoUrl, authorizationHeader);
-                fastApiClient.fetchRepo(repoUrl, authorizationHeader);
-                AnalysisResultDto analysisResult = fastApiClient.analyzeWithAi(repoUrl, null, MindmapType.CHECK, authorizationHeader);
-                repo.updateWithAnalysis(analysisResult);
-                mapData = analysisResult.getMapData();
-            } else {
-                log.info("저장소가 최신 상태 (CHECK), ArangoDB에서 기존 데이터 조회: {}", repoUrl);
-                mapData = getMapDataFromArangoDB(repoUrl, authorizationHeader);
-            }
-        } else {
-            log.info("새 저장소 (CHECK): {}", repoUrl);
-            repo = Repo.builder().githubRepoUrl(repoUrl).build();
-            fastApiClient.saveRepoInfo(repoUrl, authorizationHeader);
-            fastApiClient.fetchRepo(repoUrl, authorizationHeader);
-            AnalysisResultDto analysisResult = fastApiClient.analyzeWithAi(repoUrl, null, MindmapType.CHECK, authorizationHeader);
-            repo.updateWithAnalysis(analysisResult);
-            mapData = analysisResult.getMapData();
+    private String determineAIGeneratedTitle(AnalysisResultDto analysisResult, User user) {
+        // AI가 제목을 성공적으로 생성한 경우
+        if (analysisResult != null && StringUtils.hasText(analysisResult.getTitle())) {
+            log.info("AI 생성 제목 사용: {}", analysisResult.getTitle());
+            return analysisResult.getTitle();
         }
 
-        repoRepository.save(repo);
+        // AI 제목 생성 실패 또는 프롬프트 없는 경우 → 자동 번호 제목
+        long userMindmapCount = mindmapRepository.countByUserAndDeletedAtIsNull(user);
+        String defaultTitle = "마인드맵 " + (userMindmapCount + 1);
 
-        // CHECK 타입 제목 결정
-        String field;
-        if (StringUtils.hasText(userField)) {
-            field = userField;
-        } else {
-            long nextSeq = findNextCheckSequence(user);
-            field = "확인용 (" + nextSeq + ")";
-        }
-
-        return new MindmapCreationResultDto(repo, mapData, field);
+        log.info("기본 제목 사용: {}", defaultTitle);
+        return defaultTitle;
     }
 
-    private boolean shouldUpdateRepo(Repo repo, String authorizationHeader) {
+    private boolean shouldUpdateRepo(Repo repo, String authHeader) {
         try {
-            LocalDateTime githubLastCommit = fastApiClient.getRepositoryLastCommitTime(repo.getGithubRepoUrl(), authorizationHeader);
+            LocalDateTime githubLastCommit = fastApiClient.getRepositoryLastCommitTime(repo.getGithubRepoUrl(), authHeader);
 
             if (repo.getGithubLastUpdatedAt() == null) {
                 return true;
@@ -305,9 +322,9 @@ public class MindmapService {
         }
     }
 
-    private String getMapDataFromArangoDB(String repoUrl, String authorizationHeader) {
+    private String getMapDataFromArangoDB(String repoUrl, String authHeader) {
         try {
-            MindmapGraphDto graphData = fastApiClient.getMindmapGraph(repoUrl, authorizationHeader);
+            MindmapGraphDto graphData = fastApiClient.getMindmapGraph(repoUrl, authHeader);
             return graphData != null ? objectMapper.writeValueAsString(graphData) : "{}";
         } catch (Exception e) {
             log.warn("ArangoDB 데이터 조회 실패: {}", e.getMessage());
@@ -327,6 +344,20 @@ public class MindmapService {
         }
     }
 
+    /**
+     * 현재 적용된 프롬프트 문자열 조회 (수정됨)
+     */
+    private String getLatestAppliedPrompt(Mindmap mindmap) {
+        PromptHistoryResponseDto appliedHistory = promptHistoryService.getAppliedPromptHistory(mindmap.getId());
+
+        // null 체크 후 프롬프트 반환
+        if (appliedHistory != null) {
+            return appliedHistory.getPrompt();
+        }
+
+        return null;
+    }
+
     private String normalizeRepoUrl(String url) {
         if (url == null || url.trim().isEmpty()) {
             throw new IllegalArgumentException("Repository URL cannot be null or empty");
@@ -338,21 +369,4 @@ public class MindmapService {
             .replaceAll("\\.git$", "");
     }
 
-    private long findNextCheckSequence(User user) {
-        Optional<Mindmap> lastCheckMindmap = mindmapRepository.findTopByUserAndTypeOrderByCreatedAtDesc(user);
-
-        if (lastCheckMindmap.isEmpty()) {
-            return 1;
-        }
-
-        Pattern pattern = Pattern.compile("\\((\\d+)\\)");
-        Matcher matcher = pattern.matcher(lastCheckMindmap.get().getField());
-
-        if (matcher.find()) {
-            long lastSeq = Long.parseLong(matcher.group(1));
-            return lastSeq + 1;
-        }
-
-        return 1;
-    }
 }

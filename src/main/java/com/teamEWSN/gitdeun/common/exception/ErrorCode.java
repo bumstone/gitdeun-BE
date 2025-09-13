@@ -45,6 +45,10 @@ public enum ErrorCode {
     // 마인드맵 관련
     MINDMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "MINDMAP-001", "요청한 마인드맵을 찾을 수 없습니다."),
 
+    // 프롬프트 히스토리 관련 (신규 추가)
+    PROMPT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PROMPT-001", "요청한 프롬프트 히스토리를 찾을 수 없습니다."),
+    CANNOT_DELETE_APPLIED_PROMPT(HttpStatus.BAD_REQUEST, "PROMPT-002", "적용된 프롬프트 히스토리는 삭제할 수 없습니다."),
+
     // 멤버 관련
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER-001", "해당 멤버를 찾을 수 없습니다."),
     MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "MEMBER-002", "이미 마인드맵에 등록된 멤버입니다."),
