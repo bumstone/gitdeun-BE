@@ -9,16 +9,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Slf4j
 @RestController
-@RequestMapping("/api/history/{historyId}/mindmaps/pinned")
+@RequestMapping("/api/history")
 @RequiredArgsConstructor
 public class PinnedHistoryController {
 
     private final PinnedHistoryService pinnedHistoryService;
 
     // 핀 고정
-    @PostMapping
+    @PostMapping("/{historyId}/pin")
     public ResponseEntity<Void> fixPinned(
         @PathVariable("historyId") Long historyId,
         @AuthenticationPrincipal CustomUserDetails customUserDetails
@@ -28,7 +30,7 @@ public class PinnedHistoryController {
     }
 
     // 핀 해제
-    @DeleteMapping
+    @DeleteMapping("/{historyId}/pin")
     public ResponseEntity<Void> removePinned(
         @PathVariable("historyId") Long historyId,
         @AuthenticationPrincipal CustomUserDetails customUserDetails

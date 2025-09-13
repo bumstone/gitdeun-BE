@@ -14,9 +14,9 @@ import java.util.List;
 @Repository
 public interface VisitHistoryRepository extends JpaRepository<VisitHistory, Long> {
 
-    // 사용자의 핀 고정되지 않은 방문 기록을 최신순으로 조회
+    // 삭제되지 않은 마인드맵의 핀 고정되지 않은 방문 기록을 최신순으로 조회
     @Query("SELECT v FROM VisitHistory v LEFT JOIN v.pinnedHistorys p " +
-        "WHERE v.user = :user AND p IS NULL " +
+        "WHERE v.user = :user AND p IS NULL AND v.mindmap.deletedAt IS NULL " +
         "ORDER BY v.lastVisitedAt DESC")
-    Page<VisitHistory> findUnpinnedHistoriesByUser(@Param("user") User user, Pageable pageable);
+    Page<VisitHistory> findUnpinnedHistoriesByUserAndNotDeletedMindmap(@Param("user") User user, Pageable pageable);
 }
