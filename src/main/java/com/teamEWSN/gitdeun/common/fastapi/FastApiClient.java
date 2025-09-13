@@ -2,7 +2,6 @@ package com.teamEWSN.gitdeun.common.fastapi;
 
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.common.fastapi.dto.MindmapGraphDto;
-import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -38,10 +37,24 @@ public class FastApiClient {
     }
 
     /**
-     * FastAPI 서버에 리포지토리 분석을 요청 (AI 기반)
+     * FastAPI 서버에 리포지토리 프롬프트 기반 마인드맵 분석
      */
-    public AnalysisResultDto analyzeWithAi(String repoUrl, String prompt, MindmapType type, String authorizationHeader) {
-        AnalysisRequest requestBody = new AnalysisRequest(repoUrl, prompt, type);
+    public AnalysisResultDto analyzeWithPrompt(String repoUrl, String prompt, String authorizationHeader) {
+        AnalysisRequest requestBody = new AnalysisRequest(repoUrl, prompt);
+        return webClient.post()
+            .uri("/mindmap/analyze-prompt")
+            .header("Authorization", authorizationHeader)
+            .body(Mono.just(requestBody), AnalysisRequest.class)
+            .retrieve()
+            .bodyToMono(AnalysisResultDto.class)
+            .block();
+    }
+
+    /**
+     * 기본 마인드맵 분석 (프롬프트 X)
+     */
+    public AnalysisResultDto analyzeDefault(String repoUrl, String authorizationHeader) {
+        AnalysisRequest requestBody = new AnalysisRequest(repoUrl, null);
         return webClient.post()
             .uri("/mindmap/analyze-ai")
             .header("Authorization", authorizationHeader)
@@ -113,8 +126,7 @@ public class FastApiClient {
     @AllArgsConstructor
     private static class AnalysisRequest {
         private String repo_url;
-        private String prompt;
-        private MindmapType mode; // FastAPI 모델의 필드명(mode)과 일치
+        private String prompt;     // nullable
     }
 
     @Getter
