@@ -16,7 +16,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 방문 기록 핀 고정/해제에 대한 실시간 알림 서비스
  * - 사용자별 SSE 연결 관리
  * - 핀 상태 변경 시 실시간 브로드캐스트
- * - 핀 개수 제한 알림
  */
 @Slf4j
 @Service
@@ -95,66 +94,6 @@ public class VisitHistoryBroadcastService {
     }
 
     /**
-     * 핀 개수 제한 도달 알림
-     */
-    public void broadcastPinLimitWarning(Long userId) {
-        Map<String, Object> warningData = Map.of(
-            "type", "pin_limit_warning",
-            "message", "핀 고정은 최대 8개까지 가능합니다.",
-            "currentCount", 8,
-            "maxCount", 8
-        );
-
-        broadcastToUser(userId, "pin_limit_warning", warningData);
-    }
-
-    /**
-     * 방문 기록 생성 알림 (선택적)
-     */
-    public void broadcastVisitHistoryCreated(Long userId, Long mindmapId, String mindmapTitle) {
-        Map<String, Object> eventData = Map.of(
-            "type", "visit_history_created",
-            "mindmapId", mindmapId,
-            "mindmapTitle", mindmapTitle,
-            "message", "새로운 방문 기록이 추가되었습니다."
-        );
-
-        broadcastToUser(userId, "visit_history_created", eventData);
-    }
-
-    /**
-     * 특정 사용자에게 이벤트 브로드캐스트
-     */
-    private void broadcastToUser(Long userId, String eventName, Object data) {
-        CopyOnWriteArrayList<SseEmitter> connections = userConnections.get(userId);
-
-        if (connections == null || connections.isEmpty()) {
-            return;
-        }
-
-        try {
-            String jsonData = objectMapper.writeValueAsString(data);
-
-            CopyOnWriteArrayList<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
-
-            connections.forEach(emitter -> {
-                try {
-                    emitter.send(SseEmitter.event()
-                        .name(eventName)
-                        .data(jsonData));
-                } catch (IOException e) {
-                    deadEmitters.add(emitter);
-                }
-            });
-
-            deadEmitters.forEach(emitter -> removeConnection(userId, emitter));
-
-        } catch (Exception e) {
-            log.error("사용자 브로드캐스트 실패 - 사용자 ID: {}, 이벤트: {}", userId, eventName, e);
-        }
-    }
-
-    /**
      * 개별 emitter에게 메시지 전송
      */
     private void sendToEmitter(SseEmitter emitter) {
@@ -182,28 +121,4 @@ public class VisitHistoryBroadcastService {
         }
     }
 
-    /**
-     * 활성 연결 수 조회
-     */
-    public int getConnectionCount(Long userId) {
-        CopyOnWriteArrayList<SseEmitter> connections = userConnections.get(userId);
-        return connections != null ? connections.size() : 0;
-    }
-
-    /**
-     * 사용자의 모든 연결 해제
-     */
-    public void disconnectUser(Long userId) {
-        CopyOnWriteArrayList<SseEmitter> connections = userConnections.remove(userId);
-        if (connections != null) {
-            connections.forEach(emitter -> {
-                try {
-                    emitter.complete();
-                } catch (Exception e) {
-                    log.debug("SSE 연결 종료 처리 실패", e);
-                }
-            });
-            log.info("사용자 ID {} 의 모든 방문기록 SSE 연결 강제 해제", userId);
-        }
-    }
 }
