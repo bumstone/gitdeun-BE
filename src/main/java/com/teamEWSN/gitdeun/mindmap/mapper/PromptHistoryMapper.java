@@ -30,14 +30,4 @@ public interface PromptHistoryMapper {
      */
     List<PromptHistoryResponseDto> toResponseDtoList(List<PromptHistory> promptHistories);
 
-    /**
-     * 적용된 프롬프트 히스토리만 필터링하여 변환
-     */
-    default PromptHistoryResponseDto toAppliedResponseDto(List<PromptHistory> promptHistories) {
-        return promptHistories.stream()
-            .filter(PromptHistory::getApplied)
-            .findFirst()
-            .map(this::toResponseDto)
-            .orElse(null);
-    }
 }

@@ -2,6 +2,7 @@ package com.teamEWSN.gitdeun.mindmap.repository;
 
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.user.entity.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,13 +23,7 @@ public interface MindmapRepository extends JpaRepository<Mindmap, Long> {
     /**
      * 삭제되지 않은 마인드맵 조회
      */
-    @Query("SELECT m FROM Mindmap m WHERE m.id = :id AND m.deletedAt IS NULL")
-    Optional<Mindmap> findByIdAndNotDeleted(@Param("id") Long id);
-
-    /**
-     * 삭제되지 않은 마인드맵 목록 조회
-     */
-    @Query("SELECT m FROM Mindmap m WHERE m.user = :user AND m.deletedAt IS NULL ORDER BY m.updatedAt DESC")
-    List<Mindmap> findByUserAndNotDeleted(@Param("user") User user);
+    @EntityGraph(value = "Mindmap.detail", type = EntityGraph.EntityGraphType.LOAD)
+    Optional<Mindmap> findByIdAndDeletedAtIsNull(Long id);
 
 }

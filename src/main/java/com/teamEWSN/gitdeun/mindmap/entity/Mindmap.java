@@ -18,6 +18,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "mindmap")
+@NamedEntityGraph(
+    name = "Mindmap.detail",
+    attributeNodes = {
+        @NamedAttributeNode("repo"),
+        @NamedAttributeNode("promptHistories")
+    }
+)
 public class Mindmap extends AuditedEntity {
 
     @Id

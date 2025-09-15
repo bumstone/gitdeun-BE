@@ -10,7 +10,7 @@ import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = { PromptHistoryMapper.class })
 public interface MindmapMapper {
 
     /**
@@ -24,17 +24,8 @@ public interface MindmapMapper {
      * 마인드맵 상세 정보 매핑 (프롬프트 히스토리 제외)
      */
     @Mapping(source = "id", target = "mindmapId")
-    MindmapDetailResponseDto toDetailResponseDto(Mindmap mindmap);
-
-    /**
-     * 마인드맵 상세 정보 + 프롬프트 히스토리 매핑
-     */
-    @Mapping(source = "id", target = "mindmapId")
     @Mapping(source = "promptHistories", target = "promptHistories")
     @Mapping(source = "appliedPromptHistory", target = "appliedPromptHistory")
-    MindmapDetailResponseDto toDetailResponseDtoWithHistory(
-        Mindmap mindmap,
-        List<PromptHistoryResponseDto> promptHistories,
-        PromptHistoryResponseDto appliedPromptHistory
-    );
+    MindmapDetailResponseDto toDetailResponseDto(Mindmap mindmap);
+
 }

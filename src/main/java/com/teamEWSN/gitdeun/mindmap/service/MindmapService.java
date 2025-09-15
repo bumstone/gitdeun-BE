@@ -8,8 +8,8 @@ import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.common.fastapi.dto.MindmapGraphDto;
 import com.teamEWSN.gitdeun.common.webhook.dto.WebhookUpdateDto;
 import com.teamEWSN.gitdeun.mindmap.dto.*;
-import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptHistoryResponseDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
+import com.teamEWSN.gitdeun.mindmap.entity.PromptHistory;
 import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
 import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapMember;
 import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapRole;
@@ -90,7 +90,7 @@ public class MindmapService {
     }
 
     /**
-     * 마인드맵 상세 정보 조회 - ArangoDB와 동기화된 최신 데이터 반환
+     * 마인드맵 상세 정보 조회
      */
     @Transactional
     public MindmapDetailResponseDto getMindmap(Long mapId, Long userId, String authorizationHeader) {
@@ -98,30 +98,31 @@ public class MindmapService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         syncWithArangoDB(mindmap, authorizationHeader);
 
-        return buildDetailResponseDtoWithSeparatedMappers(mindmap);
+        return mindmapMapper.toDetailResponseDto(mindmap);
     }
 
     /**
-     * 마인드맵 제목 수정 - EDIT 권한 필요
+     * 마인드맵 제목 수정
      */
     @Transactional
     public MindmapDetailResponseDto updateMindmapTitle(Long mapId, Long userId, MindmapTitleUpdateDto req) {
+
+        // EDIT 권한 필요
         if (!mindmapAuthService.hasEdit(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         mindmap.updateTitle(req.getTitle());
 
-        // 분리된 매퍼 활용
-        MindmapDetailResponseDto responseDto = buildDetailResponseDtoWithSeparatedMappers(mindmap);
+        MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
 
         // 제목 변경만 별도 브로드캐스트
         mindmapSseService.broadcastTitleChanged(mapId, req.getTitle());
@@ -131,15 +132,17 @@ public class MindmapService {
     }
 
     /**
-     * 마인드맵 새로고침 - EDIT 권한 필요
+     * 마인드맵 새로고침
      */
     @Transactional
     public MindmapDetailResponseDto refreshMindmap(Long mapId, Long userId, String authorizationHeader) {
-        if (!mindmapAuthService.hasEdit(mapId, userId)) {
+
+        // 마인드맵 멤버 확인
+        if (!mindmapAuthService.hasView(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
@@ -150,11 +153,11 @@ public class MindmapService {
             fastApiClient.fetchRepo(repoUrl, authorizationHeader);
 
             // 현재 적용된 프롬프트 확인
-            String latestPrompt = getLatestAppliedPrompt(mindmap);
+            PromptHistory appliedPrompt = mindmap.getAppliedPromptHistory();
             AnalysisResultDto analysisResult;
 
-            if (StringUtils.hasText(latestPrompt)) {
-                analysisResult = fastApiClient.analyzeWithPrompt(repoUrl, latestPrompt, authorizationHeader);
+            if (appliedPrompt != null && StringUtils.hasText(appliedPrompt.getPrompt())) {
+                analysisResult = fastApiClient.analyzeWithPrompt(repoUrl, appliedPrompt.getPrompt(), authorizationHeader);
             } else {
                 analysisResult = fastApiClient.analyzeDefault(repoUrl, authorizationHeader);
             }
@@ -162,7 +165,7 @@ public class MindmapService {
             mindmap.getRepo().updateWithAnalysis(analysisResult);
             mindmap.updateMapData(analysisResult.getMapData());
 
-            MindmapDetailResponseDto responseDto = buildDetailResponseDtoWithSeparatedMappers(mindmap);
+            MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
             mindmapSseService.broadcastUpdate(mapId, responseDto);
 
             return responseDto;
@@ -174,15 +177,17 @@ public class MindmapService {
     }
 
     /**
-     * 마인드맵 소프트 삭제 - OWNER만 가능
+     * 마인드맵 소프트 삭제
      */
     @Transactional
     public void deleteMindmap(Long mapId, Long userId, String authorizationHeader) {
+
+        // Owner만 가능
         if (!mindmapAuthService.isOwner(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         try {
@@ -214,7 +219,7 @@ public class MindmapService {
 
         for (Mindmap mindmap : mindmapsToUpdate) {
             mindmap.updateMapData(dto.getMapData());
-            MindmapDetailResponseDto responseDto = buildDetailResponseDtoWithSeparatedMappers(mindmap);
+            MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
             mindmapSseService.broadcastUpdate(mindmap.getId(), responseDto);
 
             log.info("Webhook으로 마인드맵 ID {} 업데이트 및 SSE 전송 완료", mindmap.getId());
@@ -222,21 +227,6 @@ public class MindmapService {
     }
 
 // === Private Helper Methods ===
-
-    /**
-     * 분리된 매퍼들을 조합하여 상세 응답 DTO 생성
-     */
-    private MindmapDetailResponseDto buildDetailResponseDtoWithSeparatedMappers(Mindmap mindmap) {
-        // PromptHistoryService를 통해 프롬프트 히스토리 조회 (이미 매퍼 적용됨)
-        List<PromptHistoryResponseDto> historyDtos = promptHistoryService.getPromptHistories(
-            mindmap.getId(), mindmap.getUser().getId());
-
-        // 현재 적용된 프롬프트 히스토리 조회 (이미 매퍼 적용됨)
-        PromptHistoryResponseDto appliedHistory = promptHistoryService.getAppliedPromptHistory(mindmap.getId());
-
-        // MindmapMapper를 사용하여 조합
-        return mindmapMapper.toDetailResponseDtoWithHistory(mindmap, historyDtos, appliedHistory);
-    }
 
     private Repo processRepository(String repoUrl, String authHeader) {
         Optional<Repo> existingRepo = repoRepository.findByGithubRepoUrl(repoUrl);
@@ -342,20 +332,6 @@ public class MindmapService {
         } catch (Exception e) {
             log.warn("ArangoDB 동기화 실패: {}", e.getMessage());
         }
-    }
-
-    /**
-     * 현재 적용된 프롬프트 문자열 조회 (수정됨)
-     */
-    private String getLatestAppliedPrompt(Mindmap mindmap) {
-        PromptHistoryResponseDto appliedHistory = promptHistoryService.getAppliedPromptHistory(mindmap.getId());
-
-        // null 체크 후 프롬프트 반환
-        if (appliedHistory != null) {
-            return appliedHistory.getPrompt();
-        }
-
-        return null;
     }
 
     private String normalizeRepoUrl(String url) {

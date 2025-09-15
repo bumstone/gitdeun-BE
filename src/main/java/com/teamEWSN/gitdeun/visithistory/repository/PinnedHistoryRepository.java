@@ -2,8 +2,7 @@ package com.teamEWSN.gitdeun.visithistory.repository;
 
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.visithistory.entity.PinnedHistory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -45,6 +44,7 @@ public interface PinnedHistoryRepository extends JpaRepository<PinnedHistory, Lo
         "WHERE p.user.id = :userId AND v.id = :historyId AND m.deletedAt IS NULL")
     boolean existsByUserIdAndVisitHistoryIdAndNotDeletedMindmap(@Param("userId") Long userId, @Param("historyId") Long historyId);
 
+    @EntityGraph(attributePaths = {"mindmap", "mindmap.repo"})
     Optional<PinnedHistory> findByUserIdAndVisitHistoryId(Long userId, Long historyId);
 
 }
