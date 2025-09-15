@@ -18,7 +18,7 @@ public interface RecruitmentRepository extends JpaRepository<Recruitment, Long>,
     List<Recruitment> findAllByStatusAndEndAtBefore(RecruitmentStatus status, LocalDateTime now);
 
     // 내 공고 목록 조회
-    @EntityGraph(attributePaths = {"user"})
+    @EntityGraph(attributePaths = {"recruiter"})
     Page<Recruitment> findByRecruiterId(Long recruiterId, Pageable pageable);
 
     // 상태 기반 조회(추천 시)

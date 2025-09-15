@@ -79,7 +79,7 @@ public class RecruitmentService {
         List<RecruitmentListResponseDto> content = recruitmentPage.getContent().stream()
             .map(recruitment -> {
                 RecruitmentListResponseDto dto = recruitmentMapper.toListResponseDto(recruitment);
-                // 썸네일 URL 설정 (필요시)
+                // 썸네일 URL 설정
                 return addThumbnailUrl(dto, recruitment.getRecruitmentImages());
             })
             .collect(Collectors.toList());
