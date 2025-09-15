@@ -16,10 +16,11 @@ import com.teamEWSN.gitdeun.mindmap.repository.PromptHistoryRepository;
 import com.teamEWSN.gitdeun.mindmapmember.service.MindmapAuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Slf4j
 @Service
@@ -42,7 +43,7 @@ public class PromptHistoryService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
@@ -50,10 +51,18 @@ public class PromptHistoryService {
         try {
             AnalysisResultDto analysisResult = fastApiClient.analyzeWithPrompt(repoUrl, req.getPrompt(), authorizationHeader);
 
+            // FastAPI로부터 받은 analysisSummary 사용
+            String summary = analysisResult.getTitle();
+
+            // analysisSummary가 없거나 비어있는 경우 대체 로직 사용
+            if (summary == null || summary.trim().isEmpty()) {
+                summary = generateFallbackSummary(req.getPrompt());
+            }
+
             PromptHistory history = PromptHistory.builder()
                 .mindmap(mindmap)
                 .prompt(req.getPrompt())
-                .resultSummary(generateResultSummary(req.getPrompt()))
+                .title(summary)
                 .mapData(analysisResult.getMapData())
                 .applied(false)
                 .build();
@@ -75,18 +84,17 @@ public class PromptHistoryService {
      * 프롬프트 히스토리 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<PromptHistoryResponseDto> getPromptHistories(Long mapId, Long userId) {
+    public Page<PromptHistoryResponseDto> getPromptHistories(Long mapId, Long userId, Pageable pageable) {
         if (!mindmapAuthService.hasView(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        mindmapRepository.findByIdAndNotDeleted(mapId)
+        mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
-        List<PromptHistory> histories = promptHistoryRepository.findByMindmapIdOrderByCreatedAtDesc(mapId);
+        Page<PromptHistory> historiesPage = promptHistoryRepository.findByMindmapIdOrderByCreatedAtDesc(mapId, pageable);
 
-        // 매퍼 활용으로 수동 변환 코드 제거
-        return promptHistoryMapper.toResponseDtoList(histories);
+        return historiesPage.map(promptHistoryMapper::toResponseDto);
     }
 
     /**
@@ -98,7 +106,7 @@ public class PromptHistoryService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        mindmapRepository.findByIdAndNotDeleted(mapId)
+        mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         PromptHistory history = promptHistoryRepository.findByIdAndMindmapId(historyId, mapId)
@@ -112,7 +120,11 @@ public class PromptHistoryService {
      * 현재 적용된 프롬프트 히스토리 조회
      */
     @Transactional(readOnly = true)
-    public PromptHistoryResponseDto getAppliedPromptHistory(Long mapId) {
+    public PromptHistoryResponseDto getAppliedPromptHistory(Long mapId, Long userId) {
+        if (!mindmapAuthService.hasView(mapId, userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
         return promptHistoryRepository.findAppliedPromptByMindmapId(mapId)
             .map(promptHistoryMapper::toResponseDto)
             .orElse(null);
@@ -126,7 +138,7 @@ public class PromptHistoryService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         PromptHistory historyToApply = promptHistoryRepository.findByIdAndMindmapId(req.getHistoryId(), mapId)
@@ -134,7 +146,15 @@ public class PromptHistoryService {
 
         mindmap.applyPromptHistory(historyToApply);
 
-        log.info("프롬프트 히스토리 적용 완료 - 마인드맵 ID: {}, 히스토리 ID: {}", mapId, req.getHistoryId());
+        // 마인드맵 제목도 프롬프트 타이틀로 업데이트
+        mindmap.updateTitle(historyToApply.getTitle());
+
+        log.info("프롬프트 히스토리 적용 완료 - 마인드맵 ID: {}, 히스토리 ID: {}, 제목 변경: {}",
+            mapId, req.getHistoryId(), historyToApply.getTitle());
+
+        // 제목 변경 브로드캐스트 추가
+        mindmapSseService.broadcastTitleChanged(mapId, historyToApply.getTitle());
+
 
         mindmapSseService.broadcastPromptApplied(mapId, historyToApply.getId());
     }
@@ -147,7 +167,7 @@ public class PromptHistoryService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        mindmapRepository.findByIdAndNotDeleted(mapId)
+        mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         PromptHistory history = promptHistoryRepository.findByIdAndMindmapId(historyId, mapId)
@@ -164,12 +184,12 @@ public class PromptHistoryService {
     /**
      * 마인드맵 생성 시 초기 프롬프트 히스토리 생성
      */
-    public void createInitialPromptHistory(Mindmap mindmap, String prompt, String mapData) {
+    public void createInitialPromptHistory(Mindmap mindmap, String prompt, String mapData, String promptTitle) {
         if (prompt != null && !prompt.trim().isEmpty()) {
             PromptHistory history = PromptHistory.builder()
                 .mindmap(mindmap)
                 .prompt(prompt)
-                .resultSummary(generateResultSummary(prompt))
+                .title(promptTitle)
                 .mapData(mapData)
                 .applied(true)
                 .build();
@@ -180,14 +200,14 @@ public class PromptHistoryService {
     }
 
     /**
-     * 프롬프트 결과 요약 생성
+     * 프롬프트 결과 대체 요약 생성
      */
-    private String generateResultSummary(String prompt) {
+    private String generateFallbackSummary(String prompt) {
         if (prompt == null) {
             return "기본 분석";
         }
 
-        if (prompt.length() > 50) {
+        if (prompt.length() > 24) {
             return prompt.substring(0, 24) + "...";
         }
         return prompt;

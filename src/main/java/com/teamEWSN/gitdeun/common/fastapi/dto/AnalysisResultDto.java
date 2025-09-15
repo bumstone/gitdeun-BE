@@ -14,8 +14,7 @@ public class AnalysisResultDto {
 
     // Mindmap 관련 정보
     private String mapData;     // JSON 형태의 마인드맵 데이터
-    private String title;
+    private String title;   // 프롬프트 및 mindmap 정보 요약
     private String errorMessage;    // 실패 시 전달될 에러메세지
-    private String analysisSummary;
     // TODO: FastAPI 응답에 맞춰 필드 정의
 }

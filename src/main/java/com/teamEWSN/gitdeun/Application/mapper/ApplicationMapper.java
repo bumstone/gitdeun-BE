@@ -22,6 +22,7 @@ public interface ApplicationMapper {
     ApplicationResponseDto toResponseDto(Application application);
 
     @Mapping(source = "id", target = "applicationId")
+    @Mapping(source = "applicant.id", target = "applicantId")
     @Mapping(source = "applicant.name", target = "applicantName")
     @Mapping(source = "applicant.nickname", target = "applicantNickname")
     @Mapping(source = "applicant.profileImage", target = "applicantProfileImage")

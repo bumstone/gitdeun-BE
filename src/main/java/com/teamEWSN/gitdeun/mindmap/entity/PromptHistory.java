@@ -26,8 +26,8 @@ public class PromptHistory extends CreatedEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String prompt;
 
-    @Column(name = "result_summary", length = 500)
-    private String resultSummary;  // 분석 결과 요약 (기록 제목)
+    @Column(length = 50)
+    private String title;  // 분석 결과 요약 (기록 제목)
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "map_data", columnDefinition = "json", nullable = false)

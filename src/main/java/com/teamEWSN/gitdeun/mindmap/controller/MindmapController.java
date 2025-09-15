@@ -10,12 +10,15 @@ import com.teamEWSN.gitdeun.mindmap.service.MindmapService;
 import com.teamEWSN.gitdeun.mindmap.service.PromptHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -129,14 +132,17 @@ public class MindmapController {
     }
 
     /**
-     * 프롬프트 히스토리 목록 조회
+     * 프롬프트 히스토리 목록 조회 (페이징)
      */
     @GetMapping("/{mapId}/prompts/histories")
-    public ResponseEntity<List<PromptHistoryResponseDto>> getPromptHistories(
+    public ResponseEntity<Page<PromptHistoryResponseDto>> getPromptHistories(
         @PathVariable Long mapId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
     ) {
-        List<PromptHistoryResponseDto> responseDto = promptHistoryService.getPromptHistories(mapId, userDetails.getId());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<PromptHistoryResponseDto> responseDto = promptHistoryService.getPromptHistories(mapId, userDetails.getId(), pageable);
         return ResponseEntity.ok(responseDto);
     }
 
@@ -166,4 +172,14 @@ public class MindmapController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * 현재 적용된 프롬프트 히스토리 조회
+     */
+    @GetMapping("/{mapId}/prompts/applied")
+    public ResponseEntity<PromptHistoryResponseDto> getAppliedPromptHistory(
+        @PathVariable Long mapId,
+        @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(promptHistoryService.getAppliedPromptHistory(mapId, userDetails.getId()));
+    }
 }

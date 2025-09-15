@@ -78,7 +78,8 @@ public class MindmapService {
 
         // 5. 초기 프롬프트 히스토리 생성 (프롬프트가 있는 경우)
         if (StringUtils.hasText(req.getPrompt())) {
-            promptHistoryService.createInitialPromptHistory(mindmap, req.getPrompt(), analysisResult.getMapData());
+            promptHistoryService.createInitialPromptHistory(mindmap, req.getPrompt(), analysisResult.getMapData(),
+                analysisResult.getTitle());
         }
 
         // 6. 소유자 등록 및 방문 기록

@@ -20,7 +20,6 @@ public class MindmapSseService {
 
     private final ObjectMapper objectMapper;
 
-    private final Map<String, SseEmitter> userConnections = new ConcurrentHashMap<>();
     private final Map<Long, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
 
     // 타임아웃 설정(1시간)
@@ -33,10 +32,6 @@ public class MindmapSseService {
         SseEmitter emitter = new SseEmitter(TIMEOUT_MS);
 
         emitters.computeIfAbsent(mapId, k -> new CopyOnWriteArrayList<>()).add(emitter);
-
-        // 사용자별 연결 추가 추적
-        String userKey = mapId + "_" + userId;
-        userConnections.put(userKey, emitter);
 
         // 연결 종료 시 정리 (기존 로직 개선)
         emitter.onCompletion(() -> removeEmitter(mapId, userId, emitter));
@@ -143,9 +138,6 @@ public class MindmapSseService {
      * 사용자별 emitter 제거
      */
     private void removeEmitter(Long mapId, Long userId, SseEmitter emitter) {
-        // 사용자별 연결 제거
-        String userKey = mapId + "_" + userId;
-        userConnections.remove(userKey);
 
         // 마인드맵별 연결 제거
         removeEmitterOnly(mapId, emitter);
