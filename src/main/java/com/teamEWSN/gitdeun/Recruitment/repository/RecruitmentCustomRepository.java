@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface RecruitmentCustomRepository {
     Page<Recruitment> searchRecruitments(
+        String keyword,
         RecruitmentStatus status,
         List<RecruitmentField> fields,
         Pageable pageable
