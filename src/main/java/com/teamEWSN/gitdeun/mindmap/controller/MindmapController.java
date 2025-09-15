@@ -96,7 +96,7 @@ public class MindmapController {
     /**
      * 프롬프트 분석 및 미리보기 생성
      */
-    @PostMapping("/{mapId}/prompts/preview")
+    @PostMapping("/{mapId}/prompts")
     public ResponseEntity<PromptPreviewResponseDto> analyzePromptPreview(
         @PathVariable Long mapId,
         @AuthenticationPrincipal CustomUserDetails userDetails,

@@ -31,7 +31,7 @@ public class VisitHistoryController {
     /**
      * 방문 기록 실시간 연결 (SSE)
      */
-    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamVisitHistoryUpdates(
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {

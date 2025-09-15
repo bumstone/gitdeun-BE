@@ -49,7 +49,7 @@ public class NotificationService {
         User invitee = invitation.getInvitee();
         String message = String.format("'%s'님이 '%s' 마인드맵으로 초대했습니다.",
             invitation.getInviter().getName(),
-            invitation.getMindmap().getField());
+            invitation.getMindmap().getTitle());
 
         createAndSendNotification(NotificationCreateDto.actionable(
             invitee,
@@ -68,7 +68,7 @@ public class NotificationService {
         User inviter = invitation.getInviter();
         String message = String.format("'%s'님이 '%s' 마인드맵 초대를 수락했습니다.",
             invitation.getInvitee().getName(),
-            invitation.getMindmap().getField());
+            invitation.getMindmap().getTitle());
 
         createAndSendNotification(NotificationCreateDto.actionable(
             inviter,
@@ -87,7 +87,7 @@ public class NotificationService {
         User owner = invitation.getMindmap().getUser();
         String message = String.format("'%s'님이 링크를 통해 '%s' 마인드맵 참여를 요청했습니다.",
             invitation.getInvitee().getName(),
-            invitation.getMindmap().getField());
+            invitation.getMindmap().getTitle());
 
         createAndSendNotification(NotificationCreateDto.actionable(
             owner,
@@ -148,7 +148,7 @@ public class NotificationService {
     }
 
     /**
-     * 알림 읽음 처리
+     * TODO: 알림 읽음 처리
      */
     @Transactional
     public void markAsRead(Long notificationId, Long userId) {

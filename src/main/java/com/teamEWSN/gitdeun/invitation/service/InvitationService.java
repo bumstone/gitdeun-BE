@@ -78,7 +78,7 @@ public class InvitationService {
         }
 
         // 삭제된 마인드맵 제외
-        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
         User inviter = userRepository.findById(inviterId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
@@ -199,7 +199,7 @@ public class InvitationService {
         }
 
         // 삭제된 마인드맵에는 초대할 수 없음
-        Mindmap mindmap = mindmapRepository.findByIdAndNotDeleted(mapId)
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
         User inviter = userRepository.findById(inviterId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
