@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class MindmapCreateRequestDto {
-    private String repoUrl;
-    private String prompt;
+public class MindmapTitleUpdateDto {
+    private String title;
 }

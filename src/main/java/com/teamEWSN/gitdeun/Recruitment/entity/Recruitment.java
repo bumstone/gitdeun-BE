@@ -18,7 +18,9 @@ import java.util.Set;
     indexes = {
         @Index(name = "idx_recruitment_status", columnList = "status"),
         @Index(name = "idx_recruitment_deadline", columnList = "end_at"),
-        @Index(name = "idx_recruitment_recruiter", columnList = "recruiter_id")
+        @Index(name = "idx_recruitment_recruiter", columnList = "recruiter_id"),
+        @Index(name = "idx_recruitment_status_end_at", columnList = "status, end_at"),
+        @Index(name = "idx_recruitment_created_at", columnList = "created_at")
     })
 @Getter
 @Setter

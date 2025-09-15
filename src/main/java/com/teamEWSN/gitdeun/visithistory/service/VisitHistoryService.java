@@ -33,6 +33,11 @@ public class VisitHistoryService {
     // 마인드맵 생성 시 호출되어 방문 기록을 생성
     @Transactional
     public void createVisitHistory(User user, Mindmap mindmap) {
+        // 삭제된 마인드맵에는 방문 기록을 생성하지 않음
+        if (mindmap.isDeleted()) {
+            return;
+        }
+
         VisitHistory visitHistory = VisitHistory.builder()
             .user(user)
             .mindmap(mindmap)
@@ -45,7 +50,9 @@ public class VisitHistoryService {
     @Transactional(readOnly = true)
     public Page<VisitHistoryResponseDto> getVisitHistories(Long userId, Pageable pageable) {
         User user = userService.findById(userId);
-        Page<VisitHistory> histories = visitHistoryRepository.findUnpinnedHistoriesByUser(user, pageable);
+
+        // 삭제되지 않은 마인드맵 필터링
+        Page<VisitHistory> histories = visitHistoryRepository.findUnpinnedHistoriesByUserAndNotDeletedMindmap(user, pageable);
         return histories.map(visitHistoryMapper::toResponseDto);
     }
 
@@ -53,10 +60,9 @@ public class VisitHistoryService {
     @Transactional(readOnly = true)
     public List<VisitHistoryResponseDto> getPinnedHistories(Long userId) {
         User user = userService.findById(userId);
-        // 핀 고정 횟수에 제한이 있지만, 명시적으로 상위 8개만 조회
-        List<PinnedHistory> pinnedHistories = pinnedHistoryRepository.findTop8ByUserOrderByCreatedAtDesc(user);
 
-        // List를 스트림으로 변환하여 매핑
+        List<PinnedHistory> pinnedHistories = pinnedHistoryRepository.findTop8ByUserAndNotDeletedMindmapOrderByCreatedAtDesc(user);
+
         return pinnedHistories.stream()
             .map(pinned -> visitHistoryMapper.toResponseDto(pinned.getVisitHistory()))
             .collect(Collectors.toList());

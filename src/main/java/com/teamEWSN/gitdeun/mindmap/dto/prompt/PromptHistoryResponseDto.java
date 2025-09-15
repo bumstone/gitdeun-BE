@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.mindmap.dto;
+package com.teamEWSN.gitdeun.mindmap.dto.prompt;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,10 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 @AllArgsConstructor
-public class MindmapResponseDto {
-    private Long mindmapId;
-    private Long repoId;
-    private String title;
+public class PromptHistoryResponseDto {
+    private Long historyId;
     private String prompt;
+    private String title;
+    private Boolean applied;
     private LocalDateTime createdAt;
 }

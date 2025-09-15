@@ -104,14 +104,16 @@ public class RecruitmentService {
 
     /**
      * 상태(status)와 모집 분야(field)를 기준으로 모집 공고를 필터링하여 검색합니다.
-     * @param status 검색할 모집 상태 (선택 사항)
-     * @param fields 검색할 모집 분야 목록 (선택 사항)
+     * @param keyword 제목 검색 키워드 (선택 사항) - 부분 문자열 매칭
+     * @param status  검색할 모집 상태 (선택 사항)
+     * @param fields  검색할 모집 분야 목록 (선택 사항)
      * @param pageable 페이징 정보
      * @return 페이징 처리된 검색 결과 목록
      */
     @Transactional(readOnly = true)
-    public Page<RecruitmentListResponseDto> searchRecruitments(RecruitmentStatus status, List<RecruitmentField> fields, Pageable pageable) {
-        return recruitmentRepository.searchRecruitments(status, fields, pageable).map(recruitmentMapper::toListResponseDto);
+    public Page<RecruitmentListResponseDto> searchRecruitments(String keyword, RecruitmentStatus status, List<RecruitmentField> fields, Pageable pageable) {
+        return recruitmentRepository.searchRecruitments(keyword, status, fields, pageable)
+            .map(recruitmentMapper::toListResponseDto);
     }
 
     /**

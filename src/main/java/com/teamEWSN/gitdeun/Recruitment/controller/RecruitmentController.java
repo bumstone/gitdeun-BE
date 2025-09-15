@@ -82,11 +82,12 @@ public class RecruitmentController {
      */
     @GetMapping("/recruitments")
     public ResponseEntity<Page<RecruitmentListResponseDto>> searchRecruitments(
+        @RequestParam(required = false) String keyword,
         @RequestParam(required = false) RecruitmentStatus status,
         @RequestParam(required = false) List<RecruitmentField> field,
         @PageableDefault(size = 10) Pageable pageable
     ) {
-        Page<RecruitmentListResponseDto> response = recruitmentService.searchRecruitments(status, field, pageable);
+        Page<RecruitmentListResponseDto> response = recruitmentService.searchRecruitments(keyword, status, field, pageable);
         return ResponseEntity.ok(response);
     }
 

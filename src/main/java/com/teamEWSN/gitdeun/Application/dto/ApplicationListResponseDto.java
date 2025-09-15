@@ -16,6 +16,7 @@ public class ApplicationListResponseDto {
     private Long applicationId;
 
     // 지원자 간략 정보
+    private Long applicantId;
     private String applicantName;
     private String applicantNickname;
     private String applicantProfileImage;

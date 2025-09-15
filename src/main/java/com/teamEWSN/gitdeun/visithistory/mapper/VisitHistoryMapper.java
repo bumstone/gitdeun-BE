@@ -11,7 +11,7 @@ public interface VisitHistoryMapper {
 
     @Mapping(source = "id", target = "visitHistoryId")
     @Mapping(source = "mindmap.id", target = "mindmapId")
-    @Mapping(source = "mindmap.field", target = "mindmapField")
+    @Mapping(source = "mindmap.title", target = "mindmapTitle")
     @Mapping(source = "mindmap.repo.githubRepoUrl", target = "repoUrl")
     VisitHistoryResponseDto toResponseDto(VisitHistory visitHistory);
 }
