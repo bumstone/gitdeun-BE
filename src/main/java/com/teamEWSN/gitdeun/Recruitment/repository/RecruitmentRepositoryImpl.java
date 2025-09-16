@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.Recruitment.repository;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.teamEWSN.gitdeun.Recruitment.entity.Recruitment;
 import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
@@ -119,11 +120,12 @@ public class RecruitmentRepositoryImpl implements RecruitmentCustomRepository {
     /**
      * MySQL Full-Text Search를 사용한 검색
      * MATCH ... AGAINST 구문 활용
+     * WHERE 절: 점수 > 0 판단식
      */
     private BooleanExpression titleFullTextSearch(String keyword) {
-        String booleanQuery = buildBooleanQuery(keyword);
+        String booleanQuery = buildBooleanQuery(keyword); // 기존 전처리/토크나이저 사용
         return Expressions.booleanTemplate(
-            "MATCH({0}, {1}) AGAINST ({2} IN BOOLEAN MODE)",
+            "function('match_against_boolean', {0}, {1}, {2}) > 0",
             recruitment.title, recruitment.content, booleanQuery
         );
     }
@@ -137,10 +139,10 @@ public class RecruitmentRepositoryImpl implements RecruitmentCustomRepository {
             .or(recruitment.content.containsIgnoreCase(k));
     }
 
-    // BOOLEAN MODE 정렬식
+    // ORDER BY 절: 점수 desc
     private OrderSpecifier<Double> scoreOrder(String keyword) {
-        String tpl = "MATCH({0}, {1}) AGAINST ({2} IN BOOLEAN MODE)";
-        return Expressions.numberTemplate(Double.class, tpl,
+        return Expressions.numberTemplate(Double.class,
+                "function('match_against_boolean', {0}, {1}, {2})",
                 recruitment.title, recruitment.content, buildBooleanQuery(keyword))
             .desc();
     }
