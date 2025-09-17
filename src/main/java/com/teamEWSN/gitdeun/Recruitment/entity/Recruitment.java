@@ -1,5 +1,7 @@
 package com.teamEWSN.gitdeun.Recruitment.entity;
 
+import com.teamEWSN.gitdeun.Application.entity.Application;
+import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import jakarta.persistence.*;
@@ -16,14 +18,16 @@ import java.util.Set;
     indexes = {
         @Index(name = "idx_recruitment_status", columnList = "status"),
         @Index(name = "idx_recruitment_deadline", columnList = "end_at"),
-        @Index(name = "idx_recruitment_recruiter", columnList = "recruiter_id")
+        @Index(name = "idx_recruitment_recruiter", columnList = "recruiter_id"),
+        @Index(name = "idx_recruitment_status_end_at", columnList = "status, end_at"),
+        @Index(name = "idx_recruitment_created_at", columnList = "created_at")
     })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Recruitment {
+public class Recruitment extends AuditedEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -67,7 +71,7 @@ public class Recruitment {
 
     // 개발 분야 태그 (선택 필요) - BACKEND/FRONTEND/AI 등
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "recruitment_field_tags", joinColumns = @JoinColumn(name = "recruitment_id"))
+    @CollectionTable(name = "recruitment_field_tags")
     @Column(name = "field", nullable = false, length = 32)
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -75,7 +79,7 @@ public class Recruitment {
 
     // 개발 언어 태그 (선택 필요) - 화면 필터/표시용
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "recruitment_language_tags", joinColumns = @JoinColumn(name = "recruitment_id"))
+    @CollectionTable(name = "recruitment_language_tags")
     @Column(name = "language", nullable = false, length = 64)
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -87,26 +91,46 @@ public class Recruitment {
     private RecruitmentStatus status;
 
     // 조회수
-    @Column(name = "views", nullable = false)
+    @Column(name = "view_count", nullable = false)
     @Builder.Default
-    private int views = 0;
+    private int viewCount = 0;
 
     // 모집 공고 이미지 (선택)
     @Builder.Default
     @OneToMany(mappedBy = "recruitment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecruitmentImage> recruitmentImages = new ArrayList<>();
 
-    /*// 지원 신청 리스트
+    // 지원 신청 리스트
     @OneToMany(mappedBy = "recruitment", fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Application> applications = new ArrayList<>();*/
+    private List<Application> applications = new ArrayList<>();
 
     // 추천 가중치용 요구 기술(언어/프레임워크/툴 등, 선택)
-    @OneToMany(mappedBy = "recruitment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "recruitment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private Set<RecruitmentRequiredSkill> requiredSkills = new HashSet<>();
 
+    /**
+     * 모집 인원을 1 감소시키고, 인원이 0이 되면 상태를 COMPLETED로 변경
+     */
+    public void decreaseQuota() {
+        if (this.recruitQuota > 0) {
+            this.recruitQuota--;
+            if (this.recruitQuota == 0) {
+                this.status = RecruitmentStatus.COMPLETED;
+            }
+        }
+    }
 
+    /**
+     * 모집 인원을 1 증가시키고, 상태가 COMPLETED였다면 RECRUITING으로 변경
+     */
+    public void increaseQuota() {
+        this.recruitQuota++;
+        if (this.status == RecruitmentStatus.COMPLETED && LocalDateTime.now().isBefore(this.endAt)) {
+            this.status = RecruitmentStatus.RECRUITING;
+        }
+    }
 
-    public void increaseView() { this.views++; }
+    public void increaseView() { this.viewCount++; }
 }

@@ -12,12 +12,14 @@ import com.teamEWSN.gitdeun.notification.mapper.NotificationMapper;
 import com.teamEWSN.gitdeun.notification.repository.NotificationRepository;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,12 @@ public class NotificationService {
     private final NotificationMapper notificationMapper;
     private final JavaMailSender mailSender;
 
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
+    @Value("${spring.mail.properties.from.name:Gitdeun}")
+    private String fromName;
+
     /**
      * 이메일 초대 알림
      */
@@ -41,7 +49,7 @@ public class NotificationService {
         User invitee = invitation.getInvitee();
         String message = String.format("'%s'님이 '%s' 마인드맵으로 초대했습니다.",
             invitation.getInviter().getName(),
-            invitation.getMindmap().getField());
+            invitation.getMindmap().getTitle());
 
         createAndSendNotification(NotificationCreateDto.actionable(
             invitee,
@@ -60,7 +68,7 @@ public class NotificationService {
         User inviter = invitation.getInviter();
         String message = String.format("'%s'님이 '%s' 마인드맵 초대를 수락했습니다.",
             invitation.getInvitee().getName(),
-            invitation.getMindmap().getField());
+            invitation.getMindmap().getTitle());
 
         createAndSendNotification(NotificationCreateDto.actionable(
             inviter,
@@ -79,7 +87,7 @@ public class NotificationService {
         User owner = invitation.getMindmap().getUser();
         String message = String.format("'%s'님이 링크를 통해 '%s' 마인드맵 참여를 요청했습니다.",
             invitation.getInvitee().getName(),
-            invitation.getMindmap().getField());
+            invitation.getMindmap().getTitle());
 
         createAndSendNotification(NotificationCreateDto.actionable(
             owner,
@@ -140,7 +148,7 @@ public class NotificationService {
     }
 
     /**
-     * 알림 읽음 처리
+     * TODO: 알림 읽음 처리
      */
     @Transactional
     public void markAsRead(Long notificationId, Long userId) {
@@ -188,12 +196,16 @@ public class NotificationService {
     @Async
     public void sendEmailNotification(String to, String subject, String text) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(text);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(text, false); // HTML이면 true
+            helper.setFrom(fromEmail, fromName); // 이름과 이메일 분리 설정
+
             mailSender.send(message);
-            log.info("Email sent to {}", to);
+            log.info("Email sent to {} from {}", to, fromName);
         } catch (Exception e) {
             log.error("Failed to send email to {}", to, e);
         }

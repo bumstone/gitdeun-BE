@@ -1,7 +1,5 @@
 package com.teamEWSN.gitdeun.common.s3.controller;
 
-import com.teamEWSN.gitdeun.common.exception.ErrorCode;
-import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.s3.service.S3BucketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -21,18 +19,12 @@ import java.util.List;
 public class S3BucketController {
 
     private final S3BucketService s3BucketService;
-    private static final int MAX_FILE_COUNT = 10;
 
     @PostMapping("/upload")
     public ResponseEntity<List<String>> uploadFiles(
         @RequestParam("files") List<MultipartFile> files,
         @RequestParam("path") String path
     ) {
-        // FILE-005: 업로드 가능한 파일 개수를 초과했습니다.
-        if (files.size() > MAX_FILE_COUNT) {
-            throw new GlobalException(ErrorCode.FILE_COUNT_EXCEEDED);
-        }
-
         List<String> fileUrls = s3BucketService.upload(files, path);
         return ResponseEntity.ok(fileUrls);
     }

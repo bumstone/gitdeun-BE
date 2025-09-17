@@ -11,8 +11,8 @@ import lombok.*;
 @Table(name = "application",
     uniqueConstraints = {
         // 동일 사용자·공고에 대해 "활성" 신청 중복 방지용 (WITHDRAWN 제외)
-        @UniqueConstraint(name = "uk_active_application",
-            columnNames = {"recruitment_id", "applicant_id", "active"})
+        @UniqueConstraint(name = "uk_application_recruitment_applicant",
+            columnNames = {"recruitment_id", "applicant_id"})
     },
     indexes = {
         @Index(name = "idx_application_recruitment", columnList = "recruitment_id"),

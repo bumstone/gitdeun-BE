@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class InvitationResponseDto {
 
     private Long invitationId;
-    private String mindmapName;
+    private String mindmapTitle;
     private String inviteeName;
     private String inviteeEmail;
     private MindmapRole role;

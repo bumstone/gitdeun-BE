@@ -37,7 +37,7 @@ public class Notification extends CreatedEntity {
     private boolean read; // 읽음 여부 (기본값: false)
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "notification_type", nullable = false)
+    @Column(name = "notification_type", nullable = false, length = 64)
     private NotificationType notificationType; // 알림 종류
 
     @Column(name = "reference_id")

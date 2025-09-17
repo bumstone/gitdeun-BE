@@ -45,6 +45,10 @@ public enum ErrorCode {
     // 마인드맵 관련
     MINDMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "MINDMAP-001", "요청한 마인드맵을 찾을 수 없습니다."),
 
+    // 프롬프트 히스토리 관련 (신규 추가)
+    PROMPT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PROMPT-001", "요청한 프롬프트 히스토리를 찾을 수 없습니다."),
+    CANNOT_DELETE_APPLIED_PROMPT(HttpStatus.BAD_REQUEST, "PROMPT-002", "적용된 프롬프트 히스토리는 삭제할 수 없습니다."),
+
     // 멤버 관련
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER-001", "해당 멤버를 찾을 수 없습니다."),
     MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "MEMBER-002", "이미 마인드맵에 등록된 멤버입니다."),
@@ -61,6 +65,7 @@ public enum ErrorCode {
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION-001", "알림을 찾을 수 없습니다."),
     CANNOT_ACCESS_NOTIFICATION(HttpStatus.FORBIDDEN, "NOTIFICATION-002", "해당 알림에 접근할 권한이 없습니다."),
 
+
     // 방문기록 관련
     HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "VISITHISTORY-001", "방문 기록을 찾을 수 없습니다."),
 
@@ -69,6 +74,25 @@ public enum ErrorCode {
     PINNEDHISTORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "PINNEDHISTORY-002", "이미 핀 고정한 기록입니다."),
     PINNEDHISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PINNEDHISTORY-003", "핀 고정 기록을 찾을 수 없습니다."),
     PINNED_HISTORY_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "PINNEDHISTORY-004", "최대 8개까지만 핀으로 고정할 수 있습니다."),
+
+    // 모집 공고 관련
+    RECRUITMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "RECRUIT-001", "모집 공고를 찾을 수 없습니다."),
+    RECRUITMENT_NOT_RECRUITING(HttpStatus.BAD_REQUEST, "RECRUIT-002", "모집 중인 공고가 아닙니다."),
+    RECRUITMENT_EXPIRED(HttpStatus.BAD_REQUEST, "RECRUIT-003", "모집 기간이 마감된 공고입니다."),
+    RECRUITMENT_FULL(HttpStatus.BAD_REQUEST, "RECRUIT-004", "모집 인원이 마감되었습니다."),
+    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "RECRUIT-005", "시작일은 종료일보다 이전이어야 합니다."),
+    END_DATE_IN_PAST(HttpStatus.BAD_REQUEST, "RECRUIT-006", "종료일은 현재보다 이후여야 합니다."),
+
+    // 지원 관련
+    APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "APPLICATION-001", "요청한 지원 정보를 찾을 수 없습니다."),
+    ALREADY_APPLIED(HttpStatus.CONFLICT, "APPLICATION-002", "이미 지원한 공고입니다."),
+    CANNOT_APPLY_OWN_RECRUITMENT(HttpStatus.BAD_REQUEST, "APPLICATION-003", "본인의 공고에는 지원할 수 없습니다."),
+    INVALID_APPLICATION_FIELD(HttpStatus.BAD_REQUEST, "APPLICATION-004", "해당 공고에서 모집하지 않는 분야입니다."),
+    APPLICATION_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "APPLICATION-005", "이미 철회된 지원입니다."),
+    CANNOT_WITHDRAW_ACCEPTED(HttpStatus.BAD_REQUEST, "APPLICATION-006", "수락된 지원은 철회할 수 없습니다."),
+    APPLICATION_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "APPLICATION-007", "활성 상태가 아닌 지원입니다."),
+    APPLICATION_ALREADY_PROCESSED(HttpStatus.BAD_REQUEST, "APPLICATION-008", "이미 처리된 지원입니다."),
+
 
     // S3 파일 관련
     // Client Errors (4xx)

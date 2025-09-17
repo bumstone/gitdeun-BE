@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class VisitHistoryResponseDto {
     private Long visitHistoryId;
     private Long mindmapId;
-    private String mindmapField; // 마인드맵 제목
+    private String mindmapTitle;
     private String repoUrl;
     private LocalDateTime lastVisitedAt;
 }

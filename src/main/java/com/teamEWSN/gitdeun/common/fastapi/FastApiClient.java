@@ -1,8 +1,7 @@
 package com.teamEWSN.gitdeun.common.fastapi;
 
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
-import com.teamEWSN.gitdeun.common.fastapi.dto.ArangoDataDto;
-import com.teamEWSN.gitdeun.mindmap.entity.MindmapType;
+import com.teamEWSN.gitdeun.common.fastapi.dto.MindmapGraphDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,97 +14,131 @@ import java.time.LocalDateTime;
 @Component
 public class FastApiClient {
 
-    private final WebClient webClient; // FastApiConfig에서 생성한 Bean을 주입받음
+    private final WebClient webClient;
 
     public FastApiClient(@Qualifier("fastApiWebClient") WebClient webClient) {
         this.webClient = webClient;
     }
 
-    // FastAPI 서버에 리포지토리 분석을 요청
-    public AnalysisResultDto analyze(String repoUrl, String prompt, MindmapType type, String authorizationHeader) {
-        AnalysisRequest requestBody = new AnalysisRequest(repoUrl, prompt, type);
-        // FastAPI 요청 본문을 위한 내부 DTO
+    /**
+     * GitHub 저장소의 최신 커밋 시간 조회
+     */
+    public LocalDateTime getRepositoryLastCommitTime(String repoUrl, String authorizationHeader) {
+        return webClient.get()
+            .uri(uriBuilder -> uriBuilder
+                .path("/github/repos/last-commit")
+                .queryParam("repo_url", repoUrl)
+                .build())
+            .header("Authorization", authorizationHeader)
+            .retrieve()
+            .bodyToMono(RepositoryCommitInfo.class)
+            .map(RepositoryCommitInfo::getLastCommitTime)
+            .block();
+    }
 
+    /**
+     * FastAPI 서버에 리포지토리 프롬프트 기반 마인드맵 분석
+     */
+    public AnalysisResultDto analyzeWithPrompt(String repoUrl, String prompt, String authorizationHeader) {
+        AnalysisRequest requestBody = new AnalysisRequest(repoUrl, prompt);
         return webClient.post()
-            .uri("/analyze") // FastAPI에 정의된 분석 엔드포인트
+            .uri("/mindmap/analyze-prompt")
             .header("Authorization", authorizationHeader)
             .body(Mono.just(requestBody), AnalysisRequest.class)
-            .retrieve() // 응답을 받아옴
-            .bodyToMono(AnalysisResultDto.class) // 응답 본문을 DTO로 변환
-            .block(); // 비동기 처리를 동기적으로 대기
-    }
-
-    // ArangoDB에서 마인드맵 데이터를 조회
-    public ArangoDataDto getArangoData(String arangodbKey, String authorizationHeader) {
-        return webClient.get()
-            .uri("/arango/data/{key}", arangodbKey) // ArangoDB 데이터 조회 엔드포인트
-            .header("Authorization", authorizationHeader)
             .retrieve()
-            .bodyToMono(ArangoDataDto.class)
+            .bodyToMono(AnalysisResultDto.class)
             .block();
     }
 
-    // ArangoDB에 마인드맵 데이터를 저장하고 키를 반환
-    public String saveArangoData(String repoUrl, String mapData, String authorizationHeader) {
-        ArangoSaveRequest requestBody = new ArangoSaveRequest(repoUrl, mapData);
-
+    /**
+     * 기본 마인드맵 분석 (프롬프트 X)
+     */
+    public AnalysisResultDto analyzeDefault(String repoUrl, String authorizationHeader) {
+        AnalysisRequest requestBody = new AnalysisRequest(repoUrl, null);
         return webClient.post()
-            .uri("/arango/save") // ArangoDB 데이터 저장 엔드포인트
+            .uri("/mindmap/analyze-ai")
             .header("Authorization", authorizationHeader)
-            .body(Mono.just(requestBody), ArangoSaveRequest.class)
+            .body(Mono.just(requestBody), AnalysisRequest.class)
             .retrieve()
-            .bodyToMono(ArangoSaveResponse.class)
-            .map(ArangoSaveResponse::getArangodbKey)
+            .bodyToMono(AnalysisResultDto.class)
             .block();
     }
 
-    // ArangoDB에서 마인드맵 데이터를 업데이트
-    public ArangoDataDto updateArangoData(String arangodbKey, String mapData, String authorizationHeader) {
-        ArangoUpdateRequest requestBody = new ArangoUpdateRequest(mapData);
-
-        return webClient.put()
-            .uri("/arango/data/{key}", arangodbKey) // ArangoDB 데이터 업데이트 엔드포인트
+    /**
+     * ArangoDB에서 마인드맵 그래프 데이터를 조회
+     */
+    public MindmapGraphDto getMindmapGraph(String repoUrl, String authorizationHeader) {
+        return webClient.get()
+            .uri(uriBuilder -> uriBuilder
+                .path("/mindmap/graph")
+                .queryParam("repo_url", repoUrl)
+                .build())
             .header("Authorization", authorizationHeader)
-            .body(Mono.just(requestBody), ArangoUpdateRequest.class)
             .retrieve()
-            .bodyToMono(ArangoDataDto.class)
+            .bodyToMono(MindmapGraphDto.class)
             .block();
     }
 
-    // ArangoDB에서 마인드맵 데이터를 삭제
-    public void deleteAnalysisData(String arangodbKey) {
-        webClient.delete()
-            .uri("/arango/data/{key}", arangodbKey) // ArangoDB 데이터 삭제 엔드포인트
+    /**
+     * GitHub 저장소 정보 저장을 요청
+     */
+    public void saveRepoInfo(String repoUrl, String authorizationHeader) {
+        webClient.post()
+            .uri("/repo/github/repo-info")
+            .header("Authorization", authorizationHeader)
+            .body(Mono.just(new GitRepoRequest(repoUrl)), GitRepoRequest.class)
             .retrieve()
             .bodyToMono(Void.class)
             .block();
     }
 
+    /**
+     * GitHub ZIP을 ArangoDB에 저장을 요청
+     */
+    public void fetchRepo(String repoUrl, String authorizationHeader) {
+        webClient.post()
+            .uri("/github/repos/fetch")
+            .header("Authorization", authorizationHeader)
+            .body(Mono.just(new GitRepoRequest(repoUrl)), GitRepoRequest.class)
+            .retrieve()
+            .bodyToMono(Void.class)
+            .block();
+    }
+
+    /**
+     * ArangoDB에서 repo_url 기반으로 마인드맵 데이터를 삭제
+     */
+    public void deleteMindmapData(String repoUrl, String authorizationHeader) {
+        webClient.delete()
+            .uri(uriBuilder -> uriBuilder
+                .path("/mindmap/repo")
+                .queryParam("repo_url", repoUrl)
+                .build())
+            .header("Authorization", authorizationHeader)
+            .retrieve()
+            .bodyToMono(Void.class)
+            .block();
+    }
+
+    // === Inner Classes ===
+
     @Getter
     @AllArgsConstructor
     private static class AnalysisRequest {
-        private String url;
-        private String prompt;
-        private MindmapType type;
+        private String repo_url;
+        private String prompt;     // nullable
     }
 
     @Getter
     @AllArgsConstructor
-    private static class ArangoSaveRequest {
-        private String repoUrl;
-        private String mapData;
+    private static class GitRepoRequest {
+        private String repo_url;
     }
 
     @Getter
-    @AllArgsConstructor
-    private static class ArangoUpdateRequest {
-        private String mapData;
-    }
-
-    @Getter
-    @AllArgsConstructor
-    private static class ArangoSaveResponse {
-        private String arangodbKey;
-        private String status;
+    public static class RepositoryCommitInfo {
+        private LocalDateTime lastCommitTime;
+        private String lastCommitSha;
+        private String defaultBranch;
     }
 }

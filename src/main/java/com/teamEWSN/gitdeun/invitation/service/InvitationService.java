@@ -77,7 +77,8 @@ public class InvitationService {
             throw new GlobalException(ErrorCode.INVITATION_ALREADY_EXISTS);
         }
 
-        Mindmap mindmap = mindmapRepository.findById(mapId)
+        // 삭제된 마인드맵 제외
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
         User inviter = userRepository.findById(inviterId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
@@ -150,6 +151,11 @@ public class InvitationService {
         Invitation invitation = invitationRepository.findById(invitationId)
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
+        // 초대된 마인드맵이 삭제되었는지 확인
+        if (invitation.getMindmap().isDeleted()) {
+            throw new GlobalException(ErrorCode.MINDMAP_NOT_FOUND);
+        }
+
         // 초대 중복 여부
         if (!invitation.getInvitee().getId().equals(userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
@@ -192,7 +198,8 @@ public class InvitationService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        Mindmap mindmap = mindmapRepository.findById(mapId)
+        // 삭제된 마인드맵에는 초대할 수 없음
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
         User inviter = userRepository.findById(inviterId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
@@ -217,6 +224,7 @@ public class InvitationService {
         Invitation invitation = invitationRepository.findByToken(token)
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
+        // 만료된 초대 여부 확인
         if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
         }
@@ -224,6 +232,11 @@ public class InvitationService {
         // 이미 초대 거절한 사용자 확인
         if (invitationRepository.existsByMindmapIdAndInviteeIdAndStatus(invitation.getMindmap().getId(), userId, InvitationStatus.REJECTED)) {
             throw new GlobalException(ErrorCode.INVITATION_REJECTED_USER);
+        }
+
+        // 초대된 마인드맵이 삭제되었는지 확인
+        if (invitation.getMindmap().isDeleted()) {
+            throw new GlobalException(ErrorCode.MINDMAP_NOT_FOUND);
         }
 
         User user = userRepository.findById(userId)
@@ -266,7 +279,7 @@ public class InvitationService {
         return new InvitationActionResponseDto("초대 요청이 승인되었습니다.");
     }
 
-    // Owner의 링크 초대 요청 거절 메서드
+    // Owner의 링크 초대 요청 거절
     @Transactional
     public InvitationActionResponseDto rejectLinkApproval(Long invitationId, Long ownerId) {
         Invitation invitation = invitationRepository.findById(invitationId)

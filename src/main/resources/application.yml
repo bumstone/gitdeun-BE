@@ -46,8 +46,22 @@ spring:
           auth: true
           starttls:
             enable: true
+      # 발신자 정보 추가
+      from:
+        name: "Gitdeun"
+        email: ${GMAIL_USERNAME}
   profiles:
     active: dev, s3Bucket  # logback-spring SpringProfile 설정 및 AWS S3 Bucket 설정
+  servlet:
+    multipart:
+      max-file-size: 10MB          # 개별 파일의 최대 크기
+      max-request-size: 50MB       # 요청 전체(모든 파일 + 폼 데이터)의 최대 크기
+
+server:
+  tomcat:
+    max-parameter-count: 15000    # 파라미터 개수
+    max-part-count: 200            # 파트(파일+필드) 개수 상향
+    max-part-header-size: 4096    # 파일명이 길거나 커스텀 헤더 많을 때
 
 db:
   crypto-key: ${CRYPTO_KEY}
