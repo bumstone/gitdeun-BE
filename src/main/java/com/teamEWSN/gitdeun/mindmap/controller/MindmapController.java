@@ -1,13 +1,18 @@
 package com.teamEWSN.gitdeun.mindmap.controller;
 
+import com.teamEWSN.gitdeun.common.exception.GlobalException;
+import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import com.teamEWSN.gitdeun.mindmap.dto.*;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.MindmapPromptAnalysisDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptApplyRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptHistoryResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptPreviewResponseDto;
+import com.teamEWSN.gitdeun.mindmap.dto.request.MindmapCreateRequestDto;
+import com.teamEWSN.gitdeun.mindmap.service.MindmapAsyncService;
 import com.teamEWSN.gitdeun.mindmap.service.MindmapService;
 import com.teamEWSN.gitdeun.mindmap.service.PromptHistoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,6 +24,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.CompletableFuture;
+
 
 @Slf4j
 @RestController
@@ -27,22 +34,36 @@ import org.springframework.web.bind.annotation.*;
 public class MindmapController {
 
     private final MindmapService mindmapService;
+    private final MindmapAsyncService mindmapAsyncService;
     private final PromptHistoryService promptHistoryService;
 
-    // 마인드맵 생성 (FastAPI 분석 기반)
-    @PostMapping
-    public ResponseEntity<MindmapResponseDto> createMindmap(
-        @RequestHeader("Authorization") String authorizationHeader,
-        @RequestBody MindmapCreateRequestDto request,
-        @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        MindmapResponseDto responseDto = mindmapService.createMindmap(
-            request,
-            userDetails.getId(),
-            authorizationHeader
-        );
+    // 마인드맵 생성 (FastAPI 비동기 분석 기반)
+    @PostMapping("/async")
+    public ResponseEntity<MindmapCreationResponseDto> createMindmapAsync(
+        @Valid @RequestBody MindmapCreateRequestDto request,
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestHeader("Authorization") String authorizationHeader) {
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+        Long userId = userDetails.getId();
+        log.info("마인드맵 비동기 생성 요청 - 사용자: {}, 저장소: {}", userId, request.getRepoUrl());
+
+        try {
+            // 비동기 처리 시작 (응답은 즉시 반환)
+            CompletableFuture<MindmapResponseDto> futureResult = mindmapAsyncService
+                .createMindmap(request, userId, authorizationHeader);
+
+            // 즉시 응답 반환
+            MindmapCreationResponseDto response = MindmapCreationResponseDto.builder()
+                .processId(String.format("mindmap_%d_%d", userId, System.currentTimeMillis()))
+                .status("PROCESSING")
+                .message("마인드맵 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.")
+                .build();
+
+            return ResponseEntity.accepted().body(response);
+
+        } catch (Exception e) {
+            throw new GlobalException(ErrorCode.MINDMAP_CREATION_FAILED);
+        }
     }
 
     // 마인드맵 상세 조회

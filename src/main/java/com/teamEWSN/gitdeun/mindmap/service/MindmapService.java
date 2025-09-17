@@ -8,6 +8,7 @@ import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.common.fastapi.dto.MindmapGraphDto;
 import com.teamEWSN.gitdeun.common.webhook.dto.WebhookUpdateDto;
 import com.teamEWSN.gitdeun.mindmap.dto.*;
+import com.teamEWSN.gitdeun.mindmap.dto.request.MindmapCreateRequestDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.mindmap.entity.PromptHistory;
 import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
@@ -50,44 +51,40 @@ public class MindmapService {
 
     // 마인드맵 생성
     @Transactional
-    public MindmapResponseDto createMindmap(MindmapCreateRequestDto req, Long userId, String authorizationHeader) {
+    public Mindmap saveCompletedMindmap(AnalysisResultDto analysisResult, Long userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
-        String normalizedUrl = normalizeRepoUrl(req.getRepoUrl());
+        // 저장소 메타데이터 처리
+        Repo repo = processRepository(analysisResult);
 
-        // 1. Repository 처리
-        Repo repo = processRepository(normalizedUrl, authorizationHeader);
+        // AI가 생성한 제목 사용, 실패 시 기본 제목
+        String title = determineAIGeneratedTitle(analysisResult.getTitle(), user);
 
-        // 2. FastAPI를 통해 분석 수행 및 AI 생성 제목과 맵 데이터 획득
-        AnalysisResultDto analysisResult = generateMapDataWithAnalysis(normalizedUrl, req.getPrompt(), authorizationHeader);
-
-        // 3. AI가 생성한 제목 사용, 실패 시 기본 제목
-        String title = determineAIGeneratedTitle(analysisResult, user);
-
-        // 4. 마인드맵 엔티티 생성
+        // 마인드맵 엔티티 생성
         Mindmap mindmap = Mindmap.builder()
             .repo(repo)
             .user(user)
             .branch(repo.getDefaultBranch())
             .title(title)
-            .mapData(analysisResult.getMapData())
+            .mapData(StringUtils.hasText(analysisResult.getMapData()) ?
+                analysisResult.getMapData() : "{}")
             .build();
 
         mindmapRepository.save(mindmap);
 
-        // 5. 초기 프롬프트 히스토리 생성 (프롬프트가 있는 경우)
+        /*// 초기 프롬프트 히스토리 생성 (프롬프트가 있는 경우)
         if (StringUtils.hasText(req.getPrompt())) {
             promptHistoryService.createInitialPromptHistory(mindmap, req.getPrompt(), analysisResult.getMapData(),
                 analysisResult.getTitle());
-        }
+        }*/
 
-        // 6. 소유자 등록 및 방문 기록
+        // 소유자 등록 및 방문 기록
         mindmapMemberRepository.save(MindmapMember.of(mindmap, user, MindmapRole.OWNER));
         visitHistoryService.createVisitHistory(user, mindmap);
 
         log.info("마인드맵 생성 완료 - ID: {}, AI 생성 제목: {}", mindmap.getId(), title);
-        return mindmapMapper.toResponseDto(mindmap);
+        return mindmap;
     }
 
     /**
@@ -283,19 +280,16 @@ public class MindmapService {
      * 1. 프롬프트 있고 AI 제목 생성 성공 → AI 제목 사용
      * 2. 프롬프트 없거나 AI 제목 생성 실패 → 자동 번호 제목
      */
-    private String determineAIGeneratedTitle(AnalysisResultDto analysisResult, User user) {
+    private String determineAIGeneratedTitle(String title, User user) {
         // AI가 제목을 성공적으로 생성한 경우
-        if (analysisResult != null && StringUtils.hasText(analysisResult.getTitle())) {
-            log.info("AI 생성 제목 사용: {}", analysisResult.getTitle());
-            return analysisResult.getTitle();
+        if (StringUtils.hasText(title)) {
+            return title;
         }
 
         // AI 제목 생성 실패 또는 프롬프트 없는 경우 → 자동 번호 제목
         long userMindmapCount = mindmapRepository.countByUserAndDeletedAtIsNull(user);
-        String defaultTitle = "마인드맵 " + (userMindmapCount + 1);
 
-        log.info("기본 제목 사용: {}", defaultTitle);
-        return defaultTitle;
+        return "마인드맵 " + (userMindmapCount + 1);
     }
 
     private boolean shouldUpdateRepo(Repo repo, String authHeader) {

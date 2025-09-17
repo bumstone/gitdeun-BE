@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.mindmap.dto;
+package com.teamEWSN.gitdeun.mindmap.dto.request;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
