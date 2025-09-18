@@ -44,6 +44,21 @@ public enum ErrorCode {
 
     // 마인드맵 관련
     MINDMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "MINDMAP-001", "요청한 마인드맵을 찾을 수 없습니다."),
+    MINDMAP_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MINDMAP-002", "마인드맵 생성 중 오류가 발생했습니다."),
+
+    // 마인드맵 요청 검증 관련
+    INVALID_USER_ID(HttpStatus.BAD_REQUEST, "VALIDATE-001", "유효하지 않은 사용자 ID입니다."),
+    REPOSITORY_URL_REQUIRED(HttpStatus.BAD_REQUEST, "VALIDATE-002", "리포지토리 URL은 필수입니다."),
+    REPOSITORY_URL_TOO_LONG(HttpStatus.BAD_REQUEST, "VALIDATE-003", "리포지토리 URL이 너무 깁니다. (1000자 이내)"),
+    MALICIOUS_URL_DETECTED(HttpStatus.BAD_REQUEST, "VALIDATE-004", "악의적인 패턴이 포함된 URL입니다."),
+    UNSUPPORTED_REPOSITORY_URL(HttpStatus.BAD_REQUEST, "VALIDATE-005", "지원하지 않는 리포지토리 URL 형식입니다."),
+    INVALID_GITHUB_URL(HttpStatus.BAD_REQUEST, "VALIDATE-006", "유효하지 않은 GitHub URL입니다."),
+    INVALID_REPOSITORY_URL(HttpStatus.BAD_REQUEST, "VALIDATE-007", "유효하지 않은 리포지토리 URL입니다."),
+    PROMPT_TOO_LONG(HttpStatus.BAD_REQUEST, "VALIDATE-008", "프롬프트가 너무 깁니다. (2000자 이내)"),
+    PROMPT_TOO_SHORT(HttpStatus.BAD_REQUEST, "VALIDATE-009", "프롬프트가 너무 짧습니다. (3자 이상)"),
+    MALICIOUS_PROMPT_DETECTED(HttpStatus.BAD_REQUEST, "VALIDATE-010", "악의적인 패턴이 포함된 프롬프트입니다."),
+    FORBIDDEN_REPOSITORY_PATTERN(HttpStatus.FORBIDDEN, "VALIDATE-011", "분석이 금지된 리포지토리 패턴입니다. (예: test, demo)"),
+    SYSTEM_PROTECTED_REPOSITORY(HttpStatus.FORBIDDEN, "VALIDATE-012", "시스템 보호 대상으로 지정된 리포지토리입니다."),
 
     // 프롬프트 히스토리 관련 (신규 추가)
     PROMPT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PROMPT-001", "요청한 프롬프트 히스토리를 찾을 수 없습니다."),

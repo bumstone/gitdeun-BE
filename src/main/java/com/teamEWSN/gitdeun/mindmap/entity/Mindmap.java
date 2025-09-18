@@ -46,7 +46,7 @@ public class Mindmap extends AuditedEntity {
     @Column(length = 100, nullable = false)
     private String branch;
 
-    @Column(name = "title", length = 255, nullable = false)
+    @Column(length = 50, nullable = false)
     private String title;
 
     @JdbcTypeCode(SqlTypes.JSON)

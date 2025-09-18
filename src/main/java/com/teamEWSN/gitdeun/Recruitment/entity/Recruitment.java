@@ -65,7 +65,7 @@ public class Recruitment extends AuditedEntity {
     @Column(name = "team_size_total", nullable = false)
     private Integer teamSizeTotal;
 
-    // 남은 모집 인원(입력 필요) – 신청 시 1 감소, 철회/거절 시 1 증가(복원)
+    // 남은 모집 인원(입력 필요) – 신청 시 1 감소
     @Column(name = "recruit_quota", nullable = false)
     private Integer recruitQuota;
 
