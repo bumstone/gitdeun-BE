@@ -5,9 +5,11 @@ import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.mindmap.dto.request.MindmapCreateRequestDto;
+import com.teamEWSN.gitdeun.mindmap.dto.request.ValidatedMindmapRequest;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.mindmap.entity.PromptHistory;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
+import com.teamEWSN.gitdeun.mindmap.util.MindmapRequestValidator;
 import com.teamEWSN.gitdeun.notification.dto.NotificationCreateDto;
 import com.teamEWSN.gitdeun.notification.entity.NotificationType;
 import com.teamEWSN.gitdeun.notification.service.NotificationService;
@@ -31,22 +33,39 @@ public class MindmapOrchestrationService {
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final MindmapRepository mindmapRepository;
+    private final MindmapRequestValidator requestValidator;
 
     /**
      * 비동기적으로 마인드맵 생성 과정을 총괄
      */
     @Async("mindmapExecutor")
     public void createMindmap(MindmapCreateRequestDto request, Long userId, String authHeader) {
-        String normalizedUrl = normalizeRepoUrl(request.getRepoUrl());
+        log.info("마인드맵 생성 요청 검증 시작 - 사용자: {}", userId);
+        ValidatedMindmapRequest validatedRequest = requestValidator.validateAndProcess(
+            request.getRepoUrl(),
+            request.getPrompt(),
+            userId
+        );
+
+        // 2. FastAPI 통합 분석 요청 - analyzeRepository 메서드 사용
+        String normalizedUrl = validatedRequest.getRepositoryInfo().getNormalizedUrl();
+        String processedPrompt = validatedRequest.getProcessedPrompt();
 
         CompletableFuture.supplyAsync(() -> {
-            // 1. FastAPI에 리포지토리 분석 요청
-            log.info("FastAPI 분석 요청 시작 - 사용자: {}, 저장소: {}", userId, normalizedUrl);
-            return requestAnalysisFromFastAPI(normalizedUrl, request.getPrompt(), authHeader);
+            // 1. 요청 검증 및 전처리
+            log.info("FastAPI 분석 요청 시작 - URL: {}, 프롬프트 존재: {}",
+                normalizedUrl, StringUtils.hasText(processedPrompt));
+
+            // prompt가 null이면 기본 분석, 있으면 프롬프트 포함 분석
+            return fastApiClient.analyzeResult(
+                normalizedUrl,
+                processedPrompt,
+                authHeader
+            );
         }).thenApply(analysisResult -> {
             // 2. 분석 결과를 바탕으로 DB에 마인드맵 정보 저장 (트랜잭션)
             log.info("분석 완료, DB 저장 시작 - 사용자: {}", userId);
-            return mindmapService.saveMindmapFromAnalysis(analysisResult, normalizedUrl, request.getPrompt(), userId);
+            return mindmapService.saveMindmapFromAnalysis(analysisResult, normalizedUrl, processedPrompt, userId);
         }).whenComplete((mindmap, throwable) -> {
             // 3. 최종 결과에 따라 알림 전송
             if (throwable != null) {
@@ -64,15 +83,19 @@ public class MindmapOrchestrationService {
             Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
-            String repoUrl = mindmap.getRepo().getGithubRepoUrl();
             PromptHistory appliedPrompt = mindmap.getAppliedPromptHistory();
 
-            // 1. FastAPI 분석 요청
-            AnalysisResultDto analysisResult = (appliedPrompt != null && StringUtils.hasText(appliedPrompt.getPrompt()))
-                ? fastApiClient.analyzeWithPrompt(repoUrl, appliedPrompt.getPrompt(), authHeader)
-                : fastApiClient.analyzeDefault(repoUrl, authHeader);
+            String repoUrl = mindmap.getRepo().getGithubRepoUrl();
+            String prompt = appliedPrompt.getPrompt();
 
-            // 2. 분석 결과를 DB에 업데이트 (트랜잭션)
+            // FastAPI 분석 요청
+            AnalysisResultDto analysisResult = fastApiClient.refreshMindmap(
+                repoUrl,
+                prompt,
+                authHeader
+            );
+
+            // 분석 결과를 DB에 업데이트 (트랜잭션)
             mindmapService.updateMindmapFromAnalysis(mapId, analysisResult);
             log.info("비동기 새로고침 성공 - 마인드맵 ID: {}", mapId);
 
@@ -92,22 +115,6 @@ public class MindmapOrchestrationService {
         } catch (Exception e) {
             log.error("ArangoDB 데이터 비동기 삭제 실패 - 저장소: {}, 원인: {}", repoUrl, e.getMessage());
             // TODO: 실패 시 재시도 로직 또는 관리자 알림 등의 후속 처리 구현 가능
-        }
-    }
-
-    private AnalysisResultDto requestAnalysisFromFastAPI(String repoUrl, String prompt, String authHeader) {
-        try {
-            // 저장소 정보 최신화
-            fastApiClient.saveRepoInfo(repoUrl, authHeader);
-            fastApiClient.fetchRepo(repoUrl, authHeader);
-
-            // 프롬프트 유무에 따라 다른 분석 API 호출
-            return StringUtils.hasText(prompt)
-                ? fastApiClient.analyzeWithPrompt(repoUrl, prompt, authHeader)
-                : fastApiClient.analyzeDefault(repoUrl, authHeader);
-        } catch (Exception e) {
-            log.error("FastAPI 분석 실패 - 저장소: {}, 원인: {}", repoUrl, e.getMessage(), e);
-            throw new GlobalException(ErrorCode.MINDMAP_CREATION_FAILED);
         }
     }
 
@@ -151,13 +158,6 @@ public class MindmapOrchestrationService {
         } catch (Exception e) {
             log.error("실패 알림 전송 중 추가 오류 발생: {}", e.getMessage());
         }
-    }
-
-    private String normalizeRepoUrl(String url) {
-        if (url == null || url.trim().isEmpty()) {
-            throw new IllegalArgumentException("Repository URL cannot be null or empty");
-        }
-        return url.trim().toLowerCase().replaceAll("/$", "").replaceAll("\\.git$", "");
     }
 
     private String getSimplifiedErrorMessage(Throwable throwable) {
