@@ -29,10 +29,6 @@ public class PromptHistory extends CreatedEntity {
     @Column(length = 50)
     private String title;  // 분석 결과 요약 (기록 제목)
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "map_data", columnDefinition = "json", nullable = false)
-    private String mapData;  // 해당 프롬프트의 분석 결과 데이터
-
     @Builder.Default
     @Column(name = "applied", nullable = false)
     private Boolean applied = false;   // 적용 확정 여부

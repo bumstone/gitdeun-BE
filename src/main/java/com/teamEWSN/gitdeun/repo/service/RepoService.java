@@ -1,6 +1,5 @@
 package com.teamEWSN.gitdeun.repo.service;
 
-import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
@@ -12,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service

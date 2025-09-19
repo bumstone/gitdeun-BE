@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 public class WebhookUpdateDto {
     // FastAPI 콜백 페이로드와 동일
     private String repoUrl;
-    private String mapData;
     private String defaultBranch;
-    private LocalDateTime githubLastUpdatedAt;
+    private LocalDateTime lastCommit;
 }

@@ -49,7 +49,7 @@ public class PromptHistoryService {
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
 
         try {
-            AnalysisResultDto analysisResult = fastApiClient.analyzeWithPrompt(repoUrl, req.getPrompt(), authorizationHeader);
+            AnalysisResultDto analysisResult = fastApiClient.refreshMindmap(repoUrl, req.getPrompt(), authorizationHeader);
 
             // FastAPI로부터 받은 analysisSummary 사용
             String summary = analysisResult.getTitle();
@@ -63,7 +63,6 @@ public class PromptHistoryService {
                 .mindmap(mindmap)
                 .prompt(req.getPrompt())
                 .title(summary)
-                .mapData(analysisResult.getMapData())
                 .applied(false)
                 .build();
 
@@ -184,13 +183,12 @@ public class PromptHistoryService {
     /**
      * 마인드맵 생성 시 초기 프롬프트 히스토리 생성
      */
-    public void createInitialPromptHistory(Mindmap mindmap, String prompt, String mapData, String promptTitle) {
+    public void createInitialPromptHistory(Mindmap mindmap, String prompt, String promptTitle) {
         if (prompt != null && !prompt.trim().isEmpty()) {
             PromptHistory history = PromptHistory.builder()
                 .mindmap(mindmap)
                 .prompt(prompt)
                 .title(promptTitle)
-                .mapData(mapData)
                 .applied(true)
                 .build();
 
