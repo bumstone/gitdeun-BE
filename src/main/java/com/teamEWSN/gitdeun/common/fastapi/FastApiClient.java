@@ -51,16 +51,11 @@ public class FastApiClient {
             AnalyzeResponse analyzeResult = analyzeAI(repoUrl, prompt, authorizationHeader);
             log.info("AI 분석 완료 - 디렉터리: {}", analyzeResult.getDirs_analyzed());
 
-            // Step 3: 생성된 그래프 데이터 조회
-            MindmapGraphDto graphData = getGraph(mapId, authorizationHeader);
-            log.info("그래프 조회 완료 - 노드: {}, 엣지: {}",
-                graphData.getNodes().size(), graphData.getEdges().size());
-
-            // Step 4: 저장소 정보 조회 (TODO: FastAPI에 엔드포인트 추가 필요)
+            // Step 3: 저장소 정보 조회
             RepoInfoResponse repoInfo = getRepoInfo(mapId, authorizationHeader);
 
             // 모든 데이터를 종합하여 DTO 생성
-            return buildAnalysisResultDto(mapId, analyzeResult, graphData, repoInfo);
+            return buildAnalysisResultDto(repoInfo);
 
         } catch (Exception e) {
             log.error("저장소 분석 실패: {}", e.getMessage(), e);
@@ -83,14 +78,11 @@ public class FastApiClient {
             log.info("새로고침 완료 - 변경 파일: {}, 분석 디렉터리: {}",
                 refreshResult.getChanged_files(), refreshResult.getDirs_analyzed());
 
-            // Step 2: 업데이트된 그래프 조회
-            MindmapGraphDto graphData = getGraph(mapId, authorizationHeader);
-
-            // Step 3: 저장소 정보 조회
+            // Step 2: 저장소 정보 조회
             RepoInfoResponse repoInfo = getRepoInfo(mapId, authorizationHeader);
 
             // 새로고침 결과를 DTO로 변환
-            return buildRefreshResultDto(mapId, refreshResult, graphData, repoInfo);
+            return buildRefreshResultDto(repoInfo);
 
         } catch (Exception e) {
             log.error("마인드맵 새로고침 실패: {}", e.getMessage(), e);
@@ -202,7 +194,9 @@ public class FastApiClient {
     /**
      * ArangoDB에서 repo_url 기반으로 마인드맵 데이터를 삭제
      */
-    public void deleteMindmapData(String mapId, String authorizationHeader) {
+    public void deleteMindmapData(String repoUrl, String authorizationHeader) {
+        String mapId = extractMapId(repoUrl);
+
         webClient.delete()
             .uri(uriBuilder -> uriBuilder
                 .path("/mindmap/{mapId}")
@@ -225,58 +219,24 @@ public class FastApiClient {
     }
 
     private AnalysisResultDto buildAnalysisResultDto(
-        String mapId,
-        AnalyzeResponse analyzeResult,
-        MindmapGraphDto graphData,
         RepoInfoResponse repoInfo
     ) {
-        // 그래프 데이터를 JSON 문자열로 변환
-        String mapDataJson = convertGraphToJson(graphData);
-
-        // AI가 생성한 제목 또는 기본 제목
-        // TODO: 제목 생성 fastapi 메서드 필요
-        String title = String.format("%s 프로젝트 구조 분석 (디렉터리 %d개)",
-            mapId, analyzeResult.getDirs_analyzed());
-
         return AnalysisResultDto.builder()
             .defaultBranch(repoInfo.getDefaultBranch())
             .lastCommit(repoInfo.getLastCommit())
-            .title(title)
             .errorMessage(null)
             .build();
     }
 
     private AnalysisResultDto buildRefreshResultDto(
-        String mapId,
-        RefreshResponse refreshResult,
-        MindmapGraphDto graphData,
         RepoInfoResponse repoInfo
     ) {
-        String mapDataJson = convertGraphToJson(graphData);
-
-        // TODO: 제목 생성 fastapi 메서드 필요
-        String title = String.format("%s (변경 파일 %d개 반영)",
-            mapId, refreshResult.getChanged_files());
-
         return AnalysisResultDto.builder()
             .defaultBranch(repoInfo.getDefaultBranch())
             .lastCommit(repoInfo.getLastCommit())
-            .title(title)
             .errorMessage(null)
             .build();
     }
-
-    private String convertGraphToJson(MindmapGraphDto graph) {
-        // TODO: ObjectMapper 사용하여 실제 JSON 변환
-        return String.format(
-            "{\"nodes\":%d,\"edges\":%d,\"data\":\"%s\"}",
-            graph.getNodes().size(),
-            graph.getEdges().size(),
-            graph.toString()
-        );
-    }
-
-
 
     // === Response DTOs ===
 
@@ -315,8 +275,6 @@ public class FastApiClient {
         @JsonProperty("last_commit")
         @JsonDeserialize(using = IsoToLocalDateTimeDeserializer.class)
         private LocalDateTime lastCommit;
-
-
     }
 
     @Getter

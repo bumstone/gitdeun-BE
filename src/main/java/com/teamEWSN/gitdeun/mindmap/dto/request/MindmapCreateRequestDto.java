@@ -7,5 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MindmapCreateRequestDto {
     private String repoUrl;
-    private String prompt;
+    private String title;
 }

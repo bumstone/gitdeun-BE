@@ -34,7 +34,6 @@ public class MindmapService {
     private final VisitHistoryService visitHistoryService;
     private final MindmapSseService mindmapSseService;
     private final MindmapAuthService mindmapAuthService;
-    private final PromptHistoryService promptHistoryService;
     private final MindmapMapper mindmapMapper;
     private final MindmapRepository mindmapRepository;
     private final MindmapMemberRepository mindmapMemberRepository;
@@ -44,15 +43,15 @@ public class MindmapService {
 
     // FastAPI 분석 결과를 받아 마인드맵을 생성하고 DB에 저장 (단일 트랜잭션)
     @Transactional
-    public Mindmap saveMindmapFromAnalysis(AnalysisResultDto analysisResult, String repoUrl, String prompt, Long userId) {
+    public Mindmap saveMindmapFromAnalysis(AnalysisResultDto analysisResult, String repoUrl, String requestTitle, Long userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
-        // 1. 저장소 정보 처리 (기존에 있으면 업데이트, 없으면 생성)
+        // 저장소 정보 처리 (기존에 있으면 업데이트, 없으면 생성)
         Repo repo = processRepository(repoUrl, analysisResult);
 
-        // 2. AI가 생성한 제목 또는 기본 제목 결정
-        String title = determineTitle(analysisResult, user);
+        // AI가 생성한 제목 또는 기본 제목 결정
+        String title = determineTitle(requestTitle, user);
 
         // 3. 마인드맵 엔티티 생성 및 저장
         Mindmap mindmap = Mindmap.builder()
@@ -63,15 +62,10 @@ public class MindmapService {
             .build();
         mindmapRepository.save(mindmap);
 
-        // 4. 초기 프롬프트 히스토리 생성 (프롬프트가 있는 경우)
-        if (StringUtils.hasText(prompt)) {
-            promptHistoryService.createInitialPromptHistory(mindmap, prompt, title);
-        }
-
-        // 5. 마인드맵 소유자 멤버로 등록
+        // 마인드맵 소유자 멤버로 등록
         mindmapMemberRepository.save(MindmapMember.of(mindmap, user, MindmapRole.OWNER));
 
-        // 6. 방문 기록 생성
+        // 방문 기록 생성
         visitHistoryService.createVisitHistory(user, mindmap);
 
         log.info("마인드맵 DB 저장 완료 - ID: {}, 제목: {}", mindmap.getId(), title);
@@ -209,9 +203,9 @@ public class MindmapService {
             });
     }
 
-    private String determineTitle(AnalysisResultDto analysisResult, User user) {
-        if (StringUtils.hasText(analysisResult.getTitle())) {
-            return analysisResult.getTitle();
+    private String determineTitle(String title, User user) {
+        if (StringUtils.hasText(title)) {
+            return title;
         }
         long userMindmapCount = mindmapRepository.countByUserAndDeletedAtIsNull(user);
         return "마인드맵 " + (userMindmapCount + 1);

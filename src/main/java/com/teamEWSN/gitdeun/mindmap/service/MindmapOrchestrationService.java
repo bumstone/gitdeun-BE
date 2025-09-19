@@ -43,7 +43,7 @@ public class MindmapOrchestrationService {
         log.info("마인드맵 생성 요청 검증 시작 - 사용자: {}", userId);
         ValidatedMindmapRequest validatedRequest = requestValidator.validateAndProcess(
             request.getRepoUrl(),
-            request.getPrompt(),
+            null,
             userId
         );
 
@@ -59,13 +59,13 @@ public class MindmapOrchestrationService {
             // prompt가 null이면 기본 분석, 있으면 프롬프트 포함 분석
             return fastApiClient.analyzeResult(
                 normalizedUrl,
-                processedPrompt,
+                null,
                 authHeader
             );
         }).thenApply(analysisResult -> {
             // 2. 분석 결과를 바탕으로 DB에 마인드맵 정보 저장 (트랜잭션)
             log.info("분석 완료, DB 저장 시작 - 사용자: {}", userId);
-            return mindmapService.saveMindmapFromAnalysis(analysisResult, normalizedUrl, processedPrompt, userId);
+            return mindmapService.saveMindmapFromAnalysis(analysisResult, normalizedUrl, request.getTitle(), userId);
         }).whenComplete((mindmap, throwable) -> {
             // 3. 최종 결과에 따라 알림 전송
             if (throwable != null) {
