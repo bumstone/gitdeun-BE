@@ -1,6 +1,7 @@
 package com.teamEWSN.gitdeun.mindmap.mapper;
 
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
+import com.teamEWSN.gitdeun.mindmap.dto.MindmapGraphResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptHistoryResponseDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
@@ -27,5 +28,12 @@ public interface MindmapMapper {
     @Mapping(source = "promptHistories", target = "promptHistories")
     @Mapping(source = "appliedPromptHistory", target = "appliedPromptHistory")
     MindmapDetailResponseDto toDetailResponseDto(Mindmap mindmap);
+
+    @Mapping(source = "mindmap.id", target = "mindmapId")
+    @Mapping(source = "mindmap.promptHistories", target = "promptHistories")
+    @Mapping(source = "mindmap.appliedPromptHistory", target = "appliedPromptHistory")
+    @Mapping(source = "graphData", target = "mindmapGraph")
+    MindmapDetailResponseDto toDetailResponseDto(Mindmap mindmap,
+                                                 MindmapGraphResponseDto graphData);
 
 }

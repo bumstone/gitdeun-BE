@@ -7,6 +7,7 @@ import com.teamEWSN.gitdeun.common.webhook.dto.WebhookUpdateDto;
 import com.teamEWSN.gitdeun.mindmap.dto.*;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.mindmap.mapper.MindmapMapper;
+import com.teamEWSN.gitdeun.mindmap.util.MindmapGraphCache;
 import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapMember;
 import com.teamEWSN.gitdeun.mindmapmember.entity.MindmapRole;
 import com.teamEWSN.gitdeun.mindmapmember.repository.MindmapMemberRepository;
@@ -39,6 +40,7 @@ public class MindmapService {
     private final MindmapMemberRepository mindmapMemberRepository;
     private final RepoRepository repoRepository;
     private final UserRepository userRepository;
+    private final MindmapGraphCache mindmapGraphCache;
 
     // FastAPI 분석 결과를 받아 마인드맵을 생성하고 DB에 저장 (단일 트랜잭션)
     @Transactional
@@ -78,7 +80,7 @@ public class MindmapService {
 
     // 마인드맵 상세 정보 조회
     @Transactional(readOnly = true)
-    public MindmapDetailResponseDto getMindmap(Long mapId, Long userId) {
+    public MindmapDetailResponseDto getMindmap(Long mapId, Long userId, String authHeader) {
         if (!mindmapAuthService.hasView(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
@@ -86,7 +88,13 @@ public class MindmapService {
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
-        return mindmapMapper.toDetailResponseDto(mindmap);
+        // 캐싱된 그래프 데이터 조회
+        MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(
+            mindmap.getRepo().getGithubRepoUrl(),
+            authHeader
+        );
+
+        return mindmapMapper.toDetailResponseDto(mindmap, graphData);
     }
 
     //마인드맵 제목 수정
@@ -110,13 +118,21 @@ public class MindmapService {
 
     // 분석 결과를 바탕으로 기존 마인드맵을 업데이트 (새로고침)
     @Transactional
-    public MindmapDetailResponseDto updateMindmapFromAnalysis(Long mapId, AnalysisResultDto analysisResult) {
+    public MindmapDetailResponseDto updateMindmapFromAnalysis(Long mapId, String authHeader, AnalysisResultDto analysisResult) {
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         mindmap.getRepo().updateWithAnalysis(analysisResult);
 
-        MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
+        // 새로고침 시 그래프 캐시 무효화
+        mindmapGraphCache.evictCache(mindmap.getRepo().getGithubRepoUrl());
+
+        MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(
+            mindmap.getRepo().getGithubRepoUrl(),
+            authHeader
+        );
+
+        MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap, graphData);
         mindmapSseService.broadcastUpdate(mapId, responseDto);
 
         log.info("마인드맵 새로고침 DB 업데이트 완료 - ID: {}", mapId);
@@ -136,6 +152,9 @@ public class MindmapService {
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
+        // 삭제 시 관련 캐시도 무효화
+        mindmapGraphCache.evictCache(mindmap.getRepo().getGithubRepoUrl());
+
         mindmap.softDelete();
         log.info("마인드맵 소프트 삭제 완료 (DB) - ID: {}", mapId);
 
@@ -146,7 +165,7 @@ public class MindmapService {
      * TODO: Webhook을 통한 마인드맵 업데이트
      */
     @Transactional
-    public void updateMindmapFromWebhook(WebhookUpdateDto dto, String authorizationHeader) {
+    public void updateMindmapFromWebhook(WebhookUpdateDto dto, String authHeader) {
         Repo repo = repoRepository.findByGithubRepoUrl(dto.getRepoUrl())
             .orElseThrow(() -> new GlobalException(ErrorCode.REPO_NOT_FOUND_BY_URL));
 
@@ -156,8 +175,17 @@ public class MindmapService {
 
         repo.updateWithWebhookData(dto);
 
+        // Webhook 업데이트 시 관련 캐시 무효화
+        mindmapGraphCache.evictCache(repo.getGithubRepoUrl());
+
         for (Mindmap mindmap : mindmapsToUpdate) {
-            MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
+            // 새로운 그래프 데이터로 업데이트된 응답 생성
+            MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(
+                repo.getGithubRepoUrl(),
+                authHeader
+            );
+
+            MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap, graphData);
             mindmapSseService.broadcastUpdate(mindmap.getId(), responseDto);
             log.info("Webhook으로 마인드맵 ID {} 업데이트 및 SSE 전송 완료", mindmap.getId());
         }
