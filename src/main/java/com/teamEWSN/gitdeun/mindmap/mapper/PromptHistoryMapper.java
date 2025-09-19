@@ -22,7 +22,6 @@ public interface PromptHistoryMapper {
      * PromptHistory 엔티티 → PromptPreviewResponseDto 변환
      */
     @Mapping(source = "id", target = "historyId")
-    @Mapping(source = "mapData", target = "previewMapData")
     PromptPreviewResponseDto toPreviewResponseDto(PromptHistory promptHistory);
 
     /**

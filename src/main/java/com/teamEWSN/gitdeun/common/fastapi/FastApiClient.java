@@ -1,5 +1,8 @@
 package com.teamEWSN.gitdeun.common.fastapi;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.teamEWSN.gitdeun.common.converter.IsoToLocalDateTimeDeserializer;
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.common.fastapi.dto.MindmapGraphDto;
 import lombok.Getter;
@@ -42,6 +45,8 @@ public class FastApiClient {
             log.info("Fetch 완료 - 파일: {}, 파싱: {}",
                 fetchResult.getFiles_saved(), fetchResult.getFiles_parsed());
 
+            saveRepoInfo(mapId, authorizationHeader);
+
             // Step 2: 마인드맵 기본 분석 (AI)
             AnalyzeResponse analyzeResult = analyzeAI(repoUrl, prompt, authorizationHeader);
             log.info("AI 분석 완료 - 디렉터리: {}", analyzeResult.getDirs_analyzed());
@@ -55,7 +60,7 @@ public class FastApiClient {
             RepoInfoResponse repoInfo = getRepoInfo(mapId, authorizationHeader);
 
             // 모든 데이터를 종합하여 DTO 생성
-            return buildAnalysisResultDto(mapId, fetchResult, analyzeResult, graphData, repoInfo);
+            return buildAnalysisResultDto(mapId, analyzeResult, graphData, repoInfo);
 
         } catch (Exception e) {
             log.error("저장소 분석 실패: {}", e.getMessage(), e);
@@ -96,7 +101,7 @@ public class FastApiClient {
     }
 
     // 저장소 파일 fetch
-    private FetchResponse fetchRepoInfo(String repoUrl, String authHeader) {
+    public FetchResponse fetchRepoInfo(String repoUrl, String authHeader) {
         Map<String, String> request = new HashMap<>();
         request.put("repo_url", repoUrl);
 
@@ -124,14 +129,23 @@ public class FastApiClient {
             .block();
     }
 
-    // 저장소 정보 조회 (TODO: FastAPI에 구현 필요)
-    private RepoInfoResponse getRepoInfo(String mapId, String authHeader) {
-        // TODO: FastAPI에 /repo/{mapId}/info 엔드포인트 구현 필요
-        // 현재는 기본값 반환
-        RepoInfoResponse info = new RepoInfoResponse();
-        info.setDefault_branch("main");
-        info.setLast_updated_at(LocalDateTime.now());
-        return info;
+    // 저장소 정보 조회
+    public RepoInfoResponse getRepoInfo(String mapId, String authHeader) {
+        try {
+            return webClient.get()
+                .uri("/repo/{mapId}/info", mapId)
+                .header("Authorization", authHeader)
+                .retrieve()
+                .bodyToMono(RepoInfoResponse.class)
+                .block();
+        } catch (Exception e) {
+            log.warn("저장소 정보 조회 실패: {}, 기본값 사용", e.getMessage());
+            // 조회 실패 시 기본값 반환
+            RepoInfoResponse info = new RepoInfoResponse();
+            info.setDefaultBranch("main");
+            info.setLastCommit(LocalDateTime.now());
+            return info;
+        }
     }
 
     /**
@@ -158,7 +172,7 @@ public class FastApiClient {
     /**
      * ArangoDB에서 마인드맵 그래프 데이터를 조회
      */
-    private MindmapGraphDto getGraph(String mapId, String authHeader) {
+    public MindmapGraphDto getGraph(String mapId, String authHeader) {
         return webClient.get()
             .uri("/mindmap/{mapId}/graph", mapId)
             .header("Authorization", authHeader)
@@ -168,7 +182,7 @@ public class FastApiClient {
     }
 
     // 최신 변경사항 새로고침
-    private RefreshResponse refreshLatest(String mapId, String prompt, String authHeader) {
+    public RefreshResponse refreshLatest(String mapId, String prompt, String authHeader) {
         Map<String, Object> request = new HashMap<>();
         if (StringUtils.hasText(prompt)) {
             request.put("prompt", prompt);
@@ -212,7 +226,6 @@ public class FastApiClient {
 
     private AnalysisResultDto buildAnalysisResultDto(
         String mapId,
-        FetchResponse fetchResult,
         AnalyzeResponse analyzeResult,
         MindmapGraphDto graphData,
         RepoInfoResponse repoInfo
@@ -221,13 +234,13 @@ public class FastApiClient {
         String mapDataJson = convertGraphToJson(graphData);
 
         // AI가 생성한 제목 또는 기본 제목
+        // TODO: 제목 생성 fastapi 메서드 필요
         String title = String.format("%s 프로젝트 구조 분석 (디렉터리 %d개)",
             mapId, analyzeResult.getDirs_analyzed());
 
         return AnalysisResultDto.builder()
-            .defaultBranch(repoInfo.getDefault_branch())
-            .githubLastUpdatedAt(repoInfo.getLast_updated_at())
-            .mapData(mapDataJson)
+            .defaultBranch(repoInfo.getDefaultBranch())
+            .lastCommit(repoInfo.getLastCommit())
             .title(title)
             .errorMessage(null)
             .build();
@@ -240,13 +253,14 @@ public class FastApiClient {
         RepoInfoResponse repoInfo
     ) {
         String mapDataJson = convertGraphToJson(graphData);
+
+        // TODO: 제목 생성 fastapi 메서드 필요
         String title = String.format("%s (변경 파일 %d개 반영)",
             mapId, refreshResult.getChanged_files());
 
         return AnalysisResultDto.builder()
-            .defaultBranch(repoInfo.getDefault_branch())
-            .githubLastUpdatedAt(repoInfo.getLast_updated_at())
-            .mapData(mapDataJson)
+            .defaultBranch(repoInfo.getDefaultBranch())
+            .lastCommit(repoInfo.getLastCommit())
             .title(title)
             .errorMessage(null)
             .build();
@@ -295,8 +309,14 @@ public class FastApiClient {
     @Getter
     @Setter
     public static class RepoInfoResponse {
-        private String default_branch;
-        private LocalDateTime last_updated_at;
+        @JsonProperty("default_branch")
+        private String defaultBranch;
+
+        @JsonProperty("last_commit")
+        @JsonDeserialize(using = IsoToLocalDateTimeDeserializer.class)
+        private LocalDateTime lastCommit;
+
+
     }
 
     @Getter
@@ -308,4 +328,6 @@ public class FastApiClient {
         private Integer nodes_removed;
         private Integer recs_removed;
     }
+
+
 }

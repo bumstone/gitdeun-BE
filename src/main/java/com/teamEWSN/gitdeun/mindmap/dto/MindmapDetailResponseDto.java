@@ -15,7 +15,10 @@ public class MindmapDetailResponseDto {
     private Long mindmapId;
     private String title;
     private String branch;
-    private String mapData; // 핵심 데이터인 마인드맵 JSON
+
+    // 맵 데이터
+    private MindmapGraphResponseDto mindmapGraph;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

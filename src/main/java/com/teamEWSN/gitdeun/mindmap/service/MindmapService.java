@@ -58,13 +58,12 @@ public class MindmapService {
             .user(user)
             .branch(repo.getDefaultBranch())
             .title(title)
-            .mapData(StringUtils.hasText(analysisResult.getMapData()) ? analysisResult.getMapData() : "{}")
             .build();
         mindmapRepository.save(mindmap);
 
         // 4. 초기 프롬프트 히스토리 생성 (프롬프트가 있는 경우)
         if (StringUtils.hasText(prompt)) {
-            promptHistoryService.createInitialPromptHistory(mindmap, prompt, analysisResult.getMapData(), title);
+            promptHistoryService.createInitialPromptHistory(mindmap, prompt, title);
         }
 
         // 5. 마인드맵 소유자 멤버로 등록
@@ -116,7 +115,6 @@ public class MindmapService {
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         mindmap.getRepo().updateWithAnalysis(analysisResult);
-        mindmap.updateMapData(analysisResult.getMapData());
 
         MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
         mindmapSseService.broadcastUpdate(mapId, responseDto);
@@ -159,7 +157,6 @@ public class MindmapService {
         repo.updateWithWebhookData(dto);
 
         for (Mindmap mindmap : mindmapsToUpdate) {
-            mindmap.updateMapData(dto.getMapData());
             MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap);
             mindmapSseService.broadcastUpdate(mindmap.getId(), responseDto);
             log.info("Webhook으로 마인드맵 ID {} 업데이트 및 SSE 전송 완료", mindmap.getId());
@@ -178,7 +175,7 @@ public class MindmapService {
                 Repo newRepo = Repo.builder()
                     .githubRepoUrl(repoUrl)
                     .defaultBranch(analysisResult.getDefaultBranch())
-                    .githubLastUpdatedAt(analysisResult.getGithubLastUpdatedAt())
+                    .githubLastUpdatedAt(analysisResult.getLastCommit())
                     .build();
                 return repoRepository.save(newRepo);
             });

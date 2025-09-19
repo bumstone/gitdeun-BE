@@ -25,6 +25,7 @@ spring:
         order_updates: true
         jdbc:
           batch_size: 1000
+          time_zone: UTC
   security:
     oauth2:
       client:
