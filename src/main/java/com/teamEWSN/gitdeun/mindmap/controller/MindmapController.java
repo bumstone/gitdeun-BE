@@ -65,9 +65,10 @@ public class MindmapController {
     @GetMapping("/{mapId}")
     public ResponseEntity<MindmapDetailResponseDto> getMindmap(
         @PathVariable Long mapId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestHeader("Authorization") String authorizationHeader
     ) {
-        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId());
+        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId(), authorizationHeader);
         return ResponseEntity.ok(responseDto);
     }
 
@@ -80,7 +81,10 @@ public class MindmapController {
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @RequestBody MindmapTitleUpdateDto request
     ) {
-        MindmapDetailResponseDto responseDto = mindmapService.updateMindmapTitle(mapId, userDetails.getId(), request);
+        MindmapDetailResponseDto responseDto = mindmapService.updateMindmapTitle(
+            mapId,
+            userDetails.getId(),
+            request);
         return ResponseEntity.ok(responseDto);
     }
 
@@ -152,12 +156,12 @@ public class MindmapController {
     public ResponseEntity<MindmapDetailResponseDto> applyPromptHistory(
         @PathVariable Long mapId,
         @AuthenticationPrincipal CustomUserDetails userDetails,
-        @RequestBody PromptApplyRequestDto request
+        @RequestBody PromptApplyRequestDto request,
+        @RequestHeader("Authorization") String authorizationHeader
     ) {
         promptHistoryService.applyPromptHistory(mapId, userDetails.getId(), request);
 
-        // TODO: 마인드맵 정보 갱신 요청 후 상세 조회
-        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId());
+        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId(), authorizationHeader);
         return ResponseEntity.ok(responseDto);
     }
 

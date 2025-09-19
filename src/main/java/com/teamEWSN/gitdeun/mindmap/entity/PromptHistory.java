@@ -27,7 +27,7 @@ public class PromptHistory extends CreatedEntity {
     private String prompt;
 
     @Column(length = 50)
-    private String title;  // 분석 결과 요약 (기록 제목)
+    private String summary;  // 분석 결과 요약 (기록 제목)
 
     @Builder.Default
     @Column(name = "applied", nullable = false)

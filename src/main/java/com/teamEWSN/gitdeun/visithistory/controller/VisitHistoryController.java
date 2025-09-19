@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +44,7 @@ public class VisitHistoryController {
     @GetMapping("/visits")
     public ResponseEntity<Page<VisitHistoryResponseDto>> getVisitHistories(
         @AuthenticationPrincipal CustomUserDetails userDetails,
-        @PageableDefault(size = 10, sort = "lastVisitedAt,desc") Pageable pageable
+        @PageableDefault(size = 10, sort = "lastVisitedAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<VisitHistoryResponseDto> histories = visitHistoryService.getVisitHistories(userDetails.getId(), pageable);
         return ResponseEntity.ok(histories);

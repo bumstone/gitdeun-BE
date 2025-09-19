@@ -7,6 +7,7 @@ import com.teamEWSN.gitdeun.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,7 +24,7 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<Page<NotificationResponseDto>> getMyNotifications(
         @AuthenticationPrincipal CustomUserDetails userDetails,
-        @PageableDefault(size = 10, sort = "createdAt,desc") Pageable pageable) {
+        @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<NotificationResponseDto> notifications = notificationService.getNotifications(userDetails.getId(), pageable);
         return ResponseEntity.ok(notifications);
     }

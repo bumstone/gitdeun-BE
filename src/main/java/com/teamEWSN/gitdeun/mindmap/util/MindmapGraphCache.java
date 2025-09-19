@@ -5,8 +5,6 @@ import com.teamEWSN.gitdeun.common.fastapi.dto.MindmapGraphDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapGraphResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -19,19 +17,14 @@ public class MindmapGraphCache {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final FastApiClient fastApiClient;
-
-    // L1 캐시: Caffeine
-    @Cacheable(value = "MINDMAP_GRAPH_L1", key = "#mapId")
-    public MindmapGraphResponseDto getGraphFromL1Cache(String mapId) {
-        return null; // 캐시 미스 시 L2로 진행
-    }
+    private final MindmapL1Cache mindmapL1Cache;
 
     // L2 캐시: Redis
     public MindmapGraphResponseDto getGraphWithHybridCache(String repoUrl, String authHeader) {
         String mapId = extractMapId(repoUrl);
 
         // 1. L1 캐시 확인 (Caffeine)
-        MindmapGraphResponseDto l1Result = getGraphFromL1Cache(mapId);
+        MindmapGraphResponseDto l1Result = mindmapL1Cache.getGraphFromL1Cache(mapId);
         if (l1Result != null) {
             log.debug("마인드맵 그래프 L1 캐시 히트 - mapId: {}", mapId);
             return l1Result;
@@ -45,7 +38,7 @@ public class MindmapGraphCache {
             if (l2Result != null) {
                 log.debug("마인드맵 그래프 L2 캐시 히트 - mapId: {}", mapId);
                 // L1 캐시에 다시 저장
-                cacheToL1(mapId, l2Result);
+                mindmapL1Cache.cacheToL1(mapId, l2Result);
                 return l2Result;
             }
         } catch (Exception e) {
@@ -66,7 +59,7 @@ public class MindmapGraphCache {
                 log.warn("Redis 캐시 저장 실패 - mapId: {}", mapId, e);
             }
 
-            cacheToL1(mapId, responseDto); // L1: 30분 (CacheType에서 정의)
+            mindmapL1Cache.cacheToL1(mapId, responseDto); // L1: 30분 (CacheType에서 정의)
 
             return responseDto;
 
@@ -81,11 +74,6 @@ public class MindmapGraphCache {
         }
     }
 
-    @CachePut(value = "MINDMAP_GRAPH_L1", key = "#mapId")
-    public MindmapGraphResponseDto cacheToL1(String mapId, MindmapGraphResponseDto data) {
-        return data;
-    }
-
     // 캐시 무효화 (마인드맵 새로고침 시)
     public void evictCache(String repoUrl) {
         String mapId = extractMapId(repoUrl);
@@ -94,6 +82,8 @@ public class MindmapGraphCache {
         try {
             redisTemplate.delete(redisKey);
             log.info("마인드맵 그래프 캐시 무효화 완료 - mapId: {}", mapId);
+            // L1 캐시(Caffeine) 삭제
+            mindmapL1Cache.evictL1Cache(mapId);
         } catch (Exception e) {
             log.warn("캐시 무효화 실패 - mapId: {}", mapId, e);
         }
