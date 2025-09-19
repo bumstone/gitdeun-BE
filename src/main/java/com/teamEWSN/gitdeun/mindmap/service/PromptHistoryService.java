@@ -49,10 +49,10 @@ public class PromptHistoryService {
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
 
         try {
-            AnalysisResultDto analysisResult = fastApiClient.analyzeWithPrompt(repoUrl, req.getPrompt(), authorizationHeader);
+            AnalysisResultDto analysisResult = fastApiClient.refreshMindmap(repoUrl, req.getPrompt(), authorizationHeader);
 
             // FastAPI로부터 받은 analysisSummary 사용
-            String summary = analysisResult.getTitle();
+            String summary = analysisResult.getSummary();
 
             // analysisSummary가 없거나 비어있는 경우 대체 로직 사용
             if (summary == null || summary.trim().isEmpty()) {
@@ -62,8 +62,7 @@ public class PromptHistoryService {
             PromptHistory history = PromptHistory.builder()
                 .mindmap(mindmap)
                 .prompt(req.getPrompt())
-                .title(summary)
-                .mapData(analysisResult.getMapData())
+                .summary(summary)
                 .applied(false)
                 .build();
 
@@ -146,16 +145,6 @@ public class PromptHistoryService {
 
         mindmap.applyPromptHistory(historyToApply);
 
-        // 마인드맵 제목도 프롬프트 타이틀로 업데이트
-        mindmap.updateTitle(historyToApply.getTitle());
-
-        log.info("프롬프트 히스토리 적용 완료 - 마인드맵 ID: {}, 히스토리 ID: {}, 제목 변경: {}",
-            mapId, req.getHistoryId(), historyToApply.getTitle());
-
-        // 제목 변경 브로드캐스트 추가
-        mindmapSseService.broadcastTitleChanged(mapId, historyToApply.getTitle());
-
-
         mindmapSseService.broadcastPromptApplied(mapId, historyToApply.getId());
     }
 
@@ -179,24 +168,6 @@ public class PromptHistoryService {
 
         promptHistoryRepository.delete(history);
         log.info("프롬프트 히스토리 삭제 완료 - 히스토리 ID: {}", historyId);
-    }
-
-    /**
-     * 마인드맵 생성 시 초기 프롬프트 히스토리 생성
-     */
-    public void createInitialPromptHistory(Mindmap mindmap, String prompt, String mapData, String promptTitle) {
-        if (prompt != null && !prompt.trim().isEmpty()) {
-            PromptHistory history = PromptHistory.builder()
-                .mindmap(mindmap)
-                .prompt(prompt)
-                .title(promptTitle)
-                .mapData(mapData)
-                .applied(true)
-                .build();
-
-            promptHistoryRepository.save(history);
-            log.info("초기 프롬프트 히스토리 생성 완료 - 마인드맵 ID: {}", mindmap.getId());
-        }
     }
 
     /**

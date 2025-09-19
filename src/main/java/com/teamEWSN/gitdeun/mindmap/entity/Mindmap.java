@@ -46,12 +46,12 @@ public class Mindmap extends AuditedEntity {
     @Column(length = 100, nullable = false)
     private String branch;
 
-    @Column(name = "title", length = 255, nullable = false)
+    @Column(length = 50, nullable = false)
     private String title;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    /*@JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "map_data", columnDefinition = "json", nullable = false)
-    private String mapData;
+    private String mapData;*/
 
     // TODO: 멤버수 제한 기능 (유료?)
     @Builder.Default
@@ -65,10 +65,6 @@ public class Mindmap extends AuditedEntity {
     @OneToMany(mappedBy = "mindmap", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PromptHistory> promptHistories = new ArrayList<>();
 
-
-    public void updateMapData(String newMapData) {
-        this.mapData = newMapData;
-    }
 
     public void updateTitle(String newTitle) {
         this.title = newTitle;
@@ -97,7 +93,6 @@ public class Mindmap extends AuditedEntity {
 
         // 새 프롬프트 적용
         promptHistory.applyToMindmap();
-        this.mapData = promptHistory.getMapData();
     }
 
 

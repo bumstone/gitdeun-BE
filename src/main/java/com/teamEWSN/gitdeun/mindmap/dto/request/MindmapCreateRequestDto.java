@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.mindmap.dto;
+package com.teamEWSN.gitdeun.mindmap.dto.request;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -7,5 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MindmapCreateRequestDto {
     private String repoUrl;
-    private String prompt;
+    private String title;
 }

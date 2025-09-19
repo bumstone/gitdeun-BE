@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -31,8 +32,8 @@ public class Repo {
     @Column(name = "default_branch", length = 100)
     private String defaultBranch;   // 기본 브랜치
 
-    @Column(name = "github_last_updated_at")
-    private LocalDateTime githubLastUpdatedAt; // GitHub 브랜치 최신 커밋 시간 (commit.committer.date)
+    @Column(name = "last_commit")
+    private LocalDateTime lastCommit; // GitHub 브랜치 최신 커밋 시간 (commit.committer.date)
 
     @OneToMany(mappedBy = "repo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Mindmap> mindmaps = new ArrayList<>();
@@ -41,16 +42,39 @@ public class Repo {
     public Repo(String githubRepoUrl, String defaultBranch, LocalDateTime githubLastUpdatedAt) {
         this.githubRepoUrl = githubRepoUrl;
         this.defaultBranch = defaultBranch;
-        this.githubLastUpdatedAt = githubLastUpdatedAt;
+        this.lastCommit = githubLastUpdatedAt;
     }
 
     public void updateWithAnalysis(AnalysisResultDto result) {
         this.defaultBranch = result.getDefaultBranch();
-        this.githubLastUpdatedAt = result.getGithubLastUpdatedAt();
+        this.lastCommit = result.getLastCommit();
     }
 
     public void updateWithWebhookData(WebhookUpdateDto dto) {
         this.defaultBranch = dto.getDefaultBranch();
-        this.githubLastUpdatedAt = dto.getGithubLastUpdatedAt();
+        this.lastCommit = dto.getLastCommit();
+    }
+
+    // 마지막 커밋 시간 업데이트
+    public void updateLastCommitTime(LocalDateTime lastCommitTime) {
+        if (lastCommitTime != null) {
+            this.lastCommit = lastCommitTime;
+        }
+    }
+
+    // 기본 브랜치 업데이트
+    public void updateDefaultBranch(String defaultBranch) {
+        if (StringUtils.hasText(defaultBranch)) {
+            this.defaultBranch = defaultBranch;
+        }
+    }
+
+
+    // 저장소가 최신 상태인지 확인
+    public boolean isNewerThan(LocalDateTime comparisonTime) {
+        if (this.lastCommit == null || comparisonTime == null) {
+            return false;
+        }
+        return this.lastCommit.isAfter(comparisonTime);
     }
 }

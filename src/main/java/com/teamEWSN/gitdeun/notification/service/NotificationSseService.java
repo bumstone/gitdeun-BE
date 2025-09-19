@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 @Slf4j
 @Service
@@ -19,8 +21,9 @@ public class NotificationSseService {
     // 한 사용자에 대해 여러 탭/기기의 연결을 허용
     private final Map<Long, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
 
-    // 1시간
-    private static final long TIMEOUT_MS = 60L * 60L * 1000L;
+    // 타임아웃 설정
+    private static final long TIMEOUT_MS = 60L * 60L * 1000L; // 1시간
+
 
     /** 클라이언트 구독 */
     public SseEmitter subscribe(Long userId) {

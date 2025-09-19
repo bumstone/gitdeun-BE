@@ -23,6 +23,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,10 +48,14 @@ public class RecruitmentService {
         User recruiter = userRepository.findById(userId)
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
-        validateRecruitmentDates(requestDto.getStartAt(), requestDto.getEndAt());
+        // 마감일을 해당 날짜의 23:59:59로 설정
+        LocalDateTime adjustedEndAt = requestDto.getEndAt().with(LocalTime.of(23, 59, 59));
+
+        validateRecruitmentDates(requestDto.getStartAt(), adjustedEndAt);
 
         Recruitment recruitment = recruitmentMapper.toEntity(requestDto);
         recruitment.setRecruiter(recruiter);
+        recruitment.setEndAt(adjustedEndAt);
 
         RecruitmentStatus initialStatus = requestDto.getStartAt().isAfter(LocalDateTime.now()) ?
             RecruitmentStatus.FORTHCOMING : RecruitmentStatus.RECRUITING;
