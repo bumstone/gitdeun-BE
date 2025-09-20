@@ -74,11 +74,12 @@ public class FastApiClient {
 
         try {
             // Step 1: 최신 변경사항만 빠르게 새로고침
-            RefreshResponse refreshResult = refreshLatest(mapId, prompt, authorizationHeader);
+            RefreshResponse refreshResult = refreshLatest(mapId, prompt, repoUrl, authorizationHeader);
             log.info("새로고침 완료 - 변경 파일: {}, 분석 디렉터리: {}",
                 refreshResult.getChanged_files(), refreshResult.getDirs_analyzed());
 
             // Step 2: 저장소 정보 조회
+            saveRepoInfo(repoUrl, authorizationHeader);
             RepoInfoResponse repoInfo = getRepoInfo(mapId, authorizationHeader);
 
             // 새로고침 결과를 DTO로 변환
@@ -175,13 +176,12 @@ public class FastApiClient {
     // TODO: 프롬프트 summary 반환
 
     // 최신 변경사항 새로고침
-    public RefreshResponse refreshLatest(String mapId, String prompt, String authHeader) {
+    public RefreshResponse refreshLatest(String mapId, String prompt, String repoUrl, String authHeader) {
         Map<String, Object> request = new HashMap<>();
+        request.put("repo_url", repoUrl);
         if (StringUtils.hasText(prompt)) {
             request.put("prompt", prompt);
         }
-        request.put("max_dirs", 10);
-        request.put("max_files_per_dir", 5);
 
         return webClient.post()
             .uri("/mindmap/{mapId}/refresh-latest", mapId)
