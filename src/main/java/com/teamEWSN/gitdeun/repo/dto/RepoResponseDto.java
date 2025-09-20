@@ -13,6 +13,6 @@ public class RepoResponseDto {
     private final String githubRepoUrl;
     private final String language;
     private final String defaultBranch;
-    private final LocalDateTime githubLastUpdatedAt;
+    private final LocalDateTime lastCommit;
 
 }
