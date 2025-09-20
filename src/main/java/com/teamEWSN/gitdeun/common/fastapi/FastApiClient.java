@@ -173,6 +173,8 @@ public class FastApiClient {
             .block();
     }
 
+    // TODO: 프롬프트 summary 반환
+
     // 최신 변경사항 새로고침
     public RefreshResponse refreshLatest(String mapId, String prompt, String authHeader) {
         Map<String, Object> request = new HashMap<>();
