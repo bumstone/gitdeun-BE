@@ -1,13 +1,12 @@
-package com.teamEWSN.gitdeun.Recruitment.repository;
+package com.teamEWSN.gitdeun.recruitment.repository;
 
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.teamEWSN.gitdeun.Recruitment.entity.Recruitment;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentStatus;
+import com.teamEWSN.gitdeun.recruitment.entity.Recruitment;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentField;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,7 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.teamEWSN.gitdeun.Recruitment.entity.QRecruitment.recruitment;
+import static com.teamEWSN.gitdeun.recruitment.entity.QRecruitment.recruitment;
 
 @Slf4j
 @Repository

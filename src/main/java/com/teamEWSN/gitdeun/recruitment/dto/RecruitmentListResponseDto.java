@@ -1,7 +1,7 @@
-package com.teamEWSN.gitdeun.Recruitment.dto;
+package com.teamEWSN.gitdeun.recruitment.dto;
 
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentStatus;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentField;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentStatus;
 import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import lombok.*;
 

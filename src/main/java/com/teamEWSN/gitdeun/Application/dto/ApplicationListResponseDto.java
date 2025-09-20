@@ -1,7 +1,7 @@
 package com.teamEWSN.gitdeun.Application.dto;
 
 import com.teamEWSN.gitdeun.Application.entity.ApplicationStatus;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentField;
 import lombok.*;
 
 import java.time.LocalDateTime;

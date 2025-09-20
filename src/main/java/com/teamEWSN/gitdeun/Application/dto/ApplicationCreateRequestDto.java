@@ -1,6 +1,6 @@
 package com.teamEWSN.gitdeun.Application.dto;
 
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentField;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;

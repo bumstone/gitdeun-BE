@@ -1,8 +1,8 @@
-package com.teamEWSN.gitdeun.Recruitment.service;
+package com.teamEWSN.gitdeun.recruitment.service;
 
-import com.teamEWSN.gitdeun.Recruitment.entity.Recruitment;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentStatus;
-import com.teamEWSN.gitdeun.Recruitment.repository.RecruitmentRepository;
+import com.teamEWSN.gitdeun.recruitment.entity.Recruitment;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentStatus;
+import com.teamEWSN.gitdeun.recruitment.repository.RecruitmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -1,11 +1,11 @@
-package com.teamEWSN.gitdeun.Recruitment.service;
+package com.teamEWSN.gitdeun.recruitment.service;
 
-import com.teamEWSN.gitdeun.Recruitment.dto.*;
-import com.teamEWSN.gitdeun.Recruitment.entity.*;
-import com.teamEWSN.gitdeun.Recruitment.mapper.RecruitmentMapper;
-import com.teamEWSN.gitdeun.Recruitment.repository.RecruitmentImageRepository;
-import com.teamEWSN.gitdeun.Recruitment.repository.RecruitmentRepository;
-import com.teamEWSN.gitdeun.Recruitment.service.util.RecommendationScoreCalculator;
+import com.teamEWSN.gitdeun.recruitment.dto.*;
+import com.teamEWSN.gitdeun.recruitment.entity.*;
+import com.teamEWSN.gitdeun.recruitment.mapper.RecruitmentMapper;
+import com.teamEWSN.gitdeun.recruitment.repository.RecruitmentImageRepository;
+import com.teamEWSN.gitdeun.recruitment.repository.RecruitmentRepository;
+import com.teamEWSN.gitdeun.recruitment.service.util.RecommendationScoreCalculator;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.s3.service.S3BucketService;
