@@ -53,7 +53,6 @@ public class MindmapController {
         // 즉시 응답 반환
         MindmapCreationResponseDto response = MindmapCreationResponseDto.builder()
             .processId(String.format("mindmap_%d_%d", userId, System.currentTimeMillis()))
-            .status("PROCESSING")
             .message("마인드맵 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.")
             .build();
 
