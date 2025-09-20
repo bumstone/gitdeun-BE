@@ -45,7 +45,7 @@ public class FastApiClient {
             log.info("Fetch 완료 - 파일: {}, 파싱: {}",
                 fetchResult.getFiles_saved(), fetchResult.getFiles_parsed());
 
-            saveRepoInfo(mapId, authorizationHeader);
+            saveRepoInfo(repoUrl, authorizationHeader);
 
             // Step 2: 마인드맵 기본 분석 (AI)
             AnalyzeResponse analyzeResult = analyzeAI(repoUrl, prompt, authorizationHeader);
@@ -110,7 +110,6 @@ public class FastApiClient {
     public void saveRepoInfo(String repoUrl, String authHeader) {
         Map<String, String> request = new HashMap<>();
         request.put("repo_url", repoUrl);
-        request.put("mode", "DEV");  // 항상 DEV 모드
 
         webClient.post()
             .uri("/repo/github/repo-info")
@@ -172,6 +171,8 @@ public class FastApiClient {
             .bodyToMono(MindmapGraphDto.class)
             .block();
     }
+
+    // TODO: 프롬프트 summary 반환
 
     // 최신 변경사항 새로고침
     public RefreshResponse refreshLatest(String mapId, String prompt, String authHeader) {
