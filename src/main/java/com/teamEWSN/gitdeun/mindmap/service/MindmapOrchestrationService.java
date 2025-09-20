@@ -86,7 +86,7 @@ public class MindmapOrchestrationService {
             PromptHistory appliedPrompt = mindmap.getAppliedPromptHistory();
 
             String repoUrl = mindmap.getRepo().getGithubRepoUrl();
-            String prompt = appliedPrompt.getPrompt();
+            String prompt = (appliedPrompt != null) ? appliedPrompt.getPrompt() : null;
 
             // FastAPI 분석 요청
             AnalysisResultDto analysisResult = fastApiClient.refreshMindmap(
@@ -96,7 +96,7 @@ public class MindmapOrchestrationService {
             );
 
             // 분석 결과를 DB에 업데이트 (트랜잭션)
-            mindmapService.updateMindmapFromAnalysis(mapId,authHeader, analysisResult);
+            mindmapService.updateMindmapFromAnalysis(mapId, authHeader, analysisResult);
             log.info("비동기 새로고침 성공 - 마인드맵 ID: {}", mapId);
 
         } catch (Exception e) {

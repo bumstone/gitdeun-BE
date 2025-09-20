@@ -16,7 +16,6 @@ public class NodeDto {
     @JsonProperty("node_type")
     private String nodeType;
 
-    private String mode;
 
     // 편의 메서드
     public boolean isFileNode() {
