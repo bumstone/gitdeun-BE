@@ -238,13 +238,20 @@ public class InvitationService {
         Invitation invitation = invitationRepository.findByToken(token)
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
+        Long mapId = invitation.getMindmap().getId();
+
         // 만료된 초대 여부 확인
         if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
         }
 
+        // 기존 멤버 여부 확인
+        if (mindmapMemberRepository.existsByMindmapIdAndUserId(mapId, userId)) {
+            throw new GlobalException(ErrorCode.MEMBER_ALREADY_EXISTS);
+        }
+
         // 이미 초대 거절한 사용자 확인
-        if (invitationRepository.existsByMindmapIdAndInviteeIdAndStatus(invitation.getMindmap().getId(), userId, InvitationStatus.REJECTED)) {
+        if (invitationRepository.existsByMindmapIdAndInviteeIdAndStatus(mapId, userId, InvitationStatus.REJECTED)) {
             throw new GlobalException(ErrorCode.INVITATION_REJECTED_USER);
         }
 
