@@ -82,6 +82,11 @@ public class MindmapService {
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
+        //  방문 기록 생성 또는 갱신
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
+        visitHistoryService.recordOrUpdateVisit(user, mindmap);
+
         // 캐싱된 그래프 데이터 조회
         MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(
             mindmap.getRepo().getGithubRepoUrl(),

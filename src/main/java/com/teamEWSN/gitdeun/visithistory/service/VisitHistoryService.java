@@ -67,6 +67,21 @@ public class VisitHistoryService {
         visitHistoryRepository.save(visitHistory);
     }
 
+    @Transactional
+    public void recordOrUpdateVisit(User user, Mindmap mindmap) {
+        visitHistoryRepository.findByUserIdAndMindmapId(user.getId(), mindmap.getId())
+            .ifPresentOrElse(
+                // 방문 기록이 있으면: 마지막 방문 시간만 갱신
+                visitHistory -> {
+                    // visitHistory.setLastVisitedAt(LocalDateTime.now()); // Setter가 있다면 사용
+                    visitHistory.updateLastVisitedAt(); // 또는 엔티티 내부에 갱신 메소드 구현
+                    visitHistoryRepository.save(visitHistory);
+                },
+                // 방문 기록이 없으면: 새로 생성
+                () -> createVisitHistory(user, mindmap)
+            );
+    }
+
     //  핀 고정되지 않은 방문 기록 조회
     @Transactional(readOnly = true)
     public Page<VisitHistoryResponseDto> getVisitHistories(Long userId, Pageable pageable) {

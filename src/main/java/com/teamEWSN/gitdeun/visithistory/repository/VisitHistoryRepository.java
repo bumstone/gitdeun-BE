@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface VisitHistoryRepository extends JpaRepository<VisitHistory, Long> {
@@ -19,4 +20,6 @@ public interface VisitHistoryRepository extends JpaRepository<VisitHistory, Long
         "WHERE v.user = :user AND p IS NULL AND v.mindmap.deletedAt IS NULL " +
         "ORDER BY v.lastVisitedAt DESC")
     Page<VisitHistory> findUnpinnedHistoriesByUserAndNotDeletedMindmap(@Param("user") User user, Pageable pageable);
+
+    Optional<VisitHistory> findByUserIdAndMindmapId(Long userId, Long mindmapId);
 }

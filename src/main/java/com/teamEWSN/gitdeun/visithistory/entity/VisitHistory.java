@@ -37,4 +37,7 @@ public class VisitHistory {
     @OneToMany(mappedBy = "visitHistory", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PinnedHistory> pinnedHistorys = new ArrayList<>();
 
+    public void updateLastVisitedAt() {
+        this.lastVisitedAt = LocalDateTime.now();
+    }
 }
