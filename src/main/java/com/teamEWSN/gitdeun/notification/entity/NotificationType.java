@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.notification.entity;
 public enum NotificationType {
     INVITE_MINDMAP,      // 마인드맵 초대
     ACCEPT_MINDMAP,     // 초대 수락
+    REJECT_MINDMAP,
     MENTION_COMMENT,    // 댓글에서 맨션
     APPLICATION_RECEIVED,   // 지원 신청
     APPLICATION_ACCEPTED,   // 지원 수락

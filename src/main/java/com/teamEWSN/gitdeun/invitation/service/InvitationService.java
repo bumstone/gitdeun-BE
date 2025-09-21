@@ -278,6 +278,9 @@ public class InvitationService {
         MindmapMember newMember = MindmapMember.of(newInvitation.getMindmap(), newInvitation.getInvitee(), newInvitation.getRole());
         mindmapMemberRepository.save(newMember);
 
+        // 참여 요청자에게 승인 알림 전송
+        notificationService.notifyLinkApproval(newInvitation);
+
         return new InvitationActionResponseDto("초대 요청이 승인되었습니다.");
     }
 
@@ -303,6 +306,9 @@ public class InvitationService {
         }
 
         invitation.reject();
+
+        // 참여 요청자에게 거절 알림 전송
+        notificationService.notifyLinkRejection(invitation);
 
         return new InvitationActionResponseDto("초대 요청이 거부되었습니다.");
     }

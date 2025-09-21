@@ -41,23 +41,40 @@ public class NotificationService {
     @Value("${spring.mail.properties.from.name:Gitdeun}")
     private String fromName;
 
+    @Value("${app.front-url}")
+    private String frontUrl;
+
     /**
      * 이메일 초대 알림
      */
     @Transactional
     public void notifyInvitation(Invitation invitation) {
-        User invitee = invitation.getInvitee();
-        String message = String.format("'%s'님이 '%s' 마인드맵으로 초대했습니다.",
+        String webMessage = String.format("'%s'님이 '%s' 마인드맵으로 초대했습니다.",
             invitation.getInviter().getName(),
             invitation.getMindmap().getTitle());
 
-        createAndSendNotification(NotificationCreateDto.actionable(
-            invitee,
-            NotificationType.INVITE_MINDMAP,
-            message,
-            invitation.getId(),
-            invitation.getExpiresAt()
-        ));
+        // 이메일용 초대 링크 및 HTML 메시지 생성
+        String invitationLink = frontUrl + "/invitations/" + invitation.getToken();
+        String emailMessage = String.format(
+            """
+            <html>
+              <body>
+                <h3>%s님이 '%s' 마인드맵으로 초대했습니다.</h3>
+                <p>아래 버튼을 클릭하여 초대를 수락하거나 거절할 수 있습니다.</p>
+                <a href="%s" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px;">
+                  초대 확인하기
+                </a>
+                <p><small>링크는 24시간 동안 유효합니다.</small></p>
+              </body>
+            </html>
+            """,
+            invitation.getInviter().getName(),
+            invitation.getMindmap().getTitle(),
+            invitationLink
+        );
+
+        // 웹 알림 메시지와 이메일 메시지를 함께 전달
+        createAndSendNotification(invitation, webMessage, emailMessage);
     }
 
     /**
@@ -98,9 +115,66 @@ public class NotificationService {
         ));
     }
 
+    /**
+     * 링크 초대 승인 알림 (링크 초대 요청자에게 전송)
+     */
+    @Transactional
+    public void notifyLinkApproval(Invitation invitation) {
+        User invitee = invitation.getInvitee();
+        String message = String.format("'%s'님이 '%s' 마인드맵 참여를 승인했습니다.",
+            invitation.getMindmap().getUser().getName(),
+            invitation.getMindmap().getTitle());
+
+        createAndSendNotification(NotificationCreateDto.actionable(
+            invitee,
+            NotificationType.ACCEPT_MINDMAP,
+            message,
+            invitation.getId(),
+            invitation.getExpiresAt()
+        ));
+    }
 
     /**
-     * 알림 생성 및 발송 (공통 호출)
+     * 링크 초대 거절 알림 (링크 초대 요청자에게 전송)
+     */
+    @Transactional
+    public void notifyLinkRejection(Invitation invitation) {
+        String message = String.format("아쉽지만, '%s' 마인드맵 참여 요청이 거절되었습니다.",
+            invitation.getMindmap().getTitle());
+
+        createAndSendNotification(NotificationCreateDto.actionable(
+            invitation.getInvitee(),
+            NotificationType.REJECT_MINDMAP,
+            message,
+            invitation.getId(),
+            invitation.getExpiresAt()
+        ));
+    }
+
+    // 초대 이메일 알림 생성 및 발송 (HTML 형식)
+    @Transactional
+    public void createAndSendNotification(Invitation invitation, String webMessage, String emailMessage) {
+        // Notification 엔티티 생성 (웹 알림용 메시지 사용)
+        Notification notification = Notification.builder()
+            .user(invitation.getInvitee())
+            .notificationType(NotificationType.INVITE_MINDMAP)
+            .message(webMessage)
+            .referenceId(invitation.getId())
+            .expiresAt(invitation.getExpiresAt())
+            .build();
+        notificationRepository.save(notification);
+
+        // HTML 형식의 이메일 발송
+        sendEmailNotification(invitation.getInvitee().getEmail(), "[Gitdeun] 마인드맵 초대장이 도착했습니다.", emailMessage);
+
+        // 실시간 알림 전송 (웹)
+        int unreadCount = notificationRepository.countByUserAndReadFalse(invitation.getInvitee());
+        notificationSseService.sendUnreadCount(invitation.getInvitee().getId(), unreadCount);
+        notificationSseService.sendNewNotification(invitation.getInvitee().getId(), notificationMapper.toResponseDto(notification));
+    }
+
+    /**
+     * 알림 생성 및 발송 (공통 호출 - 메세지 전송)
      */
     @Transactional
     public void createAndSendNotification(NotificationCreateDto dto) {
@@ -148,7 +222,7 @@ public class NotificationService {
     }
 
     /**
-     * TODO: 알림 읽음 처리
+     * 알림 읽음 처리
      */
     @Transactional
     public void markAsRead(Long notificationId, Long userId) {
@@ -201,7 +275,7 @@ public class NotificationService {
 
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(text, false); // HTML이면 true
+            helper.setText(text, true);
             helper.setFrom(fromEmail, fromName); // 이름과 이메일 분리 설정
 
             mailSender.send(message);
