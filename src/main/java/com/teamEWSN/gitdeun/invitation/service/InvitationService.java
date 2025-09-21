@@ -20,6 +20,7 @@ import com.teamEWSN.gitdeun.notification.service.NotificationService;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,9 +43,10 @@ public class InvitationService {
     private final NotificationService notificationService;
     private final InvitationMapper invitationMapper;
 
-    // TODO: 배포 시 이메일 주소 변경
-    private static final String INVITATION_BASE_URL = "http://localhost:8080/invitations/";
-    // private static final String INVITATION_BASE_URL = "https://gitdeun.site/invitations/";
+    @Value("${app.front-url}")
+    private String frontUrl;
+
+    // 배포 시 이메일 주소 변경됨
 
     // 초대 전송(이메일 + 알림)
     @Transactional
@@ -229,7 +231,9 @@ public class InvitationService {
             .build();
         invitationRepository.save(invitation);
 
-        return new LinkResponseDto(INVITATION_BASE_URL + invitation.getToken());
+        String invitationLink = frontUrl + "/invitations/" + invitation.getToken();
+
+        return new LinkResponseDto(invitationLink);
     }
 
     // 초대 링크 접근
