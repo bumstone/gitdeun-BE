@@ -14,7 +14,7 @@ import com.teamEWSN.gitdeun.visithistory.entity.VisitHistory;
 import com.teamEWSN.gitdeun.visithistory.mapper.VisitHistoryMapper;
 import com.teamEWSN.gitdeun.visithistory.repository.PinnedHistoryRepository;
 import com.teamEWSN.gitdeun.visithistory.repository.VisitHistoryRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class VisitHistoryService {
 
     private final UserService userService;
@@ -35,6 +34,22 @@ public class VisitHistoryService {
     private final MindmapMemberRepository mindmapMemberRepository;
     private final MindmapService mindmapService;
     private final MindmapAuthService mindmapAuthService;
+
+    public VisitHistoryService(UserService userService,
+                               VisitHistoryRepository visitHistoryRepository,
+                               PinnedHistoryRepository pinnedHistoryRepository,
+                               VisitHistoryMapper visitHistoryMapper,
+                               MindmapMemberRepository mindmapMemberRepository,
+                               @Lazy MindmapService mindmapService,
+                               MindmapAuthService mindmapAuthService) {
+        this.userService = userService;
+        this.visitHistoryRepository = visitHistoryRepository;
+        this.pinnedHistoryRepository = pinnedHistoryRepository;
+        this.visitHistoryMapper = visitHistoryMapper;
+        this.mindmapMemberRepository = mindmapMemberRepository;
+        this.mindmapService = mindmapService;
+        this.mindmapAuthService = mindmapAuthService;
+    }
 
     // 마인드맵 생성 시 호출되어 방문 기록을 생성
     @Transactional
