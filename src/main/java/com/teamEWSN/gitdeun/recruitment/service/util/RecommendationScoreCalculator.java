@@ -1,7 +1,7 @@
-package com.teamEWSN.gitdeun.Recruitment.service.util;
+package com.teamEWSN.gitdeun.recruitment.service.util;
 
-import com.teamEWSN.gitdeun.Recruitment.entity.Recruitment;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentStatus;
+import com.teamEWSN.gitdeun.recruitment.entity.Recruitment;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentStatus;
 import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 
 import java.time.LocalDateTime;

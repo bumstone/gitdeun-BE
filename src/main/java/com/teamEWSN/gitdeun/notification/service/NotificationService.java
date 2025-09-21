@@ -72,7 +72,7 @@ public class NotificationService {
 
         createAndSendNotification(NotificationCreateDto.actionable(
             inviter,
-            NotificationType.INVITE_MINDMAP,
+            NotificationType.ACCEPT_MINDMAP,
             message,
             invitation.getId(),
             invitation.getExpiresAt()

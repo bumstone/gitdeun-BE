@@ -7,7 +7,5 @@ import lombok.Getter;
 @Getter
 public class MindmapCreationResponseDto {
     private String processId;
-    private String status;
     private String message;
-    // private int estimatedCompletionMinutes;
 }

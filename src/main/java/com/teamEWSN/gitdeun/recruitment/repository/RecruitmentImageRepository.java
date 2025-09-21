@@ -1,7 +1,7 @@
-package com.teamEWSN.gitdeun.Recruitment.repository;
+package com.teamEWSN.gitdeun.recruitment.repository;
 
-import com.teamEWSN.gitdeun.Recruitment.entity.Recruitment;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentImage;
+import com.teamEWSN.gitdeun.recruitment.entity.Recruitment;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentImage;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -15,7 +15,7 @@ public class NotificationResponseDto {
     private NotificationType notificationType;
     private LocalDateTime createdAt;
 
-    private Long referenceId;
+    private Long referenceId;   // mindmapId, commentId 등등
     private LocalDateTime expiresAt;
 
     public boolean isActionAvailable() {

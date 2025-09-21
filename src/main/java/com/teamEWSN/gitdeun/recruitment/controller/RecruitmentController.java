@@ -1,9 +1,9 @@
-package com.teamEWSN.gitdeun.Recruitment.controller;
+package com.teamEWSN.gitdeun.recruitment.controller;
 
-import com.teamEWSN.gitdeun.Recruitment.dto.*;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentStatus;
-import com.teamEWSN.gitdeun.Recruitment.service.RecruitmentService;
+import com.teamEWSN.gitdeun.recruitment.dto.*;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentField;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentStatus;
+import com.teamEWSN.gitdeun.recruitment.service.RecruitmentService;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

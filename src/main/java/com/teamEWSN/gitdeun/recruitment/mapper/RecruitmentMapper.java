@@ -1,8 +1,8 @@
-package com.teamEWSN.gitdeun.Recruitment.mapper;
+package com.teamEWSN.gitdeun.recruitment.mapper;
 
-import com.teamEWSN.gitdeun.Recruitment.dto.*;
-import com.teamEWSN.gitdeun.Recruitment.entity.Recruitment;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentImage;
+import com.teamEWSN.gitdeun.recruitment.dto.*;
+import com.teamEWSN.gitdeun.recruitment.entity.Recruitment;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentImage;
 import org.mapstruct.*;
 
 import java.util.List;

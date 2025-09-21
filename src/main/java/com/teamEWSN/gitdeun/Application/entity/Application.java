@@ -1,7 +1,7 @@
 package com.teamEWSN.gitdeun.Application.entity;
 
-import com.teamEWSN.gitdeun.Recruitment.entity.Recruitment;
-import com.teamEWSN.gitdeun.Recruitment.entity.RecruitmentField;
+import com.teamEWSN.gitdeun.recruitment.entity.Recruitment;
+import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentField;
 import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;

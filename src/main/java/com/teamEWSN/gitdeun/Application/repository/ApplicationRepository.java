@@ -1,7 +1,7 @@
 package com.teamEWSN.gitdeun.Application.repository;
 
 import com.teamEWSN.gitdeun.Application.entity.Application;
-import com.teamEWSN.gitdeun.Recruitment.entity.Recruitment;
+import com.teamEWSN.gitdeun.recruitment.entity.Recruitment;
 import com.teamEWSN.gitdeun.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

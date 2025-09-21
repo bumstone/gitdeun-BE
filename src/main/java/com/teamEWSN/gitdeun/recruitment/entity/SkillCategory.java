@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.Recruitment.entity;
+package com.teamEWSN.gitdeun.recruitment.entity;
 
 public enum SkillCategory {
     LANGUAGE,

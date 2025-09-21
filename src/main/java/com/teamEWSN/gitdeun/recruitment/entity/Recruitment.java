@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.Recruitment.entity;
+package com.teamEWSN.gitdeun.recruitment.entity;
 
 import com.teamEWSN.gitdeun.Application.entity.Application;
 import com.teamEWSN.gitdeun.common.util.AuditedEntity;

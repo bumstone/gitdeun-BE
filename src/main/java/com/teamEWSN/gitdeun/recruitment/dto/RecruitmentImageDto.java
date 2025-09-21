@@ -1,4 +1,4 @@
-package com.teamEWSN.gitdeun.Recruitment.dto;
+package com.teamEWSN.gitdeun.recruitment.dto;
 
 import lombok.Builder;
 import lombok.Getter;

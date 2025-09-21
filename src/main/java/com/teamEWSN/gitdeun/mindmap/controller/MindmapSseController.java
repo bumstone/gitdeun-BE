@@ -6,12 +6,15 @@ import com.teamEWSN.gitdeun.mindmapmember.service.MindmapAuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -46,7 +49,7 @@ public class MindmapSseController {
         }
 
         log.info("SSE 연결 요청 - 마인드맵 ID: {}, 사용자 ID: {}", mapId, userDetails.getId());
-        return mindmapSseService.createConnection(mapId, userDetails.getId());
+        return mindmapSseService.createConnection(mapId, userDetails);
     }
 
     /**
@@ -55,5 +58,13 @@ public class MindmapSseController {
     @GetMapping("/{mapId}/connections/count")
     public int getConnectionCount(@PathVariable Long mapId) {
         return mindmapSseService.getConnectionCount(mapId);
+    }
+
+    /**
+     * 현재 연결된 사용자 목록 조회
+     */
+    @GetMapping("/{mapId}/connections/users")
+    public ResponseEntity<List<MindmapSseService.ConnectedUserDto>> getConnectedUsers(@PathVariable Long mapId) {
+        return ResponseEntity.ok(mindmapSseService.getConnectedUsers(mapId));
     }
 }
