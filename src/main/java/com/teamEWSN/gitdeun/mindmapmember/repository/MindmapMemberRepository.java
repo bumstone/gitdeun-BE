@@ -49,4 +49,8 @@ public interface MindmapMemberRepository extends JpaRepository<MindmapMember, Lo
     @Query("SELECT m FROM MindmapMember m WHERE m.mindmap.id = :mapId AND m.role = :role " +
         "AND m.mindmap.deletedAt IS NULL")
     Optional<MindmapMember> findByMindmapIdAndRole(@Param("mapId") Long mapId, @Param("role") MindmapRole role);
+
+    // 마인드맵 ID와 사용자 ID로 멤버 조회
+    Optional<MindmapMember> findByMindmapIdAndUserId(Long mindmapId, Long userId);
+
 }

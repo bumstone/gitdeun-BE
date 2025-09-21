@@ -3,6 +3,9 @@ package com.teamEWSN.gitdeun.visithistory.service;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
+import com.teamEWSN.gitdeun.mindmap.service.MindmapService;
+import com.teamEWSN.gitdeun.mindmapmember.repository.MindmapMemberRepository;
+import com.teamEWSN.gitdeun.mindmapmember.service.MindmapAuthService;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.service.UserService;
 import com.teamEWSN.gitdeun.visithistory.dto.VisitHistoryResponseDto;
@@ -29,6 +32,9 @@ public class VisitHistoryService {
     private final VisitHistoryRepository visitHistoryRepository;
     private final PinnedHistoryRepository pinnedHistoryRepository;
     private final VisitHistoryMapper visitHistoryMapper;
+    private final MindmapMemberRepository mindmapMemberRepository;
+    private final MindmapService mindmapService;
+    private final MindmapAuthService mindmapAuthService;
 
     // 마인드맵 생성 시 호출되어 방문 기록을 생성
     @Transactional
@@ -78,6 +84,21 @@ public class VisitHistoryService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
+        Mindmap mindmap = visitHistory.getMindmap();
+        Long mindmapId = mindmap.getId();
+
+        boolean isOwner = mindmapAuthService.isOwner(mindmapId, userId);
+
+        if (isOwner) {
+            // 소유자인 경우, 마인드맵 전체를 삭제
+            mindmapService.deleteMindmap(mindmapId, userId);
+        } else {
+            // 소유자가 아닌 경우, 마인드맵의 멤버 탈퇴
+            mindmapMemberRepository.findByMindmapIdAndUserId(mindmapId, userId)
+                .ifPresent(mindmapMemberRepository::delete);
+        }
+
+        // 마지막으로 방문 기록을 삭제
         visitHistoryRepository.delete(visitHistory);
     }
 

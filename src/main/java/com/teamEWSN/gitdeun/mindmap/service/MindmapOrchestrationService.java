@@ -49,12 +49,11 @@ public class MindmapOrchestrationService {
 
         // 2. FastAPI 통합 분석 요청 - analyzeRepository 메서드 사용
         String normalizedUrl = validatedRequest.getRepositoryInfo().getNormalizedUrl();
-        String processedPrompt = validatedRequest.getProcessedPrompt();
 
         CompletableFuture.supplyAsync(() -> {
             // 1. 요청 검증 및 전처리
-            log.info("FastAPI 분석 요청 시작 - URL: {}, 프롬프트 존재: {}",
-                normalizedUrl, StringUtils.hasText(processedPrompt));
+            log.info("FastAPI 분석 요청 시작 - URL: {}, 마인드맵 제목: {}",
+                normalizedUrl, request.getTitle());
 
             // prompt가 null이면 기본 분석, 있으면 프롬프트 포함 분석
             return fastApiClient.analyzeResult(
