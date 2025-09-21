@@ -147,7 +147,7 @@ public class InvitationService {
 
     // 초대 수락
     @Transactional
-    public void acceptInvitation(Long invitationId, Long userId) {
+    public Mindmap acceptInvitation(Long invitationId, Long userId) {
         Invitation invitation = invitationRepository.findById(invitationId)
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
@@ -171,6 +171,8 @@ public class InvitationService {
         mindmapMemberRepository.save(newMember);
 
         notificationService.notifyAcceptance(invitation);
+
+        return newInvitation.getMindmap();
     }
 
     // 초대 거절
