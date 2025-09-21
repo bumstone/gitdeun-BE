@@ -151,9 +151,19 @@ public class InvitationService {
         Invitation invitation = invitationRepository.findById(invitationId)
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
+        // 초대시간 만료
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
+        }
+
         // 초대된 마인드맵이 삭제되었는지 확인
         if (invitation.getMindmap().isDeleted()) {
             throw new GlobalException(ErrorCode.MINDMAP_NOT_FOUND);
+        }
+
+        // 이미 처리된 초대 확인
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new GlobalException(ErrorCode.INVITATION_ALREADY_PROCESSED);
         }
 
         // 초대 중복 여부
@@ -161,10 +171,6 @@ public class InvitationService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        // 초대시간 만료
-        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
-        }
 
         Invitation newInvitation = invitation.accept();
         MindmapMember newMember = MindmapMember.of(newInvitation.getMindmap(), newInvitation.getInvitee(), newInvitation.getRole());
@@ -181,13 +187,19 @@ public class InvitationService {
         Invitation invitation = invitationRepository.findById(invitationId)
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
-        if (!invitation.getInvitee().getId().equals(userId)) {
-            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
-        }
-
         // 초대 시간 만료
         if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
+        }
+
+        // 이미 처리된 초대 확인
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new GlobalException(ErrorCode.INVITATION_ALREADY_PROCESSED);
+        }
+
+        // 초대 중복 여부
+        if (!invitation.getInvitee().getId().equals(userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
         invitation.reject();
@@ -260,8 +272,13 @@ public class InvitationService {
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
         // owner 확인
-        if (!invitation.getMindmap().getUser().getId().equals(ownerId)) {
+        if (!mindmapAuthService.isOwner(invitation.getMindmap().getId(), ownerId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 이미 처리된 초대 확인
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new GlobalException(ErrorCode.INVITATION_ALREADY_PROCESSED);
         }
 
         // 만료 시간 확인
@@ -291,8 +308,13 @@ public class InvitationService {
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
         // owner 확인
-        if (!invitation.getMindmap().getUser().getId().equals(ownerId)) {
+        if (!mindmapAuthService.isOwner(invitation.getMindmap().getId(), ownerId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 이미 처리된 초대 확인
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new GlobalException(ErrorCode.INVITATION_ALREADY_PROCESSED);
         }
 
         // 만료 시간 확인
