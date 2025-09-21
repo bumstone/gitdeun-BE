@@ -129,7 +129,7 @@ public class NotificationService {
             invitee,
             NotificationType.ACCEPT_MINDMAP,
             message,
-            invitation.getId(),
+            invitation.getMindmap().getId(),
             invitation.getExpiresAt()
         ));
     }
