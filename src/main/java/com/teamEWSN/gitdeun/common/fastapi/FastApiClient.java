@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -211,6 +212,40 @@ public class FastApiClient {
             .block();
     }
 
+    /**
+     * 프롬프트 기반 자동 제안 생성 (auto endpoint)
+     * - 프롬프트에서 스코프를 자동 추론
+     * - 관련 파일들에 대한 코드 제안 일괄 생성
+     */
+    public SuggestionAutoResponse createAutoSuggestions(
+        String repoUrl,
+        String prompt,
+        String authHeader) {
+
+        String mapId = extractMapId(repoUrl);
+        log.info("자동 제안 생성 시작 - mapId: {}, prompt: {}", mapId, prompt);
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("repo_url", repoUrl);
+        request.put("prompt", prompt);
+        request.put("include_children", true);
+        request.put("max_files", 12);
+        request.put("return_code", true);
+
+        try {
+            return webClient.post()
+                .uri("/suggestion/{mapId}/auto", mapId)
+                .header("Authorization", authHeader)
+                .body(Mono.just(request), Map.class)
+                .retrieve()
+                .bodyToMono(SuggestionAutoResponse.class)
+                .block();
+        } catch (Exception e) {
+            log.error("자동 제안 생성 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("제안 생성 실패: " + e.getMessage());
+        }
+    }
+
     // === Helper Methods ===
 
     // 저장소명 추출
@@ -288,5 +323,30 @@ public class FastApiClient {
         private Integer recs_removed;
     }
 
+
+    @Getter
+    @Setter
+    public static class SuggestionAutoResponse {
+        private String map_id;
+        private String prompt;
+        private List<String> chosen_scopes;  // 선택된 스코프 (노드명)
+        private List<String> candidates;
+        private Integer total_target_files;
+        private Integer created;
+        private List<AutoScopeItem> items;
+    }
+
+    @Getter
+    @Setter
+    public static class AutoScopeItem {
+        private String scope_label;
+        private String scope_node_key;
+        private String file_path;
+        private String suggestion_key;
+        private String node_key;
+        private String status;
+        private String error;
+        private String code;
+    }
 
 }

@@ -20,6 +20,7 @@ import com.teamEWSN.gitdeun.notification.service.NotificationService;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,9 +43,10 @@ public class InvitationService {
     private final NotificationService notificationService;
     private final InvitationMapper invitationMapper;
 
-    // TODO: 배포 시 이메일 주소 변경
-    private static final String INVITATION_BASE_URL = "http://localhost:8080/invitations/";
-    // private static final String INVITATION_BASE_URL = "https://gitdeun.site/invitations/";
+    @Value("${app.front-url}")
+    private String frontUrl;
+
+    // 배포 시 이메일 주소 변경됨
 
     // 초대 전송(이메일 + 알림)
     @Transactional
@@ -147,13 +149,23 @@ public class InvitationService {
 
     // 초대 수락
     @Transactional
-    public void acceptInvitation(Long invitationId, Long userId) {
+    public Mindmap acceptInvitation(Long invitationId, Long userId) {
         Invitation invitation = invitationRepository.findById(invitationId)
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
+
+        // 초대시간 만료
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
+        }
 
         // 초대된 마인드맵이 삭제되었는지 확인
         if (invitation.getMindmap().isDeleted()) {
             throw new GlobalException(ErrorCode.MINDMAP_NOT_FOUND);
+        }
+
+        // 이미 처리된 초대 확인
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new GlobalException(ErrorCode.INVITATION_ALREADY_PROCESSED);
         }
 
         // 초대 중복 여부
@@ -161,16 +173,14 @@ public class InvitationService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        // 초대시간 만료
-        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
-        }
 
         Invitation newInvitation = invitation.accept();
         MindmapMember newMember = MindmapMember.of(newInvitation.getMindmap(), newInvitation.getInvitee(), newInvitation.getRole());
         mindmapMemberRepository.save(newMember);
 
         notificationService.notifyAcceptance(invitation);
+
+        return newInvitation.getMindmap();
     }
 
     // 초대 거절
@@ -179,13 +189,19 @@ public class InvitationService {
         Invitation invitation = invitationRepository.findById(invitationId)
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
-        if (!invitation.getInvitee().getId().equals(userId)) {
-            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
-        }
-
         // 초대 시간 만료
         if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
+        }
+
+        // 이미 처리된 초대 확인
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new GlobalException(ErrorCode.INVITATION_ALREADY_PROCESSED);
+        }
+
+        // 초대 중복 여부
+        if (!invitation.getInvitee().getId().equals(userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
         invitation.reject();
@@ -215,7 +231,9 @@ public class InvitationService {
             .build();
         invitationRepository.save(invitation);
 
-        return new LinkResponseDto(INVITATION_BASE_URL + invitation.getToken());
+        String invitationLink = frontUrl + "/invitations/" + invitation.getToken();
+
+        return new LinkResponseDto(invitationLink);
     }
 
     // 초대 링크 접근
@@ -224,13 +242,20 @@ public class InvitationService {
         Invitation invitation = invitationRepository.findByToken(token)
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
+        Long mapId = invitation.getMindmap().getId();
+
         // 만료된 초대 여부 확인
         if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ErrorCode.INVITATION_EXPIRED);
         }
 
+        // 기존 멤버 여부 확인
+        if (mindmapMemberRepository.existsByMindmapIdAndUserId(mapId, userId)) {
+            throw new GlobalException(ErrorCode.MEMBER_ALREADY_EXISTS);
+        }
+
         // 이미 초대 거절한 사용자 확인
-        if (invitationRepository.existsByMindmapIdAndInviteeIdAndStatus(invitation.getMindmap().getId(), userId, InvitationStatus.REJECTED)) {
+        if (invitationRepository.existsByMindmapIdAndInviteeIdAndStatus(mapId, userId, InvitationStatus.REJECTED)) {
             throw new GlobalException(ErrorCode.INVITATION_REJECTED_USER);
         }
 
@@ -258,8 +283,13 @@ public class InvitationService {
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
         // owner 확인
-        if (!invitation.getMindmap().getUser().getId().equals(ownerId)) {
+        if (!mindmapAuthService.isOwner(invitation.getMindmap().getId(), ownerId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 이미 처리된 초대 확인
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new GlobalException(ErrorCode.INVITATION_ALREADY_PROCESSED);
         }
 
         // 만료 시간 확인
@@ -276,6 +306,9 @@ public class InvitationService {
         MindmapMember newMember = MindmapMember.of(newInvitation.getMindmap(), newInvitation.getInvitee(), newInvitation.getRole());
         mindmapMemberRepository.save(newMember);
 
+        // 참여 요청자에게 승인 알림 전송
+        notificationService.notifyLinkApproval(newInvitation);
+
         return new InvitationActionResponseDto("초대 요청이 승인되었습니다.");
     }
 
@@ -286,8 +319,13 @@ public class InvitationService {
             .orElseThrow(() -> new GlobalException(ErrorCode.INVITATION_NOT_FOUND));
 
         // owner 확인
-        if (!invitation.getMindmap().getUser().getId().equals(ownerId)) {
+        if (!mindmapAuthService.isOwner(invitation.getMindmap().getId(), ownerId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 이미 처리된 초대 확인
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new GlobalException(ErrorCode.INVITATION_ALREADY_PROCESSED);
         }
 
         // 만료 시간 확인
@@ -301,6 +339,9 @@ public class InvitationService {
         }
 
         invitation.reject();
+
+        // 참여 요청자에게 거절 알림 전송
+        notificationService.notifyLinkRejection(invitation);
 
         return new InvitationActionResponseDto("초대 요청이 거부되었습니다.");
     }

@@ -5,9 +5,7 @@ import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import com.teamEWSN.gitdeun.mindmap.dto.*;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.MindmapPromptAnalysisDto;
-import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptApplyRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptHistoryResponseDto;
-import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptPreviewResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.request.MindmapCreateRequestDto;
 import com.teamEWSN.gitdeun.mindmap.service.MindmapOrchestrationService;
 import com.teamEWSN.gitdeun.mindmap.service.MindmapService;
@@ -103,7 +101,7 @@ public class MindmapController {
         }
 
         // 비동기 서비스 호출
-        mindmapOrchestrationService.refreshMindmap(mapId, authorizationHeader);
+        mindmapOrchestrationService.refreshMindmap(mapId, userDetails.getId(), authorizationHeader);
 
         // 즉시 202 Accepted 응답 반환
         return ResponseEntity.accepted().build();
@@ -130,39 +128,43 @@ public class MindmapController {
     // 프롬프트 기록 관련
 
     /**
-     * 프롬프트 분석 및 미리보기 생성
+     * 프롬프트 분석요청 및 적용
      */
     @PostMapping("/{mapId}/prompts")
-    public ResponseEntity<PromptPreviewResponseDto> analyzePromptPreview(
+    public ResponseEntity<Void> analyzePrompt(
         @PathVariable Long mapId,
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @RequestBody MindmapPromptAnalysisDto request,
-        @RequestHeader("Authorization") String authorizationHeader
+        @RequestHeader("Authorization") String authorizationHeader,
+        @RequestParam(name = "apply-immediately", defaultValue = "true") boolean applyImmediately
     ) {
-        PromptPreviewResponseDto responseDto = promptHistoryService.createPromptPreview(
-            mapId,
-            userDetails.getId(),
-            request,
-            authorizationHeader
-        );
-        return ResponseEntity.ok(responseDto);
+        // 권한 검증은 동기적으로 먼저 수행
+        if (!mindmapAuthService.hasEdit(mapId, userDetails.getId())) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 비동기 서비스 호출
+        mindmapOrchestrationService.promptMindmap(mapId, request.getPrompt(), userDetails.getId(), authorizationHeader, applyImmediately);
+
+        // 즉시 202 Accepted 응답 반환
+        return ResponseEntity.accepted().build();
     }
 
     /**
      * 프롬프트 히스토리 적용
      */
-    @PostMapping("/{mapId}/prompts/apply")
-    public ResponseEntity<MindmapDetailResponseDto> applyPromptHistory(
-        @PathVariable Long mapId,
-        @AuthenticationPrincipal CustomUserDetails userDetails,
-        @RequestBody PromptApplyRequestDto request,
-        @RequestHeader("Authorization") String authorizationHeader
-    ) {
-        promptHistoryService.applyPromptHistory(mapId, userDetails.getId(), request);
-
-        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId(), authorizationHeader);
-        return ResponseEntity.ok(responseDto);
-    }
+//    @PostMapping("/{mapId}/prompts/{historyId}")
+//    public ResponseEntity<MindmapDetailResponseDto> applyPromptHistory(
+//        @PathVariable Long mapId,
+//        @PathVariable Long historyId,
+//        @AuthenticationPrincipal CustomUserDetails userDetails,
+//        @RequestHeader("Authorization") String authorizationHeader
+//    ) {
+//        promptHistoryService.applyPromptHistory(mapId, historyId, userDetails.getId());
+//
+//        MindmapDetailResponseDto responseDto = mindmapService.getMindmap(mapId, userDetails.getId(), authorizationHeader);
+//        return ResponseEntity.ok(responseDto);
+//    }
 
     /**
      * 프롬프트 히스토리 목록 조회 (페이징)
@@ -182,15 +184,15 @@ public class MindmapController {
     /**
      * 특정 프롬프트 히스토리 미리보기 조회
      */
-    @GetMapping("/{mapId}/prompts/histories/{historyId}/preview")
-    public ResponseEntity<PromptPreviewResponseDto> getPromptHistoryPreview(
-        @PathVariable Long mapId,
-        @PathVariable Long historyId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        PromptPreviewResponseDto responseDto = promptHistoryService.getPromptHistoryPreview(mapId, historyId, userDetails.getId());
-        return ResponseEntity.ok(responseDto);
-    }
+//    @GetMapping("/{mapId}/prompts/histories/{historyId}/preview")
+//    public ResponseEntity<PromptPreviewResponseDto> getPromptHistoryPreview(
+//        @PathVariable Long mapId,
+//        @PathVariable Long historyId,
+//        @AuthenticationPrincipal CustomUserDetails userDetails
+//    ) {
+//        PromptPreviewResponseDto responseDto = promptHistoryService.getPromptHistoryPreview(mapId, historyId, userDetails.getId());
+//        return ResponseEntity.ok(responseDto);
+//    }
 
     /**
      * 프롬프트 히스토리 삭제 (적용되지 않은 것만)
@@ -213,6 +215,6 @@ public class MindmapController {
         @PathVariable Long mapId,
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        return ResponseEntity.ok(promptHistoryService.getAppliedPromptHistory(mapId, userDetails.getId()));
+        return  ResponseEntity.ok(promptHistoryService.getAppliedPromptHistory(mapId, userDetails.getId()));
     }
 }

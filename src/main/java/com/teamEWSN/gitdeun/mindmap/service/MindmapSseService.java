@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.mindmap.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
+import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptPreviewResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -66,6 +67,14 @@ public class MindmapSseService {
     public void broadcastUpdate(Long mapId, MindmapDetailResponseDto data) {
         sendToMapSubscribers(mapId, "mindmap-update", data);
     }
+
+    /**
+     * 새로운 프롬프트 미리보기 준비 완료 브로드캐스트
+     */
+    public void broadcastPromptReady(Long mapId, PromptPreviewResponseDto data) {
+        sendToMapSubscribers(mapId, "prompt-ready", data);
+    }
+
 
     /**
      * 프롬프트 적용 브로드캐스트

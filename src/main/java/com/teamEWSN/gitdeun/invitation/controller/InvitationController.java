@@ -6,6 +6,7 @@ import com.teamEWSN.gitdeun.invitation.dto.InvitationResponseDto;
 import com.teamEWSN.gitdeun.invitation.dto.InviteRequestDto;
 import com.teamEWSN.gitdeun.invitation.dto.LinkResponseDto;
 import com.teamEWSN.gitdeun.invitation.service.InvitationService;
+import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -66,12 +68,12 @@ public class InvitationController {
 
     // 초대 수락
     @PostMapping("/{invitationId}/accept")
-    public ResponseEntity<Void> acceptInvitation(
-        @PathVariable Long invitationId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+    public ResponseEntity<Map<String, Long>> acceptInvitation( // 반환 타입 Map<String, Long>으로 변경
+                                                               @PathVariable Long invitationId,
+                                                               @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        invitationService.acceptInvitation(invitationId, userDetails.getId());
-        return ResponseEntity.noContent().build();
+        Mindmap mindmap = invitationService.acceptInvitation(invitationId, userDetails.getId());
+        return ResponseEntity.ok(Map.of("mindmapId", mindmap.getId())); // mindmapId를 JSON 형태로 반환
     }
 
     // 초대 거절

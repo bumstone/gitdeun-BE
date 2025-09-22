@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class PromptHistoryResponseDto {
     private Long historyId;
     private String prompt;
-    private String title;
+    private String summary;
     private Boolean applied;
     private LocalDateTime createdAt;
 }
