@@ -83,9 +83,11 @@ public enum ErrorCode {
 
     // 코드 리뷰 관련
     CODE_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW-001", "해당 코드 리뷰를 찾을 수 없습니다."),
-    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW-002", "해당 댓글을 찾을 수 없습니다."),
-    CANNOT_RESOLVE_REPLY(HttpStatus.BAD_REQUEST, "REVIEW-003", "대댓글은 해결 상태로 변경할 수 없습니다."),
-    EMOJI_ON_REPLY_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "REVIEW-004", "이모지는 최상위 댓글에만 추가할 수 있습니다."),
+    CODE_REFERENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW-002", "해당 코드 참조를 찾을 수 없습니다."),
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW-003", "해당 댓글을 찾을 수 없습니다."),
+    CANNOT_RESOLVE_REPLY(HttpStatus.BAD_REQUEST, "REVIEW-004", "대댓글은 해결 상태로 변경할 수 없습니다."),
+    EMOJI_ON_REPLY_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "REVIEW-005", "이모지는 최상위 댓글에만 추가할 수 있습니다."),
+
 
     // 방문기록 관련
     HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "VISITHISTORY-001", "방문 기록을 찾을 수 없습니다."),

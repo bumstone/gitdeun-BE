@@ -11,6 +11,7 @@ import java.util.List;
 public class CommentResponseDtos {
 
     @Getter
+    @Setter
     @Builder
     @AllArgsConstructor
     @NoArgsConstructor(access = AccessLevel.PROTECTED)

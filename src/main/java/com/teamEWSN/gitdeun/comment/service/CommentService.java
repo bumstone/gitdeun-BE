@@ -19,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,9 +47,11 @@ public class CommentService {
             .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
         Comment parent = null;
+        // 부모 댓글이 있는 경우
         if (request.getParentId() != null) {
             parent = commentRepository.findById(request.getParentId())
                 .orElseThrow(() -> new GlobalException(ErrorCode.COMMENT_NOT_FOUND));
+            // 이모지 여부
             if (request.getEmojiType() != null) {
                 throw new GlobalException(ErrorCode.EMOJI_ON_REPLY_NOT_ALLOWED);
             }
@@ -62,10 +67,41 @@ public class CommentService {
 
         Comment savedComment = commentRepository.save(comment);
 
-        // 파일 첨부 로직
+        // 파일 첨부 로직 : 함께 첨부된 파일이 있으면, 파일을 S3에 업로드하고 CommentAttachment로 저장
         attachmentService.saveAttachments(savedComment, files);
 
         return commentMapper.toResponseDto(savedComment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommentResponse> getCommentsAsTree(Long reviewId) {
+        // 1. 리뷰에 속한 모든 댓글을 한 번에 조회합니다.
+        List<Comment> allComments = commentRepository.findByCodeReviewId(reviewId);
+
+        // 2. 댓글을 DTO로 변환하고, 댓글 ID를 키로 하는 맵을 생성합니다.
+        Map<Long, CommentResponse> commentMap = allComments.stream()
+            .map(commentMapper::toResponseDto)
+            .collect(Collectors.toMap(CommentResponse::getCommentId, c -> c));
+
+        // 3. 최상위 댓글과 대댓글을 분리하고, 대댓글을 부모의 replies 리스트에 추가합니다.
+        List<CommentResponse> topLevelComments = new ArrayList<>();
+        commentMap.values().forEach(commentDto -> {
+            Long parentId = commentDto.getParentId();
+            if (parentId != null) {
+                CommentResponse parentDto = commentMap.get(parentId);
+                if (parentDto != null) {
+                    // 부모의 replies 리스트가 null이면 초기화
+                    if (parentDto.getReplies() == null) {
+                        parentDto.setReplies(new ArrayList<>());
+                    }
+                    parentDto.getReplies().add(commentDto);
+                }
+            } else {
+                topLevelComments.add(commentDto);
+            }
+        });
+
+        return topLevelComments;
     }
 
     @Transactional(readOnly = true)

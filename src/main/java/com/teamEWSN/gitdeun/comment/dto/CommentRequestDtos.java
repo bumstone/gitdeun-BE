@@ -2,6 +2,7 @@ package com.teamEWSN.gitdeun.comment.dto;
 
 import com.teamEWSN.gitdeun.comment.entity.EmojiType;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +10,7 @@ public class CommentRequestDtos {
 
     @Getter
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class CreateRequest {
         @NotEmpty(message = "댓글 내용은 비워둘 수 없습니다.")
         private String content;
