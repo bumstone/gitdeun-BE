@@ -18,6 +18,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "comment")
+@SQLDelete(sql = "UPDATE comment SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@Where(clause = "deleted_at IS NULL")
 public class Comment extends AuditedEntity {
 
     @Id
@@ -36,8 +38,13 @@ public class Comment extends AuditedEntity {
     @JoinColumn(name = "parent_comment_id")
     private Comment parentComment;
 
+    @Builder.Default
     @OneToMany(mappedBy = "parentComment")
     private List<Comment> replies = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommentAttachment> attachments = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
@@ -53,10 +60,6 @@ public class Comment extends AuditedEntity {
     private EmojiType emojiType;
 
 
-    public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
-    }
-
     public void updateContent(String content) {
         this.content = content;
     }
@@ -69,7 +72,24 @@ public class Comment extends AuditedEntity {
         }
     }
 
+    public void updateEmoji(EmojiType emojiType) {
+        // 같은 이모지를 다시 선택하면 제거, 다른 이모지를 선택하면 변경
+        if (this.emojiType == emojiType) {
+            this.emojiType = null;
+        } else {
+            this.emojiType = emojiType;
+        }
+    }
+
     public boolean isResolved() {
         return this.resolvedAt != null;
+    }
+
+    public boolean isTopLevel() {
+        return this.parentComment == null;
+    }
+
+    public boolean isReply() {
+        return this.parentComment != null;
     }
 }
