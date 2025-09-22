@@ -73,7 +73,7 @@ public class MindmapService {
     }
 
     // 마인드맵 상세 정보 조회
-    @Transactional(readOnly = true)
+    @Transactional
     public MindmapDetailResponseDto getMindmap(Long mapId, Long userId, String authHeader) {
         if (!mindmapAuthService.hasView(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
