@@ -130,7 +130,7 @@ public class MindmapOrchestrationService {
      * 프롬프트를 기반으로 마인드맵을 분석하고 미리보기를 생성하는 비동기 프로세스
      */
     @Async("mindmapExecutor")
-    public void promptMindmap(Long mapId, String prompt, Long userId, String authHeader) {
+    public void promptMindmap(Long mapId, String prompt, Long userId, String authHeader, boolean applyImmediately) {
         Mindmap mindmap = null;
         try {
             log.info("비동기 프롬프트 분석 시작 - 마인드맵 ID: {}", mapId);
@@ -146,11 +146,18 @@ public class MindmapOrchestrationService {
             mindmapService.updateMindmapFromPromptAnalysis(mapId, authHeader);
 
             // 분석 결과를 바탕으로 PromptHistory 생성 및 SSE 알림
-            promptHistoryService.createPromptHistoryFromSuggestion(mapId, prompt, suggestionResponse);
+            PromptHistory newHistory = promptHistoryService.createPromptHistoryFromSuggestion(mapId, prompt, suggestionResponse);
 
-            log.info("비동기 프롬프트 분석 및 미리보기 생성 성공 - 마인드맵 ID: {}", mapId);
-            // 성공 알림 전송
-            handleSuccessAndNotify(mindmap, userId, "프롬프트 분석이");
+            // 프롬프트 적용 여부 확인 후 알림
+            if (applyImmediately) {
+                promptHistoryService.applyPromptHistory(mapId, newHistory.getId(), userId);
+
+                log.info("비동기 프롬프트 분석 및 적용 성공 - 마인드맵 ID: {}", mapId);
+                handleSuccessAndNotify(mindmap, userId, "프롬프트 분석 및 적용이");
+            } else {
+                log.info("비동기 프롬프트 분석 성공 - 마인드맵 ID: {}", mapId);
+                handleSuccessAndNotify(mindmap, userId, "프롬프트 분석이");
+            }
 
         } catch (Exception e) {
             log.error("비동기 프롬프트 분석 실패 - 마인드맵 ID: {}, 원인: {}", mapId, e.getMessage(), e);

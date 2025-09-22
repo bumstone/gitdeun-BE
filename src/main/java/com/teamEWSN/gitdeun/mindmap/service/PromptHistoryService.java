@@ -3,7 +3,6 @@ package com.teamEWSN.gitdeun.mindmap.service;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.fastapi.FastApiClient.SuggestionAutoResponse;
-import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptApplyRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptHistoryResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptPreviewResponseDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
@@ -36,9 +35,8 @@ public class PromptHistoryService {
 
     /**
      * FastAPI의 제안 분석 결과를 바탕으로 프롬프트 히스토리를 생성하고 DB에 저장
-     * 완료 후 SSE로 클라이언트에게 알림
      */
-    public void createPromptHistoryFromSuggestion(Long mapId, String prompt, SuggestionAutoResponse suggestionResponse) {
+    public PromptHistory createPromptHistoryFromSuggestion(Long mapId, String prompt, SuggestionAutoResponse suggestionResponse) {
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
@@ -65,6 +63,8 @@ public class PromptHistoryService {
         // DTO로 변환하여 SSE로 브로드캐스트
         PromptPreviewResponseDto previewDto = promptHistoryMapper.toPreviewResponseDto(savedHistory);
         mindmapSseService.broadcastPromptReady(mapId, previewDto);
+
+        return savedHistory;
     }
 
     /**
@@ -120,7 +120,7 @@ public class PromptHistoryService {
     /**
      * 프롬프트 히스토리 적용
      */
-    public void applyPromptHistory(Long mapId, Long userId, PromptApplyRequestDto req) {
+    public void applyPromptHistory(Long mapId, Long historyId, Long userId) {
         if (!mindmapAuthService.hasEdit(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
@@ -128,7 +128,7 @@ public class PromptHistoryService {
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
-        PromptHistory historyToApply = promptHistoryRepository.findByIdAndMindmapId(req.getHistoryId(), mapId)
+        PromptHistory historyToApply = promptHistoryRepository.findByIdAndMindmapId(historyId, mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.PROMPT_HISTORY_NOT_FOUND));
 
         mindmap.applyPromptHistory(historyToApply);
