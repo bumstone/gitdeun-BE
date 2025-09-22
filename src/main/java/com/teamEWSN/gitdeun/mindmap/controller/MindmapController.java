@@ -103,7 +103,7 @@ public class MindmapController {
         }
 
         // 비동기 서비스 호출
-        mindmapOrchestrationService.refreshMindmap(mapId, authorizationHeader);
+        mindmapOrchestrationService.refreshMindmap(mapId, userDetails.getId(), authorizationHeader);
 
         // 즉시 202 Accepted 응답 반환
         return ResponseEntity.accepted().build();
@@ -133,19 +133,22 @@ public class MindmapController {
      * 프롬프트 분석 및 미리보기 생성
      */
     @PostMapping("/{mapId}/prompts")
-    public ResponseEntity<PromptPreviewResponseDto> analyzePromptPreview(
+    public ResponseEntity<Void> analyzePrompt(
         @PathVariable Long mapId,
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @RequestBody MindmapPromptAnalysisDto request,
         @RequestHeader("Authorization") String authorizationHeader
     ) {
-        PromptPreviewResponseDto responseDto = promptHistoryService.createPromptPreview(
-            mapId,
-            userDetails.getId(),
-            request,
-            authorizationHeader
-        );
-        return ResponseEntity.ok(responseDto);
+        // 권한 검증은 동기적으로 먼저 수행
+        if (!mindmapAuthService.hasEdit(mapId, userDetails.getId())) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 비동기 서비스 호출
+        mindmapOrchestrationService.promptMindmap(mapId, request.getPrompt(), userDetails.getId(), authorizationHeader);
+
+        // 즉시 202 Accepted 응답 반환
+        return ResponseEntity.accepted().build();
     }
 
     /**

@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.mindmap.service;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
+import com.teamEWSN.gitdeun.common.fastapi.FastApiClient.SuggestionAutoResponse;
 import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
 import com.teamEWSN.gitdeun.mindmap.dto.request.MindmapCreateRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.request.ValidatedMindmapRequest;
@@ -19,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,6 +30,7 @@ public class MindmapOrchestrationService {
 
     private final FastApiClient fastApiClient;
     private final MindmapService mindmapService;
+    private final PromptHistoryService promptHistoryService;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final MindmapRepository mindmapRepository;
@@ -68,18 +69,19 @@ public class MindmapOrchestrationService {
         }).whenComplete((mindmap, throwable) -> {
             // 3. 최종 결과에 따라 알림 전송
             if (throwable != null) {
-                handleFailureAndNotify(throwable, userId, normalizedUrl);
+                handleFailureAndNotify(throwable, userId, normalizedUrl, "생성에");
             } else {
-                handleSuccessAndNotify(mindmap, userId);
+                handleSuccessAndNotify(mindmap, userId, "생성이");
             }
         });
     }
 
     @Async("mindmapExecutor")
-    public void refreshMindmap(Long mapId, String authHeader) {
+    public void refreshMindmap(Long mapId, Long userId, String authHeader) {
+        Mindmap mindmap = null;
         try {
             log.info("비동기 새로고침 시작 - 마인드맵 ID: {}", mapId);
-            Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
+            mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
             PromptHistory appliedPrompt = mindmap.getAppliedPromptHistory();
@@ -94,12 +96,19 @@ public class MindmapOrchestrationService {
                 authHeader
             );
 
-            // 분석 결과를 DB에 업데이트 (트랜잭션)
+            // 분석 결과를 DB에 업데이트 (트랜잭션) 및 SSE 브로드캐스트
             mindmapService.updateMindmapFromAnalysis(mapId, authHeader, analysisResult);
             log.info("비동기 새로고침 성공 - 마인드맵 ID: {}", mapId);
 
+            // 성공 알림 전송
+            handleSuccessAndNotify(mindmap, userId, "새로고침이");
+
         } catch (Exception e) {
             log.error("비동기 새로고침 실패 - 마인드맵 ID: {}, 원인: {}", mapId, e.getMessage(), e);
+            // 실패 알림 전송
+            if (mindmap != null) {
+                handleFailureAndNotify(e, userId, mindmap.getRepo().getGithubRepoUrl(), "새로고침에");
+            }
         }
     }
 
@@ -117,12 +126,49 @@ public class MindmapOrchestrationService {
         }
     }
 
-    private void handleSuccessAndNotify(Mindmap mindmap, Long userId) {
+    /**
+     * 프롬프트를 기반으로 마인드맵을 분석하고 미리보기를 생성하는 비동기 프로세스
+     */
+    @Async("mindmapExecutor")
+    public void promptMindmap(Long mapId, String prompt, Long userId, String authHeader) {
+        Mindmap mindmap = null;
+        try {
+            log.info("비동기 프롬프트 분석 시작 - 마인드맵 ID: {}", mapId);
+            mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+
+            String repoUrl = mindmap.getRepo().getGithubRepoUrl();
+
+            // FastAPI에 자동 분석 요청
+            SuggestionAutoResponse suggestionResponse = fastApiClient.createAutoSuggestions(repoUrl, prompt, authHeader);
+
+            // 분석 결과를 바탕으로 마인드맵 그래프 데이터 업데이트 및 캐시 갱신
+            mindmapService.updateMindmapFromPromptAnalysis(mapId, authHeader);
+
+            // 분석 결과를 바탕으로 PromptHistory 생성 및 SSE 알림
+            promptHistoryService.createPromptHistoryFromSuggestion(mapId, prompt, suggestionResponse);
+
+            log.info("비동기 프롬프트 분석 및 미리보기 생성 성공 - 마인드맵 ID: {}", mapId);
+            // 성공 알림 전송
+            handleSuccessAndNotify(mindmap, userId, "프롬프트 분석이");
+
+        } catch (Exception e) {
+            log.error("비동기 프롬프트 분석 실패 - 마인드맵 ID: {}, 원인: {}", mapId, e.getMessage(), e);
+            // 실패 알림 전송
+            if (mindmap != null) {
+                handleFailureAndNotify(e, userId, mindmap.getRepo().getGithubRepoUrl(), "프롬프트 분석에");
+            }
+        }
+    }
+
+
+    // 성공 알림 (메시지 동적 생성)
+    private void handleSuccessAndNotify(Mindmap mindmap, Long userId, String action) {
         try {
             User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
 
-            String successMessage = String.format("마인드맵 '%s' 생성이 완료되었습니다.", mindmap.getTitle());
+            String successMessage = String.format("마인드맵 '%s'의 %s 완료되었습니다.", mindmap.getTitle(), action);
             notificationService.createAndSendNotification(
                 NotificationCreateDto.actionable(
                     user,
@@ -132,20 +178,21 @@ public class MindmapOrchestrationService {
                     null
                 )
             );
-            log.info("마인드맵 생성 성공 및 알림 전송 완료 - ID: {}, 사용자: {}", mindmap.getId(), userId);
+            log.info("마인드맵 {} 성공 및 알림 전송 완료 - ID: {}, 사용자: {}", action, mindmap.getId(), userId);
         } catch (Exception e) {
             log.error("성공 알림 전송 실패 - 마인드맵 ID: {}, 사용자 ID: {}, 오류: {}",
                 mindmap.getId(), userId, e.getMessage());
         }
     }
 
-    private void handleFailureAndNotify(Throwable throwable, Long userId, String repoUrl) {
+    // 실패 알림 (메시지 동적 생성)
+    private void handleFailureAndNotify(Throwable throwable, Long userId, String repoUrl, String action) {
         final Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-        log.error("마인드맵 생성 최종 실패 - 사용자: {}, 저장소: {}, 원인: {}", userId, repoUrl, cause.getMessage());
+        log.error("마인드맵 {} 최종 실패 - 사용자: {}, 저장소: {}, 원인: {}", action, userId, repoUrl, cause.getMessage());
 
         try {
             userRepository.findByIdAndDeletedAtIsNull(userId).ifPresent(user -> {
-                String errorMessage = "마인드맵 생성에 실패했습니다: " + getSimplifiedErrorMessage(cause);
+                String errorMessage = String.format("마인드맵 %s 실패했습니다: %s", action, getSimplifiedErrorMessage(cause));
                 notificationService.createAndSendNotification(
                     NotificationCreateDto.simple(
                         user,

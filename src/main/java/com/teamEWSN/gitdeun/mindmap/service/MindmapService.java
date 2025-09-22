@@ -115,7 +115,9 @@ public class MindmapService {
         return responseDto;
     }
 
-    // 분석 결과를 바탕으로 기존 마인드맵을 업데이트 (새로고침)
+    /**
+     * 분석 결과를 바탕으로 기존 마인드맵을 업데이트 (새로고침)
+     */
     @Transactional
     public MindmapDetailResponseDto updateMindmapFromAnalysis(Long mapId, String authHeader, AnalysisResultDto analysisResult) {
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
@@ -123,18 +125,40 @@ public class MindmapService {
 
         mindmap.getRepo().updateWithAnalysis(analysisResult);
 
-        // 새로고침 시 그래프 캐시 무효화
+        // 공통 로직 호출
+        return evictCacheAndBroadcastUpdate(mindmap, authHeader);
+    }
+
+    /**
+     * 프롬프트 분석 후 마인드맵을 업데이트 (캐시 갱신 및 SSE 브로드캐스트)
+     */
+    @Transactional
+    public MindmapDetailResponseDto updateMindmapFromPromptAnalysis(Long mapId, String authHeader) {
+        Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+
+        // 공통 로직 호출
+        return evictCacheAndBroadcastUpdate(mindmap, authHeader);
+    }
+
+    /**
+     * 마인드맵 업데이트 시 공통 로직 (캐시 무효화, 새 데이터 조회, SSE 전송)
+     */
+    private MindmapDetailResponseDto evictCacheAndBroadcastUpdate(Mindmap mindmap, String authHeader) {
+        // 그래프 캐시 무효화
         mindmapGraphCache.evictCache(mindmap.getRepo().getGithubRepoUrl());
 
+        // 새로운 그래프 데이터 조회
         MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(
             mindmap.getRepo().getGithubRepoUrl(),
             authHeader
         );
 
+        // DTO 변환 및 SSE 브로드캐스트
         MindmapDetailResponseDto responseDto = mindmapMapper.toDetailResponseDto(mindmap, graphData);
-        mindmapSseService.broadcastUpdate(mapId, responseDto);
+        mindmapSseService.broadcastUpdate(mindmap.getId(), responseDto);
 
-        log.info("마인드맵 새로고침 DB 업데이트 완료 - ID: {}", mapId);
+        log.info("마인드맵 데이터 업데이트 및 SSE 브로드캐스트 완료 - ID: {}", mindmap.getId());
         return responseDto;
     }
 
@@ -159,6 +183,8 @@ public class MindmapService {
 
         return mindmap.getRepo(); // 후처리를 위해 Repo 반환
     }
+
+
 
     /**
      * TODO: Webhook을 통한 마인드맵 업데이트

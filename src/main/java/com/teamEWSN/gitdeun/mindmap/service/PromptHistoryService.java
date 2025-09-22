@@ -2,9 +2,7 @@ package com.teamEWSN.gitdeun.mindmap.service;
 
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
-import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
-import com.teamEWSN.gitdeun.common.fastapi.dto.AnalysisResultDto;
-import com.teamEWSN.gitdeun.mindmap.dto.prompt.MindmapPromptAnalysisDto;
+import com.teamEWSN.gitdeun.common.fastapi.FastApiClient.SuggestionAutoResponse;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptApplyRequestDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptHistoryResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptPreviewResponseDto;
@@ -21,6 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 
 @Slf4j
 @Service
@@ -31,52 +31,40 @@ public class PromptHistoryService {
     private final PromptHistoryRepository promptHistoryRepository;
     private final MindmapRepository mindmapRepository;
     private final MindmapAuthService mindmapAuthService;
-    private final FastApiClient fastApiClient;
     private final MindmapSseService mindmapSseService;
     private final PromptHistoryMapper promptHistoryMapper;
 
     /**
-     * 프롬프트 분석 및 미리보기 생성
+     * FastAPI의 제안 분석 결과를 바탕으로 프롬프트 히스토리를 생성하고 DB에 저장
+     * 완료 후 SSE로 클라이언트에게 알림
      */
-    public PromptPreviewResponseDto createPromptPreview(Long mapId, Long userId, MindmapPromptAnalysisDto req, String authorizationHeader) {
-        if (!mindmapAuthService.hasEdit(mapId, userId)) {
-            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
-        }
-
+    public void createPromptHistoryFromSuggestion(Long mapId, String prompt, SuggestionAutoResponse suggestionResponse) {
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
-        String repoUrl = mindmap.getRepo().getGithubRepoUrl();
-
-        try {
-            AnalysisResultDto analysisResult = fastApiClient.refreshMindmap(repoUrl, req.getPrompt(), authorizationHeader);
-
-            // FastAPI로부터 받은 analysisSummary 사용
-            String summary = analysisResult.getSummary();
-
-            // analysisSummary가 없거나 비어있는 경우 대체 로직 사용
-            if (summary == null || summary.trim().isEmpty()) {
-                summary = generateFallbackSummary(req.getPrompt());
-            }
-
-            PromptHistory history = PromptHistory.builder()
-                .mindmap(mindmap)
-                .prompt(req.getPrompt())
-                .summary(summary)
-                .applied(false)
-                .build();
-
-            promptHistoryRepository.save(history);
-
-            log.info("프롬프트 미리보기 생성 완료 - 마인드맵 ID: {}, 히스토리 ID: {}", mapId, history.getId());
-
-            // 매퍼를 활용한 변환
-            return promptHistoryMapper.toPreviewResponseDto(history);
-
-        } catch (Exception e) {
-            log.error("프롬프트 미리보기 생성 실패: {}", e.getMessage(), e);
-            throw new RuntimeException("프롬프트 분석 중 오류가 발생했습니다: " + e.getMessage());
+        // chosen_scopes 리스트의 첫 번째 항목을 summary로 사용
+        String summary;
+        List<String> scopes = suggestionResponse.getChosen_scopes();
+        if (scopes != null && !scopes.isEmpty()) {
+            summary = scopes.getFirst();
+        } else {
+            // fallback 로직: AI가 추천 스코프를 찾지 못한 경우
+            summary = generateFallbackSummary(prompt);
         }
+
+        PromptHistory history = PromptHistory.builder()
+            .mindmap(mindmap)
+            .prompt(prompt)
+            .summary(summary)
+            .applied(false)
+            .build();
+
+        PromptHistory savedHistory = promptHistoryRepository.save(history);
+        log.info("프롬프트 히스토리 생성 완료 - 마인드맵 ID: {}, 히스토리 ID: {}", mapId, savedHistory.getId());
+
+        // DTO로 변환하여 SSE로 브로드캐스트
+        PromptPreviewResponseDto previewDto = promptHistoryMapper.toPreviewResponseDto(savedHistory);
+        mindmapSseService.broadcastPromptReady(mapId, previewDto);
     }
 
     /**
