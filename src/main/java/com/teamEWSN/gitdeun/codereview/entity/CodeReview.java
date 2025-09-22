@@ -1,17 +1,21 @@
 package com.teamEWSN.gitdeun.codereview.entity;
 
+import com.teamEWSN.gitdeun.codereference.entity.CodeReference;
+import com.teamEWSN.gitdeun.comment.entity.Comment;
 import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "code_review")
 public class CodeReview extends AuditedEntity {
 
@@ -23,24 +27,26 @@ public class CodeReview extends AuditedEntity {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mindmap_id", nullable = false)
     private Mindmap mindmap;
 
-    @Column(name = "ref_id")
-    private Long refId;
+    // 리뷰 대상: 노드 ID 또는 코드 참조
+    @Column(name = "node_id")
+    private String nodeId; // 마인드맵 그래프의 노드 ID
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "code_reference_id")
+    private CodeReference codeReference;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    @ColumnDefault("'PENDING'")
     private CodeReviewStatus status;
 
-    @Column(name = "comment_cnt")
-    @ColumnDefault("0")
-    private Integer commentCount;
+    @OneToMany(mappedBy = "codeReview", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
 
-    @Column(name = "unresolved_thread_cnt")
-    @ColumnDefault("0")
-    private Integer unresolvedThreadCount;
-
+    public void changeStatus(CodeReviewStatus status) {
+        this.status = status;
+    }
 }

@@ -4,15 +4,19 @@ import com.teamEWSN.gitdeun.codereview.entity.CodeReview;
 import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "comment")
 public class Comment extends AuditedEntity {
 
@@ -32,13 +36,40 @@ public class Comment extends AuditedEntity {
     @JoinColumn(name = "parent_comment_id")
     private Comment parentComment;
 
+    @OneToMany(mappedBy = "parentComment")
+    private List<Comment> replies = new ArrayList<>();
+
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
+
+    @Column(name = "resolved_at")
+    private LocalDateTime resolvedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "emoji_type")
     private EmojiType emojiType;
 
-    @Column(name = "resolved_at")
-    private LocalDateTime resolvedAt;
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
+
+    public void toggleResolve() {
+        if (this.resolvedAt == null) {
+            this.resolvedAt = LocalDateTime.now();
+        } else {
+            this.resolvedAt = null;
+        }
+    }
+
+    public boolean isResolved() {
+        return this.resolvedAt != null;
+    }
 }
