@@ -17,11 +17,11 @@ public interface CodeReferenceMapper {
     ReferenceResponse toReferenceResponse(CodeReference codeReference);
 
     @Mapping(target = "referenceId", source = "codeReference.id")
-    @Mapping(target = "nodeId",      source = "codeReference.nodeKey")
-    @Mapping(target = "filePath",    source = "codeReference.filePath")
-    @Mapping(target = "startLine",   source = "codeReference.startLine")
-    @Mapping(target = "endLine",     source = "codeReference.endLine")
-    @Mapping(target = "codeContent", source = "codeContent")
+    @Mapping(target = "nodeKey", source = "codeReference.nodeKey")
+    @Mapping(target = "filePath", source = "codeReference.filePath")
+    @Mapping(target = "startLine", source = "codeReference.startLine")
+    @Mapping(target = "endLine", source = "codeReference.endLine")
+    @Mapping(target = "codeContent", expression = "java(codeContent)")
     ReferenceDetailResponse toReferenceDetailResponse(CodeReference codeReference, String codeContent);
 
     /**

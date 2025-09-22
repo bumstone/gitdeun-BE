@@ -10,7 +10,7 @@ public class CodeReferenceResponseDtos {
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
     public static class ReferenceResponse {
         private Long referenceId;
-        private String nodekey;
+        private String nodeKey;
         private String filePath;
         private Integer startLine;
         private Integer endLine;
@@ -20,7 +20,7 @@ public class CodeReferenceResponseDtos {
     @Builder
     public static class ReferenceDetailResponse {
         private Long referenceId;
-        private String nodeId;
+        private String nodeKey;
         private String filePath;
         private Integer startLine;
         private Integer endLine;
