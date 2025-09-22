@@ -10,10 +10,20 @@ public class CodeReferenceResponseDtos {
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
     public static class ReferenceResponse {
         private Long referenceId;
-        private String nodeId;
+        private String nodekey;
         private String filePath;
         private Integer startLine;
         private Integer endLine;
     }
 
+    @Getter
+    @Builder
+    public static class ReferenceDetailResponse {
+        private Long referenceId;
+        private String nodeId;
+        private String filePath;
+        private Integer startLine;
+        private Integer endLine;
+        private String codeContent; // 실제 코드 내용을 담을 필드
+    }
 }

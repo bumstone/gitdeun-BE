@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CodeReviewRepository extends JpaRepository<CodeReview, Long> {
-    Page<CodeReview> findByMindmapIdAndNodeId(Long mindmapId, String nodeId, Pageable pageable);
+    Page<CodeReview> findByMindmapIdAndNodeKey(Long mindmapId, String nodeKey, Pageable pageable);
 }

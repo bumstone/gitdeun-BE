@@ -1,7 +1,7 @@
 package com.teamEWSN.gitdeun.codereference.controller;
 
 import com.teamEWSN.gitdeun.codereference.dto.CodeReferenceResponseDtos.*;
-import com.teamEWSN.gitdeun.codereference.dto.*;
+import com.teamEWSN.gitdeun.codereference.dto.CodeReferenceRequestDtos.*;
 import com.teamEWSN.gitdeun.codereference.service.CodeReferenceService;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -21,31 +21,32 @@ public class CodeReferenceController {
     private final CodeReferenceService codeReferenceService;
 
     // 특정 노드에 코드 참조 생성
-    @PostMapping("/nodes/{nodeId}/code-references")
+    @PostMapping("/nodes/{nodeKey}/code-references")
     public ResponseEntity<ReferenceResponse> createCodeReference(
         @PathVariable Long mapId,
-        @PathVariable String nodeId,
-        @Valid @RequestBody CodeReferenceRequestDtos.CreateRequest request,
+        @PathVariable String nodeKey,
+        @Valid @RequestBody CreateRequest request,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(codeReferenceService.createReference(mapId, nodeId, userDetails.getId(), request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(codeReferenceService.createReference(mapId, nodeKey, userDetails.getId(), request));
     }
 
     // 특정 코드 참조 상세 조회
-    @GetMapping("/code-references/{refId}")
-    public ResponseEntity<ReferenceResponse> getCodeReference(
+    @GetMapping("/code-references/{refId}/detail")
+    public ResponseEntity<ReferenceDetailResponse> getCodeReferenceDetail(
         @PathVariable Long mapId,
         @PathVariable Long refId,
-        @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(codeReferenceService.getReference(mapId, refId, userDetails.getId()));
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestHeader("Authorization") String authorizationHeader) {
+        return ResponseEntity.ok(codeReferenceService.getReferenceDetail(mapId, refId, userDetails.getId(), authorizationHeader));
     }
 
     // 특정 노드에 연결된 모든 코드 참조 목록 조회
-    @GetMapping("/nodes/{nodeId}/code-references")
+    @GetMapping("/nodes/{nodeKey}/code-references")
     public ResponseEntity<List<ReferenceResponse>> getNodeCodeReferences(
         @PathVariable Long mapId,
-        @PathVariable String nodeId,
+        @PathVariable String nodeKey,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(codeReferenceService.getReferencesForNode(mapId, nodeId, userDetails.getId()));
+        return ResponseEntity.ok(codeReferenceService.getReferencesForNode(mapId, nodeKey, userDetails.getId()));
     }
 
     // 코드 참조 정보 수정
@@ -53,7 +54,7 @@ public class CodeReferenceController {
     public ResponseEntity<ReferenceResponse> updateCodeReference(
         @PathVariable Long mapId,
         @PathVariable Long refId,
-        @Valid @RequestBody CodeReferenceRequestDtos.CreateRequest request,
+        @Valid @RequestBody CreateRequest request,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(codeReferenceService.updateReference(mapId, refId, userDetails.getId(), request));
     }

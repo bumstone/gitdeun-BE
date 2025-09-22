@@ -249,11 +249,12 @@ public class FastApiClient {
         }
     }
 
-    public String getFileRaw(String repoId, String filePath, String authHeader) {
-        return getFileRaw(repoId, filePath, null, null, null, authHeader);
+    public String getFileRaw(String repoUrl, String filePath, String authHeader) {
+        return getFileRaw(repoUrl, filePath, null, null, null, authHeader);
     }
 
-    public String getFileRaw(String repoId, String filePath, Integer startLine, Integer endLine, String sha, String authHeader) {
+    public String getFileRaw(String repoUrl, String filePath, Integer startLine, Integer endLine, String sha, String authHeader) {
+        String repoId = extractMapId(repoUrl);
         try {
             log.debug("FastAPI 파일 내용 조회 시작 - repoId: {}, filePath: {}", repoId, filePath);
 

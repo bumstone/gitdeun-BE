@@ -25,8 +25,8 @@ public class CodeReference extends AuditedEntity {
     @JoinColumn(name = "mindmap_id", nullable = false)
     private Mindmap mindmap;
 
-    @Column(name = "node_id", nullable = false)
-    private String nodeId;
+    @Column(name = "node_key", nullable = false)
+    private String nodeKey;
 
     @Column(name = "file_path", columnDefinition = "TEXT", nullable = false)
     private String filePath;

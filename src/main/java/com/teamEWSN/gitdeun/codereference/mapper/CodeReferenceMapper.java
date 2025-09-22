@@ -13,8 +13,16 @@ public interface CodeReferenceMapper {
     /**
      * 기본 CodeReference 응답 매핑
      */
-    @Mapping(source = "id", target = "referenceId")
+    @Mapping(target = "referenceId", source = "id")
     ReferenceResponse toReferenceResponse(CodeReference codeReference);
+
+    @Mapping(target = "referenceId", source = "codeReference.id")
+    @Mapping(target = "nodeId",      source = "codeReference.nodeKey")
+    @Mapping(target = "filePath",    source = "codeReference.filePath")
+    @Mapping(target = "startLine",   source = "codeReference.startLine")
+    @Mapping(target = "endLine",     source = "codeReference.endLine")
+    @Mapping(target = "codeContent", source = "codeContent")
+    ReferenceDetailResponse toReferenceDetailResponse(CodeReference codeReference, String codeContent);
 
     /**
      * 파일명 추출 헬퍼 메서드
