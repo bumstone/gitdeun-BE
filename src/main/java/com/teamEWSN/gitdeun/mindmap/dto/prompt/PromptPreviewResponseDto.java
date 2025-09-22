@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class PromptPreviewResponseDto {
     private Long historyId;
     private String prompt;
-    private String title;
+    private String summary;
 
     // TODO: 프롬프트 미리보기용 맵 데이터
     private MindmapGraphResponseDto mindmapGraph;

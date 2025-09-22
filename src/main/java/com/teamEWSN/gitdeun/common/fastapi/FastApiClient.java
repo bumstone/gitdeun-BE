@@ -229,8 +229,8 @@ public class FastApiClient {
         request.put("repo_url", repoUrl);
         request.put("prompt", prompt);
         request.put("include_children", true);
-        request.put("max_files", 10);
-        request.put("return_code", false);
+        request.put("max_files", 12);
+        request.put("return_code", true);
 
         try {
             return webClient.post()
