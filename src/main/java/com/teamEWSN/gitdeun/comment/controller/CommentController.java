@@ -69,6 +69,15 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(commentService.addAttachmentsToComment(commentId, userDetails.getId(), files));
     }
 
+    // 첨부파일 개별 삭제
+    @DeleteMapping("/comments/attachments/{attachmentId}")
+    public ResponseEntity<Void> deleteAttachment(
+        @PathVariable Long attachmentId,
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
+        commentService.deleteAttachment(attachmentId, userDetails.getId());
+        return ResponseEntity.noContent().build();
+    }
+
     // 최상위 댓글에 이모지 추가/변경/삭제
     @PatchMapping("/comments/{commentId}/emoji")
     public ResponseEntity<Void> updateEmoji(

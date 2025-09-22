@@ -2,6 +2,10 @@ package com.teamEWSN.gitdeun.comment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -34,4 +38,11 @@ public class CommentAttachment {
     @Enumerated(EnumType.STRING)
     @Column(name = "attachment_type", nullable = false)
     private AttachmentType attachmentType;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }

@@ -15,11 +15,11 @@ import java.util.List;
 @Entity
 @Getter
 @Builder
+@SQLDelete(sql = "UPDATE comment SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@Where(clause = "deleted_at IS NULL")
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "comment")
-@SQLDelete(sql = "UPDATE comment SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@Where(clause = "deleted_at IS NULL")
 public class Comment extends AuditedEntity {
 
     @Id

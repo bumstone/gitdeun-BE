@@ -56,4 +56,24 @@ public class CommentAttachmentService {
         }
         return AttachmentType.FILE;
     }
+
+    /**
+     * 첨부파일 목록을 S3와 DB에서 모두 삭제 (Hard Delete)
+     */
+    @Transactional
+    public void deleteAttachments(List<CommentAttachment> attachments) {
+        if (CollectionUtils.isEmpty(attachments)) {
+            return;
+        }
+
+        // 1. S3에서 파일 삭제
+        List<String> urlsToDelete = attachments.stream()
+            .map(CommentAttachment::getUrl)
+            .collect(Collectors.toList());
+        s3BucketService.remove(urlsToDelete);
+
+        // 2. DB에서 첨부파일 정보 삭제
+        attachmentRepository.deleteAll(attachments);
+    }
+
 }

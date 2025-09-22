@@ -6,8 +6,10 @@ import com.teamEWSN.gitdeun.comment.dto.CommentRequestDtos.*;
 import com.teamEWSN.gitdeun.comment.dto.CommentResponseDtos.*;
 import com.teamEWSN.gitdeun.comment.dto.CommentAttachmentResponseDtos.*;
 import com.teamEWSN.gitdeun.comment.entity.Comment;
+import com.teamEWSN.gitdeun.comment.entity.CommentAttachment;
 import com.teamEWSN.gitdeun.comment.entity.EmojiType;
 import com.teamEWSN.gitdeun.comment.mapper.CommentMapper;
+import com.teamEWSN.gitdeun.comment.repository.CommentAttachmentRepository;
 import com.teamEWSN.gitdeun.comment.repository.CommentRepository;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
@@ -17,6 +19,7 @@ import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -28,6 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommentService {
     private final CommentRepository commentRepository;
+    private final CommentAttachmentRepository commentAttachmentRepository;
     private final CodeReviewRepository codeReviewRepository;
     private final UserRepository userRepository;
     private final MindmapAuthService mindmapAuthService;
@@ -142,7 +146,31 @@ public class CommentService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
+        // 1. 댓글에 첨부된 파일이 있으면 S3와 DB에서 모두 삭제
+        if (!CollectionUtils.isEmpty(comment.getAttachments())) {
+            attachmentService.deleteAttachments(comment.getAttachments());
+        }
+
+        // 2. 댓글을 Soft Delete 처리
         commentRepository.delete(comment);
+    }
+
+    /**
+     * 첨부파일 개별 삭제
+     */
+    @Transactional
+    public void deleteAttachment(Long attachmentId, Long userId) {
+        CommentAttachment attachment = commentAttachmentRepository.findById(attachmentId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.FILE_NOT_FOUND));
+
+        boolean isAuthor = attachment.getComment().getUser().getId().equals(userId);
+        boolean isManager = mindmapAuthService.hasEdit(attachment.getComment().getCodeReview().getMindmap().getId(), userId);
+
+        if (!isAuthor && !isManager) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        attachmentService.deleteAttachments(List.of(attachment));
     }
 
     @Transactional
