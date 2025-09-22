@@ -37,6 +37,7 @@ public class CodeReference extends AuditedEntity {
     @Column(name = "end_line")
     private Integer endLine;
 
+    @Builder.Default
     @OneToMany(mappedBy = "codeReference", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CodeReview> codeReviews = new ArrayList<>();
 

@@ -43,6 +43,7 @@ public class CodeReview extends AuditedEntity {
     @Column(nullable = false)
     private CodeReviewStatus status;
 
+    @Builder.Default
     @OneToMany(mappedBy = "codeReview", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
