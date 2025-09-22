@@ -1,6 +1,7 @@
 package com.teamEWSN.gitdeun.codereference.entity;
 
 import com.teamEWSN.gitdeun.codereview.entity.CodeReview;
+import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "code_reference")
-public class CodeReference {
+public class CodeReference extends AuditedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
