@@ -79,23 +79,23 @@ public class NodeService {
 
         List<RelatedFileDto> filePaths = targetNode.getRelatedFiles();
 
-        // 3. 파일 경로 목록을 사용하여 각 파일의 전체 코드를 가져옴 (이 부분은 동일)
+        // 3. 파일 경로 목록을 사용하여 각 파일의 전체 코드를 가져옴
         Map<RelatedFileDto, String> codeContentsMap = filePaths.parallelStream()
             .collect(Collectors.toConcurrentMap(
                 filePath -> filePath,
                 filePath -> fileContentCache.getFileContentWithCache(repoUrl, filePath.getFilePath(), lastCommit, authorizationHeader)
             ));
 
-        // 4. (추가된 로직) Map을 List<FileWithCodeDto> 형태로 변환
+        // 4. Map을 List<FileWithCodeDto> 형태로 변환
         List<FileWithCodeDto> filesWithCode = codeContentsMap.entrySet().stream()
-            .map(entry -> new FileWithCodeDto(entry.getKey().getFileName(), entry.getKey().getFilePath(), entry.getValue()))
+            .map(entry -> new FileWithCodeDto(entry.getKey(), entry.getValue()))
             .collect(Collectors.toList());
 
         // 5. 변경된 DTO로 응답 생성
         return new NodeCodeResponseDto(
             targetNode.getKey(),
             targetNode.getLabel(),
-            filesWithCode // 변환된 리스트를 전달
+            filesWithCode
         );
     }
 }
