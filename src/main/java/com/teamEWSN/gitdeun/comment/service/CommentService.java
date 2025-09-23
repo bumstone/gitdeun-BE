@@ -109,7 +109,7 @@ public class CommentService {
         return topLevelComments;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<AttachmentResponse> addAttachmentsToComment(Long commentId, Long userId, List<MultipartFile> files) {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new GlobalException(ErrorCode.COMMENT_NOT_FOUND));
