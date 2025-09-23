@@ -38,7 +38,7 @@ public class CodeReviewService {
     private final CodeReviewMapper codeReviewMapper;
 
     @Transactional
-    public ReviewResponse createNodeReview(Long mapId, String nodeId, Long userId, CreateRequest request, List<MultipartFile> files) {
+    public ReviewResponse createNodeReview(Long mapId, String nodeKey, Long userId, CreateRequest request, List<MultipartFile> files) {
         // 리뷰 작성 권한 확인
         if (!mindmapAuthService.hasEdit(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
@@ -53,7 +53,7 @@ public class CodeReviewService {
         CodeReview codeReview = CodeReview.builder()
             .mindmap(mindmap)
             .author(author)
-            .nodeId(nodeId)
+            .nodeKey(nodeKey)
             .status(CodeReviewStatus.PENDING)
             .build();
         CodeReview savedReview = codeReviewRepository.save(codeReview);
@@ -125,12 +125,12 @@ public class CodeReviewService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ReviewListResponse> getReviewsForNode(Long mapId, String nodeId, Long userId, Pageable pageable) {
+    public Page<ReviewListResponse> getReviewsForNode(Long mapId, String nodeKey, Long userId, Pageable pageable) {
         if (!mindmapAuthService.hasView(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        Page<CodeReview> reviews = codeReviewRepository.findByMindmapIdAndNodeId(mapId, nodeId, pageable);
+        Page<CodeReview> reviews = codeReviewRepository.findByMindmapIdAndNodeKey(mapId, nodeKey, pageable);
         return reviews.map(codeReviewMapper::toReviewListResponse);
     }
 }

@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface CodeReferenceRepository extends JpaRepository<CodeReference, Long> {
 
-    List<CodeReference> findByMindmapIdAndNodeId(Long mindmapId, String nodeId);
+    List<CodeReference> findByMindmapIdAndNodeKey(Long mindmapId, String nodeKey);
 
     Optional<CodeReference> findByMindmapIdAndId(Long mindmapId, Long id);
 

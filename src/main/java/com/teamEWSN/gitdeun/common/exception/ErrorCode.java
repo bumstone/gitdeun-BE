@@ -45,6 +45,7 @@ public enum ErrorCode {
     // 마인드맵 관련
     MINDMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "MINDMAP-001", "요청한 마인드맵을 찾을 수 없습니다."),
     MINDMAP_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MINDMAP-002", "마인드맵 생성 중 오류가 발생했습니다."),
+    NODE_NOT_FOUND(HttpStatus.NOT_FOUND, "MINDMAP-003", "요청한 마인드맵 노드 정보를 찾을 수 없습니다."),
 
     // 마인드맵 요청 검증 관련
     INVALID_USER_ID(HttpStatus.BAD_REQUEST, "VALIDATE-001", "유효하지 않은 사용자 ID입니다."),

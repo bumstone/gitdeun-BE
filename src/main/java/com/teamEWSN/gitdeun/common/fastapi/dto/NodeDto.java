@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.common.fastapi.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 public class NodeDto {
@@ -11,22 +12,8 @@ public class NodeDto {
     private String label;
 
     @JsonProperty("related_files")
-    private List<String> relatedFiles;
+    private List<RelatedFileDto> relatedFiles;
 
     @JsonProperty("node_type")
     private String nodeType;
-
-
-    // 편의 메서드
-    public boolean isFileNode() {
-        return "file".equals(nodeType);
-    }
-
-    public boolean isSuggestionNode() {
-        return "suggestion".equals(nodeType);
-    }
-
-    public int getFileCount() {
-        return relatedFiles != null ? relatedFiles.size() : 0;
-    }
 }

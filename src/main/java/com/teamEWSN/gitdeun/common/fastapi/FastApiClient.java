@@ -9,11 +9,14 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -243,6 +246,68 @@ public class FastApiClient {
         } catch (Exception e) {
             log.error("자동 제안 생성 실패: {}", e.getMessage(), e);
             throw new RuntimeException("제안 생성 실패: " + e.getMessage());
+        }
+    }
+
+    public String getFileRaw(String repoUrl, String filePath, String authHeader) {
+        return getFileRaw(repoUrl, filePath, null, null, null, authHeader);
+    }
+
+    public String getFileRaw(String repoUrl, String filePath, Integer startLine, Integer endLine, String sha, String authHeader) {
+        String repoId = extractMapId(repoUrl);
+        try {
+            log.debug("FastAPI 파일 내용 조회 시작 - repoId: {}, filePath: {}", repoId, filePath);
+
+            // URI 생성 (쿼리 파라미터 포함)
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder
+                .fromPath("/content/file/raw")
+                .queryParam("repo_id", repoId)
+                .queryParam("path", filePath);
+
+            if (startLine != null) {
+                uriBuilder.queryParam("start_line", startLine);
+            }
+            if (endLine != null) {
+                uriBuilder.queryParam("end_line", endLine);
+            }
+            if (sha != null && !sha.trim().isEmpty()) {
+                uriBuilder.queryParam("sha", sha);
+            }
+
+            String uri = uriBuilder.build().toUriString();
+
+            String response = webClient.get()
+                .uri(uri)
+                .headers(headers -> {
+                    if (authHeader != null && !authHeader.trim().isEmpty()) {
+                        headers.set("Authorization", authHeader);
+                    }
+                    headers.set("Accept", "text/plain");
+                })
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
+                    log.warn("FastAPI 파일 조회 4xx 오류 - repoId: {}, filePath: {}, status: {}",
+                        repoId, filePath, clientResponse.statusCode());
+                    return clientResponse.bodyToMono(String.class)
+                        .map(errorBody -> new RuntimeException("파일을 찾을 수 없습니다: " + errorBody));
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, serverResponse -> {
+                    log.error("FastAPI 파일 조회 5xx 오류 - repoId: {}, filePath: {}, status: {}",
+                        repoId, filePath, serverResponse.statusCode());
+                    return Mono.error(new RuntimeException("FastAPI 서버 오류"));
+                })
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(30))
+                .block();
+
+            log.debug("FastAPI 파일 내용 조회 완료 - repoId: {}, filePath: {}, 길이: {}",
+                repoId, filePath, response != null ? response.length() : 0);
+
+            return response != null ? response : "";
+
+        } catch (Exception e) {
+            log.error("FastAPI 파일 내용 조회 실패 - repoId: {}, filePath: {}", repoId, filePath, e);
+            return ""; // 빈 문자열 반환 (null 대신)
         }
     }
 
