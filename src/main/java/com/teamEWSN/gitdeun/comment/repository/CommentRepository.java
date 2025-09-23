@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    @EntityGraph(attributePaths = {"attachments"})
+    @EntityGraph(attributePaths = {"user", "replies", "attachments"})
     List<Comment> findByCodeReviewId(Long reviewId);
 }
