@@ -12,7 +12,7 @@ public class CodeReviewRequestDtos {
     @Getter
     @NoArgsConstructor
     public static class CreateRequest {
-        @NotEmpty(message = "첫 댓글 내용은 비워둘 수 없습니다.")
+        @NotEmpty(message = "댓글 내용은 비워둘 수 없습니다.")
         private String content;
         private EmojiType emojiType;
     }

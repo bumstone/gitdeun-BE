@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -61,7 +62,7 @@ public class CommentAttachmentService {
      * 첨부파일 목록을 S3와 DB에서 모두 삭제 (Hard Delete)
      */
     @Transactional
-    public void deleteAttachments(List<CommentAttachment> attachments) {
+    public void deleteAttachments(Set<CommentAttachment> attachments) {
         if (CollectionUtils.isEmpty(attachments)) {
             return;
         }
