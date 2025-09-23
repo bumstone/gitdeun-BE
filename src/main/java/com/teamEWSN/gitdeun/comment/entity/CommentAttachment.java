@@ -1,13 +1,17 @@
 package com.teamEWSN.gitdeun.comment.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "comment_attachment")
 public class CommentAttachment {
 
@@ -34,4 +38,11 @@ public class CommentAttachment {
     @Enumerated(EnumType.STRING)
     @Column(name = "attachment_type", nullable = false)
     private AttachmentType attachmentType;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }
