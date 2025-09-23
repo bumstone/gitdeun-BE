@@ -32,8 +32,8 @@ public class CodeReview extends AuditedEntity {
     private Mindmap mindmap;
 
     // 리뷰 대상: 노드 ID 또는 코드 참조
-    @Column(name = "node_id")
-    private String nodeId; // 마인드맵 그래프의 노드 ID
+    @Column(name = "node_key")
+    private String nodeKey; // 마인드맵 그래프의 노드 key
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "code_reference_id")
