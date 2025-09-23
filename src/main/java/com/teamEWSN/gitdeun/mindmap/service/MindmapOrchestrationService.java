@@ -10,6 +10,7 @@ import com.teamEWSN.gitdeun.mindmap.dto.request.ValidatedMindmapRequest;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.mindmap.entity.PromptHistory;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
+import com.teamEWSN.gitdeun.mindmap.util.FileContentCache;
 import com.teamEWSN.gitdeun.mindmap.util.MindmapRequestValidator;
 import com.teamEWSN.gitdeun.notification.dto.NotificationCreateDto;
 import com.teamEWSN.gitdeun.notification.entity.NotificationType;
@@ -38,6 +39,7 @@ public class MindmapOrchestrationService {
     private final UserRepository userRepository;
     private final MindmapRepository mindmapRepository;
     private final MindmapRequestValidator requestValidator;
+    private final FileContentCache fileContentCache;
 
     /**
      * 비동기적으로 마인드맵 생성 과정을 총괄
@@ -92,6 +94,9 @@ public class MindmapOrchestrationService {
             String repoUrl = mindmap.getRepo().getGithubRepoUrl();
             String prompt = (appliedPrompt != null) ? appliedPrompt.getPrompt() : null;
 
+            // FastAPI 분석 요청 전, 관련된 모든 파일 캐시를 무효화합니다.
+            fileContentCache.evictFileCacheForRepo(repoUrl);
+
             // FastAPI 분석 요청
             AnalysisResultDto analysisResult = fastApiClient.refreshMindmap(
                 repoUrl,
@@ -121,6 +126,9 @@ public class MindmapOrchestrationService {
     @Async("mindmapExecutor")
     public void cleanUpMindmapData(String repoUrl, String authorizationHeader) {
         try {
+            // 노드별 코드 파일 캐시 무효화
+            fileContentCache.evictFileCacheForRepo(repoUrl);
+            // 마인드맵 arangoDB 삭제 요청
             fastApiClient.deleteMindmapData(repoUrl, authorizationHeader);
             log.info("ArangoDB 데이터 비동기 삭제 완료: {}", repoUrl);
 

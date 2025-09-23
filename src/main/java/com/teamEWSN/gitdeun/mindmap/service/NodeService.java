@@ -2,8 +2,6 @@ package com.teamEWSN.gitdeun.mindmap.service;
 
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
-import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
-import com.teamEWSN.gitdeun.common.fastapi.dto.MindmapGraphDto;
 import com.teamEWSN.gitdeun.common.fastapi.dto.NodeDto;
 import com.teamEWSN.gitdeun.common.fastapi.dto.RelatedFileDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapGraphResponseDto;
@@ -11,12 +9,14 @@ import com.teamEWSN.gitdeun.mindmap.dto.NodeCodeResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.NodeSimpleDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
+import com.teamEWSN.gitdeun.mindmap.util.FileContentCache;
 import com.teamEWSN.gitdeun.mindmap.util.MindmapGraphCache;
 import com.teamEWSN.gitdeun.mindmapmember.service.MindmapAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +28,7 @@ public class NodeService {
     private final MindmapAuthService mindmapAuthService;
     private final MindmapRepository mindmapRepository;
     private final MindmapGraphCache mindmapGraphCache;
-    private final FastApiClient fastApiClient;
+    private final FileContentCache fileContentCache;
 
     /**
      * (테스트용) 마인드맵의 모든 노드 목록을 간략하게 조회합니다.
@@ -39,8 +39,9 @@ public class NodeService {
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
+        LocalDateTime lastCommit = mindmap.getRepo().getLastCommit(); // lastCommit 정보 가져오기
 
-        MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(repoUrl, authorizationHeader);
+        MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(repoUrl, lastCommit, authorizationHeader);
         if (graphData == null || graphData.getNodes() == null) {
             return Collections.emptyList();
         }
@@ -60,9 +61,11 @@ public class NodeService {
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
+        LocalDateTime lastCommit = mindmap.getRepo().getLastCommit();
+
 
         // 1. 캐시/API를 통해 그래프 데이터를 가져옵니다.
-        MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(repoUrl, authorizationHeader);
+        MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(repoUrl, lastCommit, authorizationHeader);
         if (graphData == null || !graphData.getSuccess()) {
             throw new GlobalException(ErrorCode.MINDMAP_NOT_FOUND);
         }
@@ -75,11 +78,12 @@ public class NodeService {
 
         List<RelatedFileDto> filePaths = targetNode.getRelatedFiles();
 
-        // 3. 파일 경로 목록을 사용하여 각 파일의 전체 코드를 가져옵니다.
+        // 3. 파일 경로 목록을 사용하여 각 파일의 전체 코드를 가져옴
+        // 코드 파일에 대한 캐싱 적용
         Map<RelatedFileDto, String> codeContents = filePaths.parallelStream()
             .collect(Collectors.toConcurrentMap(
                 filePath -> filePath,
-                filePath -> fastApiClient.getFileRaw(repoUrl, filePath.getFilePath(), authorizationHeader)
+                filePath -> fileContentCache.getFileContentWithCache(repoUrl, filePath.getFilePath(), lastCommit, authorizationHeader)
             ));
 
         return new NodeCodeResponseDto(
