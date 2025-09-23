@@ -3,6 +3,7 @@ package com.teamEWSN.gitdeun.mindmap.service;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
 import com.teamEWSN.gitdeun.common.fastapi.dto.NodeDto;
+import com.teamEWSN.gitdeun.mindmap.dto.FileWithCodeDto;
 import com.teamEWSN.gitdeun.common.fastapi.dto.RelatedFileDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapGraphResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.NodeCodeResponseDto;
@@ -78,19 +79,23 @@ public class NodeService {
 
         List<RelatedFileDto> filePaths = targetNode.getRelatedFiles();
 
-        // 3. 파일 경로 목록을 사용하여 각 파일의 전체 코드를 가져옴
-        // 코드 파일에 대한 캐싱 적용
-        Map<RelatedFileDto, String> codeContents = filePaths.parallelStream()
+        // 3. 파일 경로 목록을 사용하여 각 파일의 전체 코드를 가져옴 (이 부분은 동일)
+        Map<RelatedFileDto, String> codeContentsMap = filePaths.parallelStream()
             .collect(Collectors.toConcurrentMap(
                 filePath -> filePath,
                 filePath -> fileContentCache.getFileContentWithCache(repoUrl, filePath.getFilePath(), lastCommit, authorizationHeader)
             ));
 
+        // 4. (추가된 로직) Map을 List<FileWithCodeDto> 형태로 변환
+        List<FileWithCodeDto> filesWithCode = codeContentsMap.entrySet().stream()
+            .map(entry -> new FileWithCodeDto(entry.getKey().getFileName(), entry.getKey().getFilePath(), entry.getValue()))
+            .collect(Collectors.toList());
+
+        // 5. 변경된 DTO로 응답 생성
         return new NodeCodeResponseDto(
             targetNode.getKey(),
             targetNode.getLabel(),
-            filePaths,
-            codeContents
+            filesWithCode // 변환된 리스트를 전달
         );
     }
 }

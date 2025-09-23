@@ -399,6 +399,7 @@ public class FastApiClient {
         private Integer total_target_files;
         private Integer created;
         private List<AutoScopeItem> items;
+        private String aggregate_node_key;
     }
 
     @Getter

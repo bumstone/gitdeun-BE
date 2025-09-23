@@ -4,13 +4,11 @@ import com.teamEWSN.gitdeun.common.fastapi.dto.RelatedFileDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.List;
-import java.util.Map;
-
 @Getter
 @AllArgsConstructor
-public class NodeCodeResponseDto {
-    private String nodeKey;
-    private String nodeLabel;
-    private List<FileWithCodeDto> files;
+public class FileWithCodeDto {
+    private String fileName;
+    private String filePath;
+    private String codeContents;
+
 }
