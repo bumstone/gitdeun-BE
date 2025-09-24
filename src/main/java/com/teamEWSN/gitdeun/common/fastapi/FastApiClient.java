@@ -1,5 +1,6 @@
 package com.teamEWSN.gitdeun.common.fastapi;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.teamEWSN.gitdeun.common.converter.IsoToLocalDateTimeDeserializer;
@@ -249,7 +250,7 @@ public class FastApiClient {
         }
     }
 
-    public String getFileRaw(String repoUrl, String filePath, String authHeader) {
+/*    public String getFileRaw(String repoUrl, String filePath, String authHeader) {
         return getFileRaw(repoUrl, filePath, null, null, null, authHeader);
     }
 
@@ -309,52 +310,50 @@ public class FastApiClient {
             log.error("FastAPI 파일 내용 조회 실패 - repoId: {}, filePath: {}", repoId, filePath, e);
             return ""; // 빈 문자열 반환 (null 대신)
         }
-    }
+    }*/
 
-    public String getFileRawFromNode(String nodeKey, String filePath, String authHeader) {
+    public String getCodeFromNode(String nodeKey, String filePath, String authHeader) {
+        String fileName = extractFileName(filePath);
         try {
-            log.debug("FastAPI 파일 내용 조회 시작 - nodeKey: {}, filePath: {}", nodeKey, filePath);
+            log.debug("FastAPI 노드 기반 코드 조회 시작 - nodeKey: {}, filePath: {}", nodeKey, fileName);
 
-            // URI 생성 (쿼리 파라미터 포함)
             UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                .fromPath("/content/file/nodes")
+                .fromPath("/content/file/by-node") // FastAPI의 해당 엔드포인트
                 .queryParam("node_key", nodeKey)
-                .queryParam("file_path", filePath);
+                .queryParam("file_path", fileName);
+            // 'prefer' 파라미터는 생략하여 FastAPI의 기본값(auto)을 따르도록 함
 
             String uri = uriBuilder.build().toUriString();
 
-            String response = webClient.get()
+            NodeCodeResponse response = webClient.get()
                 .uri(uri)
                 .headers(headers -> {
                     if (authHeader != null && !authHeader.trim().isEmpty()) {
                         headers.set("Authorization", authHeader);
                     }
-                    headers.set("Accept", "text/plain");
                 })
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
-                    log.warn("FastAPI 파일 조회 4xx 오류 - nodeKey: {}, filePath: {}, status: {}",
-                        nodeKey, filePath, clientResponse.statusCode());
-                    return clientResponse.bodyToMono(String.class)
-                        .map(errorBody -> new RuntimeException("파일을 찾을 수 없습니다: " + errorBody));
-                })
-                .onStatus(HttpStatusCode::is5xxServerError, serverResponse -> {
-                    log.error("FastAPI 파일 조회 5xx 오류 - nodeKey: {}, filePath: {}, status: {}",
-                        nodeKey, filePath, serverResponse.statusCode());
-                    return Mono.error(new RuntimeException("FastAPI 서버 오류"));
-                })
-                .bodyToMono(String.class)
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
+                    clientResponse.bodyToMono(String.class)
+                        .map(errorBody -> {
+                            log.warn("FastAPI 노드 코드 조회 4xx 오류 - nodeKey: {}, fileName: {}, status: {}, body: {}",
+                                nodeKey, fileName, clientResponse.statusCode(), errorBody);
+                            return new RuntimeException("FastAPI 클라이언트 오류: " + errorBody);
+                        })
+                )
+                .bodyToMono(NodeCodeResponse.class)
                 .timeout(Duration.ofSeconds(30))
                 .block();
 
-            log.debug("FastAPI 파일 내용 조회 완료 - nodeKey: {}, filePath: {}, 길이: {}",
-                nodeKey, filePath, response != null ? response.length() : 0);
+            String codeContent = (response != null) ? response.getCode() : "";
+            log.debug("FastAPI 노드 기반 코드 조회 성공 - nodeKey: {}, fileName: {}, 길이: {}",
+                nodeKey, fileName, codeContent != null ? codeContent.length() : 0);
 
-            return response != null ? response : "";
+            return codeContent;
 
         } catch (Exception e) {
-            log.error("FastAPI 파일 내용 조회 실패 - nodeKey: {}, filePath: {}", nodeKey, filePath, e);
-            return ""; // 빈 문자열 반환 (null 대신)
+            log.error("FastAPI 노드 기반 코드 조회 실패 - nodeKey: {}, fileName: {}", nodeKey, fileName, e);
+            return ""; // 예외 발생 시 빈 문자열 반환
         }
     }
 
@@ -364,6 +363,11 @@ public class FastApiClient {
     private String extractMapId(String repoUrl) {
         String[] segments = repoUrl.split("/");
         return segments[segments.length - 1].replaceAll("\\.git$", "");
+    }
+
+    // 파일명 추출
+    public String extractFileName(String filePath) {
+        return filePath.substring(filePath.lastIndexOf('/') + 1);
     }
 
     private AnalysisResultDto buildAnalysisResultDto(
@@ -387,6 +391,13 @@ public class FastApiClient {
     }
 
     // === Response DTOs ===
+
+    @Getter
+    @Setter
+    @JsonIgnoreProperties(ignoreUnknown = true) // code 필드 외 다른 필드는 무시
+    private static class NodeCodeResponse {
+        private String code;
+    }
 
     @Getter
     @Setter

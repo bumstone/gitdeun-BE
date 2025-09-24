@@ -29,12 +29,14 @@ public class FileContentCache {
 
     @Component
     public static class FileContentL1Cache {
-        @Cacheable(value = "FILE_CONTENT_L1", key = "#key")
+        @Cacheable(value = "FILE_CONTENT_L1", key = "#key",
+            unless = "#result == null || #result.isEmpty()")
         public String getFromL1Cache(String key) {
-            return null;
+            return null; // 미스면 null
         }
 
-        @CachePut(value = "FILE_CONTENT_L1", key = "#key")
+        @CachePut(value = "FILE_CONTENT_L1", key = "#key",
+            condition = "#content != null && !#content.isBlank()")
         public String cacheToL1(String key, String content) {
             return content;
         }
@@ -46,7 +48,6 @@ public class FileContentCache {
 
 
     public String getFileContentWithCacheFromNode(String repoUrl, String nodeKey, String filePath, LocalDateTime lastCommit, String authHeader) {
-        // 캐시 키에 repoUrl을 포함시켜 어떤 리포지토리의 캐시인지 명확히 합니다.
         String cacheKey = "file-content:" + repoUrl + ":node:" + nodeKey + ":" + filePath + ":" + lastCommit.toString();
 
         // 1. L1 캐시 확인
@@ -59,23 +60,27 @@ public class FileContentCache {
         // 2. L2 캐시 확인
         try {
             content = (String) redisTemplate.opsForValue().get(cacheKey);
-            if (content != null) {
+            if (content != null && !content.isBlank()) {
                 log.debug("파일 내용 L2 캐시 히트 - key: {}", cacheKey);
                 l1Cache.cacheToL1(cacheKey, content); // L1에 저장
                 return content;
+            } else if (content != null && content.isBlank()) {
+                log.warn("L2 캐시에서 빈 문자열 발견 - key: {} (전파/재적재 하지 않음)", cacheKey);
+                // 캐시에 남겨두지 말고 즉시 삭제
+                try { redisTemplate.delete(cacheKey); } catch (Exception ignore) {}
             }
         } catch (Exception e) {
             log.warn("Redis 조회 실패, API 직접 호출 - key: {}", cacheKey, e);
         }
 
-        // 3. FastAPI 실시간 조회
-        content = fastApiClient.getFileRawFromNode(nodeKey, filePath, authHeader);
+        // 3. FastAPI 실시간 조회 (새로 만든 메서드를 호출하도록 변경)
+        content = fastApiClient.getCodeFromNode(nodeKey, filePath, authHeader);
 
         // 4. L1, L2 캐시에 저장
-        if (content != null) {
+        if (content != null && !content.isBlank()) {
             l1Cache.cacheToL1(cacheKey, content);
             try {
-                redisTemplate.opsForValue().set(cacheKey, content, Duration.ofHours(2)); // L2: 2시간
+                redisTemplate.opsForValue().set(cacheKey, content, Duration.ofHours(2));
             } catch (Exception e) {
                 log.warn("Redis 저장 실패 - key: {}", cacheKey, e);
             }
@@ -88,7 +93,7 @@ public class FileContentCache {
     public void evictFileCacheForRepo(String repoUrl) {
         // L1 캐시는 전체 삭제
         l1Cache.evictL1Cache();
-        deleteRedisKeysByPattern("file-content:repo:" + repoUrl + ":*");
+        deleteRedisKeysByPattern("file-content:" + repoUrl + ":*");
     }
 
     private void deleteRedisKeysByPattern(String pattern) {
