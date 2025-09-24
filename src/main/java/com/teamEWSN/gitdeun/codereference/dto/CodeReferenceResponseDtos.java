@@ -16,7 +16,6 @@ public class CodeReferenceResponseDtos {
         private String filePath;
         private Integer startLine;
         private Integer endLine;
-        private List<Long> reviewIds;
     }
 
     @Getter
@@ -28,5 +27,6 @@ public class CodeReferenceResponseDtos {
         private Integer startLine;
         private Integer endLine;
         private String codeContent; // 실제 코드 내용을 담을 필드
+        private List<Long> reviewIds;
     }
 }

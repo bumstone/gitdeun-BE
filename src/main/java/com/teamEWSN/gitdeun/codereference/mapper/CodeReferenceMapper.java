@@ -18,7 +18,6 @@ public interface CodeReferenceMapper {
      * 기본 CodeReference 응답 매핑
      */
     @Mapping(target = "referenceId", source = "id")
-    @Mapping(source = "codeReviews", target = "reviewIds", qualifiedByName = "reviewsToIds")
     ReferenceResponse toReferenceResponse(CodeReference codeReference);
 
     @Mapping(target = "referenceId", source = "codeReference.id")
@@ -27,6 +26,7 @@ public interface CodeReferenceMapper {
     @Mapping(target = "startLine", source = "codeReference.startLine")
     @Mapping(target = "endLine", source = "codeReference.endLine")
     @Mapping(target = "codeContent", expression = "java(codeContent)")
+    @Mapping(source = "codeReviews", target = "reviewIds", qualifiedByName = "reviewsToIds")
     ReferenceDetailResponse toReferenceDetailResponse(CodeReference codeReference, String codeContent);
 
     /**
