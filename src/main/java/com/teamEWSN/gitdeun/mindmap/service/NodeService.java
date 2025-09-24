@@ -37,7 +37,7 @@ public class NodeService {
     @Transactional(readOnly = true)
     public List<NodeSimpleDto> getNodeList(Long mapId, String authorizationHeader) {
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
-            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
         LocalDateTime lastCommit = mindmap.getRepo().getLastCommit(); // lastCommit 정보 가져오기
@@ -48,55 +48,77 @@ public class NodeService {
         }
 
         return graphData.getNodes().stream()
-            .map(node -> new NodeSimpleDto(node.getKey(), node.getLabel()))
-            .collect(Collectors.toList());
+                .map(node -> new NodeSimpleDto(node.getKey(), node.getLabel()))
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public NodeCodeResponseDto getNodeDetailsWithCode(Long mapId, String nodeKey, Long userId, String authorizationHeader) {
+    public NodeCodeResponseDto getNodeDetailsWithCode(
+            Long mapId,
+            String nodeKey,
+            Long userId,
+            String authorizationHeader
+    ) {
+        // 0) 권한 체크
         if (!mindmapAuthService.hasView(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
+        // 1) 맵/레포 컨텍스트 로드
         Mindmap mindmap = mindmapRepository.findByIdAndDeletedAtIsNull(mapId)
-            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
         LocalDateTime lastCommit = mindmap.getRepo().getLastCommit();
 
-
-        // 1. 캐시/API를 통해 그래프 데이터를 가져옵니다.
-        MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(repoUrl, lastCommit, authorizationHeader);
-        if (graphData == null || !graphData.getSuccess()) {
+        // 2) 그래프 데이터 로드
+        MindmapGraphResponseDto graphData =
+                mindmapGraphCache.getGraphWithHybridCache(repoUrl, lastCommit, authorizationHeader);
+        if (graphData == null || !Boolean.TRUE.equals(graphData.getSuccess())) {
             throw new GlobalException(ErrorCode.MINDMAP_NOT_FOUND);
         }
 
-        // 2. 그래프에서 해당 nodeKey를 가진 노드를 찾습니다.
+        // 3) 대상 노드 찾기
         NodeDto targetNode = graphData.getNodes().stream()
-            .filter(node -> nodeKey.equals(node.getKey()))
-            .findFirst()
-            .orElseThrow(() -> new GlobalException(ErrorCode.NODE_NOT_FOUND));
+                .filter(n -> nodeKey.equals(n.getKey()))
+                .findFirst()
+                .orElseThrow(() -> new GlobalException(ErrorCode.NODE_NOT_FOUND));
 
-        List<RelatedFileDto> filePaths = targetNode.getRelatedFiles();
+        List<RelatedFileDto> related = targetNode.getRelatedFiles();
+        if (related == null || related.isEmpty()) {
+            return new NodeCodeResponseDto(
+                    targetNode.getKey(),
+                    targetNode.getLabel(),
+                    Collections.emptyList()
+            );
+        }
 
-        // 3. 파일 경로 목록을 사용하여 각 파일의 전체 코드를 가져옴
-        Map<RelatedFileDto, String> codeContentsMap = filePaths.parallelStream()
-            .collect(Collectors.toConcurrentMap(
-                filePath -> filePath,
-                filePath -> fileContentCache.getFileContentWithCache(repoUrl, filePath.getFilePath(), lastCommit, authorizationHeader)
-            ));
+        // 4) 각 파일에 대해 FastAPI(by-node)로 코드 조회
+        //    prefer=auto => AI 코드가 있으면 AI, 없으면 원본으로 자동 폴백
+        List<FileWithCodeDto> filesWithCode = related.parallelStream()
+                .map(rf -> {
+                    String code = null;
+                    try {
+                        code = fileContentCache.getFileContentByNodeWithCache(
+                                repoUrl,
+                                nodeKey,
+                                rf.getFilePath(),   // 파일명만 와도 FastAPI가 경로 해석함
+                                "auto",             // ai 우선, 없으면 original 폴백
+                                lastCommit,
+                                authorizationHeader
+                        );
+                    } catch (Exception ignore) {
+                        // 개별 파일 실패는 무시하고 다음 파일 계속
+                    }
+                    return new FileWithCodeDto(rf, code == null ? "" : code);
+                })
+                .collect(Collectors.toList());
 
-        // 4. Map을 List<FileWithCodeDto> 형태로 변환
-        List<FileWithCodeDto> filesWithCode = codeContentsMap.entrySet().stream()
-            .map(entry -> new FileWithCodeDto(entry.getKey(), entry.getValue()))
-            .collect(Collectors.toList());
-
-        // 5. 변경된 DTO로 응답 생성
+        // 5) 응답
         return new NodeCodeResponseDto(
-            targetNode.getKey(),
-            targetNode.getLabel(),
-            filesWithCode
+                targetNode.getKey(),
+                targetNode.getLabel(),
+                filesWithCode
         );
     }
 }
-
