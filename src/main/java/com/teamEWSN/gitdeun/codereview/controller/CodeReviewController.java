@@ -27,7 +27,7 @@ public class CodeReviewController {
     private final CodeReviewService codeReviewService;
 
     // 노드에 대한 코드 리뷰 생성
-    @PostMapping(value = "/mindmaps/{mapId}/nodes/{nodeKey}/code-reviews", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/mindmaps/{mapId}/nodes/{nodeKey}/code-reviews", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<ReviewResponse> createNodeCodeReview(
         @PathVariable Long mapId,
         @PathVariable String nodeKey,
@@ -38,7 +38,7 @@ public class CodeReviewController {
     }
 
     // 코드 참조에 대한 코드 리뷰 생성
-    @PostMapping(value = "/references/{refId}/code-reviews", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/references/{refId}/code-reviews", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<ReviewResponse> createReferenceCodeReview(
             @PathVariable Long refId,
             @Valid @RequestPart("request") CreateRequest request,

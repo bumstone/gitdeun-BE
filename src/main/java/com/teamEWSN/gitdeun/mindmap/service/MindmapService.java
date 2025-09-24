@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -90,6 +91,7 @@ public class MindmapService {
         // 캐싱된 그래프 데이터 조회
         MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(
             mindmap.getRepo().getGithubRepoUrl(),
+            mindmap.getRepo().getLastCommit(),
             authHeader
         );
 
@@ -145,12 +147,15 @@ public class MindmapService {
      * 마인드맵 업데이트 시 공통 로직 (캐시 무효화, 새 데이터 조회, SSE 전송)
      */
     private MindmapDetailResponseDto evictCacheAndBroadcastUpdate(Mindmap mindmap, String authHeader) {
+        LocalDateTime lastCommitTime = mindmap.getRepo().getLastCommit();
+
         // 그래프 캐시 무효화
-        mindmapGraphCache.evictCache(mindmap.getRepo().getGithubRepoUrl());
+        mindmapGraphCache.evictCache(mindmap.getRepo().getGithubRepoUrl(), lastCommitTime);
 
         // 새로운 그래프 데이터 조회
         MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(
             mindmap.getRepo().getGithubRepoUrl(),
+            lastCommitTime,
             authHeader
         );
 
@@ -176,7 +181,7 @@ public class MindmapService {
             .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         // 삭제 시 관련 캐시도 무효화
-        mindmapGraphCache.evictCache(mindmap.getRepo().getGithubRepoUrl());
+        mindmapGraphCache.evictCache(mindmap.getRepo().getGithubRepoUrl(), mindmap.getRepo().getLastCommit());
 
         mindmap.softDelete();
         log.info("마인드맵 소프트 삭제 완료 (DB) - ID: {}", mapId);
@@ -199,14 +204,16 @@ public class MindmapService {
             .toList();
 
         repo.updateWithWebhookData(dto);
+        LocalDateTime lastCommitTime = repo.getLastCommit();
 
         // Webhook 업데이트 시 관련 캐시 무효화
-        mindmapGraphCache.evictCache(repo.getGithubRepoUrl());
+        mindmapGraphCache.evictCache(repo.getGithubRepoUrl(), lastCommitTime);
 
         for (Mindmap mindmap : mindmapsToUpdate) {
             // 새로운 그래프 데이터로 업데이트된 응답 생성
             MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(
                 repo.getGithubRepoUrl(),
+                lastCommitTime,
                 authHeader
             );
 

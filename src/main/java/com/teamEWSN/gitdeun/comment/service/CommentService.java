@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -108,7 +109,7 @@ public class CommentService {
         return topLevelComments;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<AttachmentResponse> addAttachmentsToComment(Long commentId, Long userId, List<MultipartFile> files) {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new GlobalException(ErrorCode.COMMENT_NOT_FOUND));
@@ -170,7 +171,7 @@ public class CommentService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        attachmentService.deleteAttachments(List.of(attachment));
+        attachmentService.deleteAttachments(Set.of(attachment));
     }
 
     @Transactional

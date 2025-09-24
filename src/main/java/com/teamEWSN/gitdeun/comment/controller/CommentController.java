@@ -24,7 +24,7 @@ public class CommentController {
     private final CommentService commentService;
 
     // 특정 코드 리뷰에 댓글 또는 대댓글 작성
-    @PostMapping(value = "/code-reviews/{reviewId}/comments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/code-reviews/{reviewId}/comments", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<CommentResponse> createComment(
         @PathVariable Long reviewId,
         @Valid @RequestPart("request") CreateRequest request,

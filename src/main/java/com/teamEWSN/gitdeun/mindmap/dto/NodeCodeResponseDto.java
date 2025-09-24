@@ -12,6 +12,5 @@ import java.util.Map;
 public class NodeCodeResponseDto {
     private String nodeKey;
     private String nodeLabel;
-    private List<RelatedFileDto> filePaths;
-    private Map<RelatedFileDto, String> codeContents; // filePath -> full code content
+    private List<FileWithCodeDto> files;
 }

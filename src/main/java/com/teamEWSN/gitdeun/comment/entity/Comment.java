@@ -11,7 +11,9 @@ import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -41,11 +43,11 @@ public class Comment extends AuditedEntity {
 
     @Builder.Default
     @OneToMany(mappedBy = "parentComment")
-    private List<Comment> replies = new ArrayList<>();
+    private Set<Comment> replies = new HashSet<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CommentAttachment> attachments = new ArrayList<>();
+    private Set<CommentAttachment> attachments = new HashSet<>();
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;

@@ -26,8 +26,9 @@ public class CodeReferenceController {
         @PathVariable Long mapId,
         @PathVariable String nodeKey,
         @Valid @RequestBody CreateRequest request,
+        @RequestHeader("Authorization") String authorizationHeader,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(codeReferenceService.createReference(mapId, nodeKey, userDetails.getId(), request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(codeReferenceService.createReference(mapId, nodeKey, userDetails.getId(), request, authorizationHeader));
     }
 
     // 특정 코드 참조 상세 조회
@@ -55,8 +56,9 @@ public class CodeReferenceController {
         @PathVariable Long mapId,
         @PathVariable Long refId,
         @Valid @RequestBody CreateRequest request,
+        @RequestHeader("Authorization") String authorizationHeader,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(codeReferenceService.updateReference(mapId, refId, userDetails.getId(), request));
+        return ResponseEntity.ok(codeReferenceService.updateReference(mapId, refId, userDetails.getId(), request, authorizationHeader));
     }
 
     // 코드 참조 삭제

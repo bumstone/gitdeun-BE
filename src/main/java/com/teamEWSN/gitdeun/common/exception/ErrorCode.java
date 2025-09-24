@@ -88,7 +88,8 @@ public enum ErrorCode {
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW-003", "해당 댓글을 찾을 수 없습니다."),
     CANNOT_RESOLVE_REPLY(HttpStatus.BAD_REQUEST, "REVIEW-004", "대댓글은 해결 상태로 변경할 수 없습니다."),
     EMOJI_ON_REPLY_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "REVIEW-005", "이모지는 최상위 댓글에만 추가할 수 있습니다."),
-
+    FILE_NOT_FOUND_IN_NODE(HttpStatus.NOT_FOUND, "REVIEW-006", "해당 노드에서 파일을 찾을 수 없습니다."),
+    INVALID_LINE_RANGE(HttpStatus.NOT_FOUND, "REVIEW-007", "유효한 코드 블록 범위가 아닙니다."),
 
     // 방문기록 관련
     HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "VISITHISTORY-001", "방문 기록을 찾을 수 없습니다."),

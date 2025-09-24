@@ -45,8 +45,8 @@ public class MindmapRequestValidator {
      * 마인드맵 생성 요청 종합 검증
      *
      * @param repoUrl 저장소 URL (필수)
-     * @param prompt 사용자 프롬프트 (선택)
-     * @param userId 요청 사용자 ID
+     * @param prompt  사용자 프롬프트 (선택)
+     * @param userId  요청 사용자 ID
      * @return 검증된 요청 정보
      */
     public ValidatedMindmapRequest validateAndProcess(String repoUrl, String prompt, Long userId) {
