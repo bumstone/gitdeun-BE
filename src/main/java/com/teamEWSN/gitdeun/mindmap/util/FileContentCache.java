@@ -17,6 +17,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate; // ✅ RestTemplate 주입
 import org.springframework.web.util.UriComponentsBuilder;
@@ -91,71 +92,76 @@ public class FileContentCache {
     }
 
     // ===== 추가: 노드 기준 코드 조회 (/content/file/by-node) - AI → 원본(자동 폴백은 FastAPI가 처리) =====
+    // FileContentCache.java 안에 넣어 교체
     public String getFileContentByNodeWithCache(
+            String repoUrl,
             String nodeKey,
             String filePath,
             String prefer,                 // "auto" | "ai" | "original"
-            String authorizationHeader,
-            LocalDateTime lastCommit
+            LocalDateTime lastCommit,
+            String authorizationHeader
     ) {
-        String cacheKey = "byNode:" + nodeKey + "|" + filePath + "|" + (prefer == null ? "auto" : prefer)
-                + "|" + (lastCommit == null ? "" : lastCommit);
-
-        // L1
-        String cached = l1Cache.getFromL1Cache(cacheKey);
-        if (cached != null) {
-            log.debug("by-node L1 히트 - {}", cacheKey);
-            return cached;
+        // 0) prefer 정규화
+        String pref = (prefer == null || prefer.isBlank()) ? "auto" : prefer.toLowerCase();
+        if (!pref.equals("auto") && !pref.equals("ai") && !pref.equals("original")) {
+            pref = "auto";
         }
 
-        // L2
+        // 1) 캐시 키 (레포/커밋/노드/파일/전략 모두 포함)
+        String cacheKey = String.format(
+                "byNode:%s|%s|%s|%s|%s",
+                repoUrl, nodeKey, filePath, pref, String.valueOf(lastCommit)
+        );
+
+        // 2) L1 캐시
+        String content = l1Cache.getFromL1Cache(cacheKey);
+        if (content != null) {
+            log.debug("by-node L1 cache hit: {}", cacheKey);
+            return content;
+        }
+
+        // 3) L2 캐시 (Redis)
         try {
-            String l2 = (String) redisTemplate.opsForValue().get(cacheKey);
-            if (l2 != null) {
-                log.debug("by-node L2 히트 - {}", cacheKey);
-                l1Cache.cacheToL1(cacheKey, l2);
-                return l2;
+            Object v = redisTemplate.opsForValue().get(cacheKey);
+            if (v instanceof String s) {
+                log.debug("by-node L2 cache hit: {}", cacheKey);
+                l1Cache.cacheToL1(cacheKey, s);
+                return s;
             }
         } catch (Exception e) {
-            log.warn("by-node Redis 조회 실패 - {}", cacheKey, e);
+            log.warn("Redis get failed (by-node): {}", cacheKey, e);
         }
 
-        // FastAPI: /content/file/by-node?node_key=...&file_path=...&prefer=...
-        String url = UriComponentsBuilder
-                .fromHttpUrl(fastApiBaseUrl + "/content/file/by-node")
-                .queryParam("node_key", nodeKey)
-                .queryParam("file_path", filePath)
-                .queryParam("prefer", prefer == null ? "auto" : prefer)
-                .toUriString();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-        if (authorizationHeader != null && !authorizationHeader.isBlank()) {
-            headers.set("Authorization", authorizationHeader);
-        }
-        HttpEntity<Void> req = new HttpEntity<>(headers);
-
+        // 4) FastAPI 호출 (prefer에 따라 AI/원본 결정은 FastAPI가 먼저 시도)
+        String code = null;
         try {
-            ResponseEntity<Map> resp = restTemplate.exchange(url, HttpMethod.GET, req, Map.class);
-            if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
-                Object code = resp.getBody().get("code");
-                if (code instanceof String s && !s.isEmpty()) {
-                    // 캐싱
-                    l1Cache.cacheToL1(cacheKey, s);
-                    try {
-                        redisTemplate.opsForValue().set(cacheKey, s, Duration.ofHours(2));
-                    } catch (Exception e) {
-                        log.warn("by-node Redis 저장 실패 - {}", cacheKey, e);
-                    }
-                    return s;
-                }
-            }
-        } catch (HttpStatusCodeException e) {
-            log.debug("by-node 호출 실패: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            code = fastApiClient.getCodeByNode(nodeKey, filePath, pref, authorizationHeader);
         } catch (Exception e) {
-            log.warn("by-node 호출 에러", e);
+            log.debug("fastApiClient.getCodeByNode error (nodeKey={}, filePath={}, prefer={}): {}",
+                    nodeKey, filePath, pref, e.getMessage());
         }
-        return "";
+
+        // 5) prefer=auto 인 경우에만 원본 폴백 (AI 없을 때)
+        if ((code == null || code.isBlank()) && "auto".equals(pref)) {
+            try {
+                code = fastApiClient.getFileRaw(repoUrl, filePath, authorizationHeader);
+            } catch (Exception e) {
+                log.debug("fastApiClient.getFileRaw fallback error ({}): {}", filePath, e.getMessage());
+            }
+        }
+
+        // 6) 캐시에 저장
+        if (code != null) {
+            l1Cache.cacheToL1(cacheKey, code);
+            try {
+                redisTemplate.opsForValue().set(cacheKey, code, java.time.Duration.ofHours(2));
+            } catch (Exception e) {
+                log.warn("Redis set failed (by-node): {}", cacheKey, e);
+            }
+        }
+
+        // 없으면 null (호출부에서 ""로 대체)
+        return code;
     }
 
     // ===== 캐시 무효화 =====

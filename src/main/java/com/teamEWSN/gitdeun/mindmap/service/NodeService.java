@@ -93,23 +93,36 @@ public class NodeService {
             );
         }
 
-        // 4) 각 파일에 대해 FastAPI(by-node)로 코드 조회
-        //    prefer=auto => AI 코드가 있으면 AI, 없으면 원본으로 자동 폴백
+        // 4) 각 파일에 대해 FastAPI(by-node)로 코드 조회 (prefer=auto)
         List<FileWithCodeDto> filesWithCode = related.parallelStream()
                 .map(rf -> {
                     String code = null;
                     try {
+                        // ★ 인자 순서 주의: (repoUrl, nodeKey, filePath, prefer, lastCommit, authorizationHeader)
                         code = fileContentCache.getFileContentByNodeWithCache(
-                                repoUrl,
-                                nodeKey,
-                                rf.getFilePath(),   // 파일명만 와도 FastAPI가 경로 해석함
-                                "auto",             // ai 우선, 없으면 original 폴백
-                                lastCommit,
-                                authorizationHeader
+                                repoUrl,               // 1
+                                nodeKey,               // 2
+                                rf.getFilePath(),      // 3
+                                "auto",                // 4 (ai 우선, 없으면 original)
+                                lastCommit,            // 5
+                                authorizationHeader    // 6 (없으면 null 들어가도 됨)
                         );
                     } catch (Exception ignore) {
-                        // 개별 파일 실패는 무시하고 다음 파일 계속
                     }
+
+                    // ★ AI 실패 시 원본 폴백
+                    if (code == null || code.isBlank()) {
+                        try {
+                            code = fileContentCache.getFileContentWithCache(
+                                    repoUrl,
+                                    rf.getFilePath(),
+                                    lastCommit,
+                                    authorizationHeader
+                            );
+                        } catch (Exception ignore) {
+                        }
+                    }
+
                     return new FileWithCodeDto(rf, code == null ? "" : code);
                 })
                 .collect(Collectors.toList());

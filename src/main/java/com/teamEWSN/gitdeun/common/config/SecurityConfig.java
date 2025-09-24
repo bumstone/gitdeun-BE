@@ -2,13 +2,13 @@ package com.teamEWSN.gitdeun.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.teamEWSN.gitdeun.common.jwt.*;
-import com.teamEWSN.gitdeun.common.jwt.CustomAccessDeniedHandler;
 import com.teamEWSN.gitdeun.common.oauth.handler.CustomOAuth2FailureHandler;
 import com.teamEWSN.gitdeun.common.oauth.handler.CustomOAuth2SuccessHandler;
 import com.teamEWSN.gitdeun.common.oauth.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // ★
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -20,12 +20,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import java.util.List; // ★
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
+
+  private static final String SSE_ENDPOINT = "/api/history/sse"; // ★
 
   private final CustomOAuth2UserService customOAuth2UserService;
   private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
@@ -39,79 +42,90 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
     http
-        .csrf(AbstractHttpConfigurer::disable)
-        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .formLogin(AbstractHttpConfigurer::disable)
-        .httpBasic(AbstractHttpConfigurer::disable)
-        .sessionManagement(session -> session
-            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))  // 필요한 경우 세션 요청
-        .headers((headerConfig) -> headerConfig
-            .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .formLogin(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+            // SSE는 서버가 세션을 유지하지 않아도 되지만, 앱 전체 정책 유지
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .headers((headerConfig) -> headerConfig.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
 
-    // oauth2 로그인 설정
+    // OAuth2 로그인
     http
-        .oauth2Login((oauth2) -> oauth2
-            .userInfoEndpoint(userInfoEndpointConfig -> userInfoEndpointConfig
-                .userService(customOAuth2UserService))
-//                        .defaultSuccessUrl("/oauth/success") // 로그인 성공시 이동할 URL
-            .successHandler(customOAuth2SuccessHandler)
-//                        .failureUrl("/oauth/fail") // 로그인 실패시 이동할 URL
-            .failureHandler(customOAuthFailureHandler))
-        .logout(logout -> logout
-            .logoutUrl("/logout")
-            .logoutSuccessUrl("/oauth/logout") // 로그아웃 성공시 해당 url로 이동
-            .clearAuthentication(true)  // 현재 요청의 SecurityContext 초기화
-            .deleteCookies("refreshToken")  // JWT RefreshToken 쿠키를 프론트에서 제거 명시
-        );
+            .oauth2Login((oauth2) -> oauth2
+                    .userInfoEndpoint(userInfoEndpointConfig -> userInfoEndpointConfig.userService(customOAuth2UserService))
+                    .successHandler(customOAuth2SuccessHandler)
+                    .failureHandler(customOAuthFailureHandler))
+            .logout(logout -> logout
+                    .logoutUrl("/logout")
+                    .logoutSuccessUrl("/oauth/logout")
+                    .clearAuthentication(true)
+                    .deleteCookies("refreshToken")
+            );
 
-    // 경로별 인가 작업
+    // 경로별 인가
     http
-        .authorizeHttpRequests((auth) -> auth
-            // 내부 webhook 통신 API
-            .requestMatchers("/api/webhook/**").permitAll()
-            // 외부 공개 API(클라이언트 - JWT)
-            .requestMatchers(SecurityPath.ADMIN_ENDPOINTS).hasRole("ADMIN")
-            .requestMatchers(SecurityPath.USER_ENDPOINTS).hasAnyRole("USER", "ADMIN")
-            .requestMatchers(SecurityPath.PUBLIC_ENDPOINTS).permitAll()
-            .anyRequest().permitAll()
-            // .anyRequest().authenticated()
-        );
+            .authorizeHttpRequests((auth) -> auth
+                    // ★ 프리플라이트(OPTIONS) 전부 허용
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    // ★ SSE 엔드포인트 허용 (로그 없이도 브라우저에서 직접 연결 가능해야 함)
+                    .requestMatchers(HttpMethod.GET, SSE_ENDPOINT).permitAll()
+                    // 내부 webhook
+                    .requestMatchers("/api/webhook/**").permitAll()
+                    // 그 외 정책
+                    .requestMatchers(SecurityPath.ADMIN_ENDPOINTS).hasRole("ADMIN")
+                    .requestMatchers(SecurityPath.USER_ENDPOINTS).hasAnyRole("USER", "ADMIN")
+                    .requestMatchers(SecurityPath.PUBLIC_ENDPOINTS).permitAll()
+                    .anyRequest().permitAll()
+            );
 
     // 예외 처리
     http
-        .exceptionHandling(exceptionHandling -> exceptionHandling
-            .authenticationEntryPoint(customAuthenticationEntryPoint) // 인증 실패 처리
-            .accessDeniedHandler(customAccessDeniedHandler)); // 인가 실패 처리
+            .exceptionHandling(exceptionHandling -> exceptionHandling
+                    .authenticationEntryPoint(customAuthenticationEntryPoint)
+                    .accessDeniedHandler(customAccessDeniedHandler));
 
-    // JwtFilter 추가
-    http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, objectMapper), UsernamePasswordAuthenticationFilter.class);
+    // JWT 필터
+    http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, objectMapper),
+            UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
 
-  // CORS 설정을 위한 Bean 등록
+  // CORS 설정
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = getCorsConfiguration();
-    configuration.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type"));
-    configuration.setExposedHeaders(java.util.List.of("Authorization"));
-    configuration.setAllowCredentials(true); // 인증 정보 허용 (쿠키 등)
 
-    org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration); // 모든 경로에 대해 적용
+    // ★ SSE/프리플라이트에서 필요한 헤더들 보강
+    configuration.setAllowedHeaders(List.of(
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "Cache-Control",
+            "X-Requested-With",
+            "Last-Event-ID" // SSE 재연결용
+    ));
+    configuration.setExposedHeaders(List.of(
+            "Authorization",
+            "Content-Type"
+    ));
+    configuration.setAllowCredentials(true);
+
+    org.springframework.web.cors.UrlBasedCorsConfigurationSource source =
+            new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
     return source;
   }
 
-
   private static CorsConfiguration getCorsConfiguration() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.addAllowedOrigin("http://localhost:5173"); // 개발 환경
+    configuration.addAllowedOrigin("http://localhost:5173"); // 개발
     configuration.addAllowedOrigin("https://gitdeun.netlify.app");
-    configuration.addAllowedOrigin("https://gitdeun.site"); // 혜택온 도메인
+    configuration.addAllowedOrigin("https://gitdeun.site");
     configuration.addAllowedOrigin("https://www.gitdeun.site");
-    configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
-    configuration.addAllowedHeader("*"); // 모든 헤더 허용
+    configuration.addAllowedMethod("*");   // 모든 메서드 허용 (GET/POST/PUT/DELETE/OPTIONS)
+    configuration.addAllowedHeader("*");   // 헤더 전부 허용 (위에서 setAllowedHeaders로 다시 구체화)
     return configuration;
   }
-
 }
