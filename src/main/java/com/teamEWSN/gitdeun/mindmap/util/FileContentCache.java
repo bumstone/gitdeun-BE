@@ -69,7 +69,7 @@ public class FileContentCache {
         }
 
         // 3. FastAPI 실시간 조회
-        content = fastApiClient.getFileRawFromNode(nodeKey, filePath, authHeader);
+        content = fastApiClient.getCodeForNode(nodeKey, filePath, authHeader);
 
         // 4. L1, L2 캐시에 저장
         if (content != null) {

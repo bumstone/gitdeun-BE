@@ -249,7 +249,7 @@ public class FastApiClient {
         }
     }
 
-    public String getFileRaw(String repoUrl, String filePath, String authHeader) {
+/*    public String getFileRaw(String repoUrl, String filePath, String authHeader) {
         return getFileRaw(repoUrl, filePath, null, null, null, authHeader);
     }
 
@@ -309,21 +309,20 @@ public class FastApiClient {
             log.error("FastAPI 파일 내용 조회 실패 - repoId: {}, filePath: {}", repoId, filePath, e);
             return ""; // 빈 문자열 반환 (null 대신)
         }
-    }
+    }*/
 
-    public String getFileRawFromNode(String nodeKey, String filePath, String authHeader) {
+    public String getCodeForNode(String nodeKey, String filePath, String authHeader) {
         try {
-            log.debug("FastAPI 파일 내용 조회 시작 - nodeKey: {}, filePath: {}", nodeKey, filePath);
+            log.debug("FastAPI 노드 기반 코드 조회 시작 - nodeKey: {}, filePath: {}", nodeKey, filePath);
 
-            // URI 생성 (쿼리 파라미터 포함)
             UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                .fromPath("/content/file/nodes")
+                .fromPath("/node/code") // 새로 추가된 FastAPI 엔드포인트
                 .queryParam("node_key", nodeKey)
                 .queryParam("file_path", filePath);
 
             String uri = uriBuilder.build().toUriString();
 
-            String response = webClient.get()
+            return webClient.get()
                 .uri(uri)
                 .headers(headers -> {
                     if (authHeader != null && !authHeader.trim().isEmpty()) {
@@ -332,29 +331,23 @@ public class FastApiClient {
                     headers.set("Accept", "text/plain");
                 })
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
-                    log.warn("FastAPI 파일 조회 4xx 오류 - nodeKey: {}, filePath: {}, status: {}",
-                        nodeKey, filePath, clientResponse.statusCode());
-                    return clientResponse.bodyToMono(String.class)
-                        .map(errorBody -> new RuntimeException("파일을 찾을 수 없습니다: " + errorBody));
-                })
-                .onStatus(HttpStatusCode::is5xxServerError, serverResponse -> {
-                    log.error("FastAPI 파일 조회 5xx 오류 - nodeKey: {}, filePath: {}, status: {}",
-                        nodeKey, filePath, serverResponse.statusCode());
-                    return Mono.error(new RuntimeException("FastAPI 서버 오류"));
-                })
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
+                    response.bodyToMono(String.class)
+                        .map(errorBody -> {
+                            log.warn("FastAPI 노드 코드 조회 4xx 오류 - nodeKey: {}, filePath: {}, status: {}, body: {}",
+                                nodeKey, filePath, response.statusCode(), errorBody);
+                            return new RuntimeException("FastAPI 클라이언트 오류: " + errorBody);
+                        })
+                )
                 .bodyToMono(String.class)
                 .timeout(Duration.ofSeconds(30))
-                .block();
-
-            log.debug("FastAPI 파일 내용 조회 완료 - nodeKey: {}, filePath: {}, 길이: {}",
-                nodeKey, filePath, response != null ? response.length() : 0);
-
-            return response != null ? response : "";
+                .doOnSuccess(response -> log.debug("FastAPI 노드 기반 코드 조회 성공 - nodeKey: {}, filePath: {}", nodeKey, filePath))
+                .blockOptional()
+                .orElse("");
 
         } catch (Exception e) {
-            log.error("FastAPI 파일 내용 조회 실패 - nodeKey: {}, filePath: {}", nodeKey, filePath, e);
-            return ""; // 빈 문자열 반환 (null 대신)
+            log.error("FastAPI 노드 기반 코드 조회 실패 - nodeKey: {}, filePath: {}", nodeKey, filePath, e);
+            return ""; // 예외 발생 시 빈 문자열 반환
         }
     }
 
