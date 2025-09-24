@@ -1,6 +1,5 @@
 package com.teamEWSN.gitdeun.codereference.service;
 
-
 import com.teamEWSN.gitdeun.codereference.dto.CodeReferenceRequestDtos.*;
 import com.teamEWSN.gitdeun.codereference.dto.CodeReferenceResponseDtos.*;
 import com.teamEWSN.gitdeun.codereference.entity.CodeReference;
@@ -37,30 +36,26 @@ public class CodeReferenceService {
     private final FastApiClient fastApiClient;
 
     @Transactional
-    public ReferenceResponse createReference(Long mapId, String nodeKey, Long userId, CreateRequest request, String authorizationHeader) throws GlobalException {
-        // 1. 권한 확인
+    public ReferenceResponse createReference(Long mapId, String nodeKey, Long userId, CreateRequest request, String authorizationHeader) {
         if (!mindmapAuthService.hasEdit(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        // 2. 마인드맵 존재 여부 확인
         Mindmap mindmap = mindmapRepository.findById(mapId)
-            .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(ErrorCode.MINDMAP_NOT_FOUND));
 
         validateCodeReferenceRequest(mindmap, nodeKey, request, authorizationHeader);
 
-        // 3. CodeReference 엔티티 생성 및 저장
         CodeReference codeReference = CodeReference.builder()
-            .mindmap(mindmap)
-            .nodeKey(nodeKey)
-            .filePath(request.getFilePath())
-            .startLine(request.getStartLine())
-            .endLine(request.getEndLine())
-            .build();
+                .mindmap(mindmap)
+                .nodeKey(nodeKey)
+                .filePath(request.getFilePath().trim())
+                .startLine(request.getStartLine())
+                .endLine(request.getEndLine())
+                .build();
 
-        CodeReference savedReference = codeReferenceRepository.save(codeReference);
-
-        return codeReferenceMapper.toReferenceResponse(savedReference);
+        CodeReference saved = codeReferenceRepository.save(codeReference);
+        return codeReferenceMapper.toReferenceResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -69,18 +64,18 @@ public class CodeReferenceService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        CodeReference codeReference = codeReferenceRepository.findByMindmapIdAndId(mapId, refId)
-            .orElseThrow(() -> new GlobalException(ErrorCode.CODE_REFERENCE_NOT_FOUND));
+        CodeReference ref = codeReferenceRepository.findByMindmapIdAndId(mapId, refId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.CODE_REFERENCE_NOT_FOUND));
 
-        Mindmap mindmap = codeReference.getMindmap();
+        Mindmap mindmap = ref.getMindmap();
+        String fullContent = fastApiClient.getFileRaw(
+                mindmap.getRepo().getGithubRepoUrl(),
+                ref.getFilePath(),
+                authorizationHeader
+        );
 
-        // FastAPI를 통해 전체 파일 내용 가져오기
-        String fullContent = fastApiClient.getFileRaw(mindmap.getRepo().getGithubRepoUrl(), codeReference.getFilePath(), authorizationHeader);
-
-        // 특정 라인만 추출 (snippet)
-        String snippet = extractLines(fullContent, codeReference.getStartLine(), codeReference.getEndLine());
-
-        return codeReferenceMapper.toReferenceDetailResponse(codeReference, snippet);
+        String snippet = extractLines(fullContent, ref.getStartLine(), ref.getEndLine());
+        return codeReferenceMapper.toReferenceDetailResponse(ref, snippet);
     }
 
     @Transactional(readOnly = true)
@@ -89,55 +84,46 @@ public class CodeReferenceService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        // 2. 특정 노드에 속한 모든 코드 참조 조회
-        List<CodeReference> references = codeReferenceRepository.findByMindmapIdAndNodeKey(mapId, nodeKey);
-
-        // 3. DTO 리스트로 변환하여 반환
-        return references.stream()
-            .map(codeReferenceMapper::toReferenceResponse)
-            .collect(Collectors.toList());
+        return codeReferenceRepository.findByMindmapIdAndNodeKey(mapId, nodeKey)
+                .stream()
+                .map(codeReferenceMapper::toReferenceResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional
     public ReferenceResponse updateReference(Long mapId, Long refId, Long userId, CreateRequest request, String authorizationHeader) {
-        // 1. 권한 확인
         if (!mindmapAuthService.hasEdit(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        // 2. 해당 마인드맵에 속한 코드 참조인지 확인 후 조회
-        CodeReference codeReference = codeReferenceRepository.findByMindmapIdAndId(mapId, refId)
-            .orElseThrow(() -> new GlobalException(ErrorCode.CODE_REFERENCE_NOT_FOUND));
+        CodeReference ref = codeReferenceRepository.findByMindmapIdAndId(mapId, refId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.CODE_REFERENCE_NOT_FOUND));
 
-        validateCodeReferenceRequest(codeReference.getMindmap(), codeReference.getNodeKey(), request, authorizationHeader);
+        validateCodeReferenceRequest(ref.getMindmap(), ref.getNodeKey(), request, authorizationHeader);
 
-        // 3. 엔티티 정보 업데이트
-        codeReference.update(request.getFilePath(), request.getStartLine(), request.getEndLine());
+        ref.update(request.getFilePath().trim(), request.getStartLine(), request.getEndLine());
 
-        // 4. DTO로 변환하여 반환 (JPA의 Dirty Checking에 의해 자동 저장됨)
-        return codeReferenceMapper.toReferenceResponse(codeReference);
+        return codeReferenceMapper.toReferenceResponse(ref);
     }
 
     @Transactional
     public void deleteReference(Long mapId, Long refId, Long userId) {
-        // 1. 권한 확인
         if (!mindmapAuthService.hasEdit(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
-
-        // 2. 해당 마인드맵에 코드 참조가 존재하는지 확인
         if (!codeReferenceRepository.existsByMindmapIdAndId(mapId, refId)) {
             throw new GlobalException(ErrorCode.CODE_REFERENCE_NOT_FOUND);
         }
-
-        // 3. 코드 참조 삭제
         codeReferenceRepository.deleteById(refId);
     }
 
+    /** ---------- helpers ---------- */
+
     private String extractLines(String fullContent, Integer startLine, Integer endLine) {
         if (fullContent == null) return "";
-        if (startLine == null || endLine == null || startLine <= 0 || endLine < startLine) return fullContent;
-
+        if (startLine == null || endLine == null || startLine <= 0 || endLine < startLine) {
+            return fullContent; // 라인 지정이 없으면 전체 반환
+        }
         String[] lines = fullContent.split("\\r?\\n");
         StringBuilder sb = new StringBuilder();
         for (int i = startLine - 1; i < endLine && i < lines.length; i++) {
@@ -146,35 +132,53 @@ public class CodeReferenceService {
         return sb.toString();
     }
 
-    // 코드 참조 검증
     private void validateCodeReferenceRequest(Mindmap mindmap, String nodeKey, CreateRequest request, String authorizationHeader) {
         String repoUrl = mindmap.getRepo().getGithubRepoUrl();
         LocalDateTime lastCommit = mindmap.getRepo().getLastCommit();
 
-        // 그래프 데이터에서 노드 정보 가져오기
-        MindmapGraphResponseDto graphData = mindmapGraphCache.getGraphWithHybridCache(repoUrl, lastCommit, authorizationHeader);
-        NodeDto targetNode = graphData.getNodes().stream()
-            .filter(node -> nodeKey.equals(node.getKey()))
-            .findFirst()
-            .orElseThrow(() -> new GlobalException(ErrorCode.NODE_NOT_FOUND));
+        // 그래프 로드
+        MindmapGraphResponseDto graphData =
+                mindmapGraphCache.getGraphWithHybridCache(repoUrl, lastCommit, authorizationHeader);
 
-        // 요청된 filePath가 노드에 실제 포함된 파일인지 확인
-        boolean fileExists = targetNode.getRelatedFiles().stream()
-            .anyMatch(file -> request.getFilePath().equals(file.getFilePath()));
+        NodeDto targetNode = graphData.getNodes().stream()
+                .filter(n -> nodeKey.equals(n.getKey()))
+                .findFirst()
+                .orElseThrow(() -> new GlobalException(ErrorCode.NODE_NOT_FOUND));
+
+        String reqPath = request.getFilePath() == null ? "" : request.getFilePath().trim();
+
+        // 노드에 연결된 파일 목록 안에 존재 여부 (정확히 일치 또는 말미 일치 허용)
+        boolean fileExists = targetNode.getRelatedFiles().stream().anyMatch(rf -> {
+            String fp = rf.getFilePath() == null ? "" : rf.getFilePath();
+            return fp.equals(reqPath)
+                    || fp.endsWith("/" + reqPath)
+                    || reqPath.endsWith("/" + fp);
+        });
+
         if (!fileExists) {
             throw new GlobalException(ErrorCode.FILE_NOT_FOUND_IN_NODE);
         }
 
-        // 파일의 전체 내용을 가져와 총 라인 수 계산
-        String fileContent = fileContentCache.getFileContentWithCache(repoUrl, request.getFilePath(), lastCommit, authorizationHeader);
-        int totalLines = fileContent.split("\\r?\\n").length;
-
-        // 요청된 라인 범위(startLine, endLine)가 유효한지 확인
+        // 라인 검증: start/end 둘 다 있을 때만 검사
         Integer start = request.getStartLine();
         Integer end = request.getEndLine();
-        if (start <= 0 || start > end || end > totalLines) {
-            throw new GlobalException(ErrorCode.INVALID_LINE_RANGE);
+        if (start != null && end != null) {
+            String fileContent = fileContentCache.getFileContentWithCache(
+                    repoUrl, resolvePath(reqPath, targetNode), lastCommit, authorizationHeader
+            );
+            int totalLines = fileContent == null ? 0 : fileContent.split("\\r?\\n").length;
+            if (start <= 0 || start > end || end > totalLines) {
+                throw new GlobalException(ErrorCode.INVALID_LINE_RANGE);
+            }
         }
     }
 
+    // 노드의 related_files 중 요청 경로와 가장 잘 맞는 실제 경로를 반환
+    private String resolvePath(String reqPath, NodeDto node) {
+        return node.getRelatedFiles().stream()
+                .map(rf -> rf.getFilePath())
+                .filter(fp -> fp != null && (fp.equals(reqPath) || fp.endsWith("/" + reqPath) || reqPath.endsWith("/" + fp)))
+                .findFirst()
+                .orElse(reqPath);
+    }
 }
