@@ -44,8 +44,10 @@ public class FileContentCache {
         }
     }
 
-    public String getFileContentWithCache(String repoUrl, String filePath, LocalDateTime lastCommit, String authHeader) {
-        String cacheKey = "file-content:" + repoUrl + ":" + filePath + ":" + lastCommit.toString();
+
+    public String getFileContentWithCacheFromNode(String repoUrl, String nodeKey, String filePath, LocalDateTime lastCommit, String authHeader) {
+        // 캐시 키에 repoUrl을 포함시켜 어떤 리포지토리의 캐시인지 명확히 합니다.
+        String cacheKey = "file-content:" + repoUrl + ":node:" + nodeKey + ":" + filePath + ":" + lastCommit.toString();
 
         // 1. L1 캐시 확인
         String content = l1Cache.getFromL1Cache(cacheKey);
@@ -67,7 +69,7 @@ public class FileContentCache {
         }
 
         // 3. FastAPI 실시간 조회
-        content = fastApiClient.getFileRaw(repoUrl, filePath, authHeader);
+        content = fastApiClient.getFileRawFromNode(nodeKey, filePath, authHeader);
 
         // 4. L1, L2 캐시에 저장
         if (content != null) {
@@ -81,20 +83,19 @@ public class FileContentCache {
         return content;
     }
 
+
     // 캐시 무효화
     public void evictFileCacheForRepo(String repoUrl) {
         // L1 캐시는 전체 삭제
         l1Cache.evictL1Cache();
+        deleteRedisKeysByPattern("file-content:repo:" + repoUrl + ":*");
+    }
 
-        // L2 캐시는 패턴으로 검색하여 삭제
-        // L2 캐시(Redis)는 SCAN을 사용하여 안전하게 삭제
-        String pattern = "file-content:" + repoUrl + ":*";
+    private void deleteRedisKeysByPattern(String pattern) {
         try {
             Set<String> keysToDelete = redisTemplate.execute((RedisCallback<Set<String>>) connection -> {
                 Set<String> keys = new HashSet<>();
-
                 try (Cursor<byte[]> cursor = connection.keyCommands().scan(ScanOptions.scanOptions().match(pattern).count(100).build())) {
-
                     while (cursor.hasNext()) {
                         keys.add(new String(cursor.next(), StandardCharsets.UTF_8));
                     }
