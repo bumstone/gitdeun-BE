@@ -1,5 +1,6 @@
 package com.teamEWSN.gitdeun.common.fastapi;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.teamEWSN.gitdeun.common.converter.IsoToLocalDateTimeDeserializer;
@@ -311,39 +312,43 @@ public class FastApiClient {
         }
     }*/
 
-    public String getCodeForNode(String nodeKey, String filePath, String authHeader) {
+    public String getCodeFromNode(String nodeKey, String filePath, String authHeader) {
         try {
             log.debug("FastAPI 노드 기반 코드 조회 시작 - nodeKey: {}, filePath: {}", nodeKey, filePath);
 
             UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                .fromPath("/node/code") // 새로 추가된 FastAPI 엔드포인트
+                .fromPath("/content/file/by-node") // FastAPI의 해당 엔드포인트
                 .queryParam("node_key", nodeKey)
                 .queryParam("file_path", filePath);
+            // 'prefer' 파라미터는 생략하여 FastAPI의 기본값(auto)을 따르도록 함
 
             String uri = uriBuilder.build().toUriString();
 
-            return webClient.get()
+            NodeCodeResponse response = webClient.get()
                 .uri(uri)
                 .headers(headers -> {
                     if (authHeader != null && !authHeader.trim().isEmpty()) {
                         headers.set("Authorization", authHeader);
                     }
-                    headers.set("Accept", "text/plain");
                 })
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                    response.bodyToMono(String.class)
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
+                    clientResponse.bodyToMono(String.class)
                         .map(errorBody -> {
                             log.warn("FastAPI 노드 코드 조회 4xx 오류 - nodeKey: {}, filePath: {}, status: {}, body: {}",
-                                nodeKey, filePath, response.statusCode(), errorBody);
+                                nodeKey, filePath, clientResponse.statusCode(), errorBody);
                             return new RuntimeException("FastAPI 클라이언트 오류: " + errorBody);
                         })
                 )
-                .bodyToMono(String.class)
+                .bodyToMono(NodeCodeResponse.class)
                 .timeout(Duration.ofSeconds(30))
-                .doOnSuccess(response -> log.debug("FastAPI 노드 기반 코드 조회 성공 - nodeKey: {}, filePath: {}", nodeKey, filePath))
-                .blockOptional()
-                .orElse("");
+                .block();
+
+            String codeContent = (response != null) ? response.getCode() : "";
+            log.debug("FastAPI 노드 기반 코드 조회 성공 - nodeKey: {}, filePath: {}, 길이: {}",
+                nodeKey, filePath, codeContent != null ? codeContent.length() : 0);
+
+            return codeContent;
 
         } catch (Exception e) {
             log.error("FastAPI 노드 기반 코드 조회 실패 - nodeKey: {}, filePath: {}", nodeKey, filePath, e);
@@ -380,6 +385,13 @@ public class FastApiClient {
     }
 
     // === Response DTOs ===
+
+    @Getter
+    @Setter
+    @JsonIgnoreProperties(ignoreUnknown = true) // code 필드 외 다른 필드는 무시
+    private static class NodeCodeResponse {
+        private String code;
+    }
 
     @Getter
     @Setter
