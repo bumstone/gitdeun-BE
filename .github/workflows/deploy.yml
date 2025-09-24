@@ -48,16 +48,29 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
           script: |
-            set -eux
+            set -euo pipefail
+            # 대상 디렉터리 보장
+            mkdir -p ${{ secrets.EC2_TARGET_PATH }}
+      
+            # 멀티라인 .env 안전 저장 - 옵션 A(Heredoc) 예시
+            cat > ${{ secrets.EC2_TARGET_PATH }}/.env <<'ENV_EOF'${{ secrets.ENV_FILE }}ENV_EOF
+            chmod 600 ${{ secrets.EC2_TARGET_PATH }}/.env
+            
             # Docker Hub 로그인
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-            # 최신 이미지 가져오기
+            
+            # 네트워크 준비
             docker network create gitdeun-network || true
+      
             # 최신 커밋 SHA로 배포(불변 태그)
             IMAGE="${{ secrets.DOCKER_USERNAME }}/gitdeun:${{ github.sha }}"
             docker pull "$IMAGE"
+      
+            # 기존 컨테이너 중지/삭제
             docker stop gitdeun || true
             docker rm gitdeun || true
+      
+            # 실행
             docker run -d \
               --name gitdeun \
               --restart unless-stopped \

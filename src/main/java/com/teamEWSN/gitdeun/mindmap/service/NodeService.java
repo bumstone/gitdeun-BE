@@ -83,7 +83,7 @@ public class NodeService {
         Map<RelatedFileDto, String> codeContentsMap = filePaths.parallelStream()
             .collect(Collectors.toConcurrentMap(
                 filePath -> filePath,
-                filePath -> fileContentCache.getFileContentWithCache(repoUrl, filePath.getFilePath(), lastCommit, authorizationHeader)
+                filePath -> fileContentCache.getFileContentWithCacheFromNode(repoUrl, nodeKey, filePath.getFilePath(), lastCommit, authorizationHeader)
             ));
 
         // 4. Map을 List<FileWithCodeDto> 형태로 변환

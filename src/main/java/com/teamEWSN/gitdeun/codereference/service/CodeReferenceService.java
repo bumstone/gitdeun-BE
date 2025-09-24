@@ -8,7 +8,6 @@ import com.teamEWSN.gitdeun.codereference.mapper.CodeReferenceMapper;
 import com.teamEWSN.gitdeun.codereference.repository.CodeReferenceRepository;
 import com.teamEWSN.gitdeun.common.exception.ErrorCode;
 import com.teamEWSN.gitdeun.common.exception.GlobalException;
-import com.teamEWSN.gitdeun.common.fastapi.FastApiClient;
 import com.teamEWSN.gitdeun.common.fastapi.dto.NodeDto;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapGraphResponseDto;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
@@ -16,6 +15,7 @@ import com.teamEWSN.gitdeun.mindmap.repository.MindmapRepository;
 import com.teamEWSN.gitdeun.mindmap.util.FileContentCache;
 import com.teamEWSN.gitdeun.mindmap.util.MindmapGraphCache;
 import com.teamEWSN.gitdeun.mindmapmember.service.MindmapAuthService;
+import com.teamEWSN.gitdeun.repo.entity.Repo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +34,6 @@ public class CodeReferenceService {
     private final CodeReferenceMapper codeReferenceMapper;
     private final MindmapGraphCache mindmapGraphCache;
     private final FileContentCache fileContentCache;
-    private final FastApiClient fastApiClient;
 
     @Transactional
     public ReferenceResponse createReference(Long mapId, String nodeKey, Long userId, CreateRequest request, String authorizationHeader) throws GlobalException {
@@ -72,10 +71,18 @@ public class CodeReferenceService {
         CodeReference codeReference = codeReferenceRepository.findByMindmapIdAndId(mapId, refId)
             .orElseThrow(() -> new GlobalException(ErrorCode.CODE_REFERENCE_NOT_FOUND));
 
-        Mindmap mindmap = codeReference.getMindmap();
+        Repo repo = codeReference.getMindmap().getRepo();
+        String repoUrl = repo.getGithubRepoUrl();
+        LocalDateTime lastCommit = repo.getLastCommit();
 
-        // FastAPI를 통해 전체 파일 내용 가져오기
-        String fullContent = fastApiClient.getFileRaw(mindmap.getRepo().getGithubRepoUrl(), codeReference.getFilePath(), authorizationHeader);
+        // FastAPI를 통해 전체 파일 내용 가져오기 (수정된 메서드 호출)
+        String fullContent = fileContentCache.getFileContentWithCacheFromNode(
+            repoUrl,
+            codeReference.getNodeKey(),
+            codeReference.getFilePath(),
+            lastCommit,
+            authorizationHeader
+        );
 
         // 특정 라인만 추출 (snippet)
         String snippet = extractLines(fullContent, codeReference.getStartLine(), codeReference.getEndLine());
@@ -166,7 +173,13 @@ public class CodeReferenceService {
         }
 
         // 파일의 전체 내용을 가져와 총 라인 수 계산
-        String fileContent = fileContentCache.getFileContentWithCache(repoUrl, request.getFilePath(), lastCommit, authorizationHeader);
+        String fileContent = fileContentCache.getFileContentWithCacheFromNode(
+            repoUrl,
+            nodeKey,
+            request.getFilePath(),
+            lastCommit,
+            authorizationHeader
+        );
         int totalLines = fileContent.split("\\r?\\n").length;
 
         // 요청된 라인 범위(startLine, endLine)가 유효한지 확인

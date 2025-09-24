@@ -151,6 +151,9 @@ public class MindmapOrchestrationService {
 
             String repoUrl = mindmap.getRepo().getGithubRepoUrl();
 
+            // FastAPI 분석 요청 전, 관련된 모든 파일 캐시를 무효화
+            fileContentCache.evictFileCacheForRepo(repoUrl);
+
             // FastAPI에 자동 분석 요청
             SuggestionAutoResponse suggestionResponse = fastApiClient.createAutoSuggestions(repoUrl, prompt, authHeader);
 

@@ -2,6 +2,8 @@ package com.teamEWSN.gitdeun.codereference.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 public class CodeReferenceResponseDtos {
 
     @Getter
@@ -25,5 +27,6 @@ public class CodeReferenceResponseDtos {
         private Integer startLine;
         private Integer endLine;
         private String codeContent; // 실제 코드 내용을 담을 필드
+        private List<Long> reviewIds;
     }
 }
