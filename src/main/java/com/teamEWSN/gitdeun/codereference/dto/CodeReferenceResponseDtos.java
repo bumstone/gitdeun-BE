@@ -2,6 +2,8 @@ package com.teamEWSN.gitdeun.codereference.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 public class CodeReferenceResponseDtos {
 
     @Getter
@@ -14,6 +16,7 @@ public class CodeReferenceResponseDtos {
         private String filePath;
         private Integer startLine;
         private Integer endLine;
+        private List<Long> reviewIds;
     }
 
     @Getter
