@@ -26,7 +26,7 @@ public interface CodeReferenceMapper {
     @Mapping(target = "startLine", source = "codeReference.startLine")
     @Mapping(target = "endLine", source = "codeReference.endLine")
     @Mapping(target = "codeContent", expression = "java(codeContent)")
-    @Mapping(source = "codeReviews", target = "reviewIds", qualifiedByName = "reviewsToIds")
+    @Mapping(target = "reviewIds", source = "codeReference.codeReviews", qualifiedByName = "reviewsToIds")
     ReferenceDetailResponse toReferenceDetailResponse(CodeReference codeReference, String codeContent);
 
     /**
