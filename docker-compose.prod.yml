@@ -23,7 +23,7 @@ services:
       start_period: 30s
 
   redis:
-    image: redis:7-alpine    # ← 필요 시 7.2.x-alpine 등으로 "버전 고정" 권장
+    image: redis:7-alpine
     container_name: gitdeun-redis
     restart: unless-stopped
     networks: [gitdeun-network]

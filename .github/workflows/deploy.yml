@@ -81,9 +81,6 @@ jobs:
             # Docker Hub 로그인
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             
-            # 네트워크 준비
-            docker network create gitdeun-network || true
-            
             # 이미지 갱신 후 구동
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
