@@ -241,6 +241,18 @@ public class NotificationService {
     }
 
     /**
+     * 사용자의 모든 알림을 읽음으로 처리
+     */
+    @Transactional
+    public void markAllAsRead(Long userId) {
+        User user = getUserById(userId);
+        notificationRepository.markAllAsReadByUser(user);
+
+        // 변경된 '읽지 않은 알림 개수'(0)를 실시간으로 전송
+        notificationSseService.sendUnreadCount(user.getId(), 0);
+    }
+
+    /**
      * 알림 삭제
      */
     @Transactional
