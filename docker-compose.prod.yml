@@ -1,0 +1,47 @@
+services:
+  app:
+    image: ${DOCKER_USERNAME}/gitdeun:${TAG:-latest}
+    container_name: gitdeun
+    restart: unless-stopped
+    env_file: [ ./.env ]
+    environment:
+      SPRING_PROFILES_ACTIVE: prod,s3Bucket
+      TZ: Asia/Seoul
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [gitdeun-network]
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q 'UP' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine    # ← 필요 시 7.2.x-alpine 등으로 "버전 고정" 권장
+    container_name: gitdeun-redis
+    restart: unless-stopped
+    networks: [gitdeun-network]
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: >
+      sh -c '
+      if [ -n "$REDIS_PASSWORD" ]; then
+        exec redis-server --appendonly yes --requirepass "$REDIS_PASSWORD";
+      else
+        exec redis-server --appendonly yes;
+      fi'
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$REDIS_PASSWORD\" ]; then redis-cli -a \"$REDIS_PASSWORD\" ping | grep -q PONG; else redis-cli ping | grep -q PONG; fi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  gitdeun-network:
+    name: gitdeun-network
