@@ -25,6 +25,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # Docker Buildx 설정 추가
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+
       # Dockerfile을 사용하여 이미지를 빌드하고 Docker Hub에 푸시합니다.
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.16.0

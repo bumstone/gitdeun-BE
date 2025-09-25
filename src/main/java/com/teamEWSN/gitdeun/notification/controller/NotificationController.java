@@ -46,6 +46,14 @@ public class NotificationController {
         return ResponseEntity.noContent().build();
     }
 
+    // 모든 알림 읽음 처리
+    @PatchMapping("/read-all")
+    public ResponseEntity<Void> markAllNotificationsAsRead(
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
+        notificationService.markAllAsRead(userDetails.getId());
+        return ResponseEntity.noContent().build();
+    }
+
     // 알림 삭제
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Void> deleteNotification(
