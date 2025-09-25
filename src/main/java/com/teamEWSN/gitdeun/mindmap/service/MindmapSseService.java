@@ -45,19 +45,26 @@ public class MindmapSseService {
 
         connectionsByMapId.computeIfAbsent(mapId, k -> new CopyOnWriteArrayList<>()).add(connection);
 
-
         // 연결 종료 시 정리 (기존 로직 개선)
-        emitter.onCompletion(() -> removeConnection(mapId, connection));
-        emitter.onTimeout(() -> removeConnection(mapId, connection));
+        emitter.onCompletion(() -> {
+            removeConnection(mapId, connection);
+            broadcastUserListUpdate(mapId);
+        });
+        emitter.onTimeout(() -> {
+            removeConnection(mapId, connection);
+            broadcastUserListUpdate(mapId);
+        });
         emitter.onError(throwable -> {
             log.error("SSE 연결 오류 - 마인드맵 ID: {}, 사용자 ID: {}", mapId, userDetails.getId(), throwable);
             removeConnection(mapId, connection);
+            broadcastUserListUpdate(mapId);
         });
 
         // 연결 확인용 초기 메시지
         sendToEmitter(emitter, "마인드맵 " + mapId + " 실시간 연결 성공");
-
         log.info("SSE 연결 생성 - 마인드맵 ID: {}, 사용자 ID: {}", mapId, userDetails.getId());
+
+        broadcastUserListUpdate(mapId);
         return emitter;
     }
 
@@ -158,9 +165,17 @@ public class MindmapSseService {
                 connectionsByMapId.remove(mapId);
                 log.info("마인드맵 ID {} 의 모든 구독자 연결 종료", mapId);
             }
+            broadcastUserListUpdate(mapId);
         }
     }
 
+    // 사용자 목록 변경을 모든 클라이언트에게 브로드캐스트
+    public void broadcastUserListUpdate(Long mapId) {
+        // 현재 접속자 목록
+        List<ConnectedUserDto> connectedUsers = getConnectedUsers(mapId);
+        // "user-list-updated" 라는 이벤트 이름으로 현재 접속자 목록을 전송
+        sendToMapSubscribers(mapId, "user-list-updated", connectedUsers);
+    }
 
     // 접속된 사용자 수 조회
     public int getConnectionCount(Long mapId) {
