@@ -3,7 +3,7 @@ name: Deploy to EC2 with Docker hub
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
   deploy:
@@ -30,21 +30,30 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
 
-      # Dockerfile을 사용하여 이미지를 빌드하고 Docker Hub에 푸시합니다.
+      # Dockerfile을 사용 이미지 빌드 & 푸시
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.16.0
         with:
           context: .
           file: ./Dockerfile
           push: true
-          # Docker 레이어 캐시 활성화
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/gitdeun:latest
             ${{ secrets.DOCKER_USERNAME }}/gitdeun:${{ github.sha }}
 
-      # 3. EC2에서 환경 변수를 설정하고 애플리케이션 실행
+      # docker-compose.yml 업로드
+      - name: Upload docker-compose.yml
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "${{ secrets.EC2_TARGET_PATH }}/"
+
+      # EC2에서 환경 변수를 설정하고 애플리케이션 실행
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -54,36 +63,26 @@ jobs:
           port: 22
           script: |
             set -euo pipefail
-            # 대상 디렉터리 보장
-            mkdir -p ${{ secrets.EC2_TARGET_PATH }}
-      
-            # 멀티라인 .env 안전 저장 - 옵션 A(Heredoc) 예시
-            cat > ${{ secrets.EC2_TARGET_PATH }}/.env <<'ENV_EOF'${{ secrets.ENV_FILE }}ENV_EOF
-            chmod 600 ${{ secrets.EC2_TARGET_PATH }}/.env
+            
+            # 배포 경로/로그 폴더
+            mkdir -p ${{ secrets.EC2_TARGET_PATH }}/logs
+            cd ${{ secrets.EC2_TARGET_PATH }}
+            
+            # 멀티라인 .env 안전 저장
+            cat > ./.env <<'ENV_EOF'
+            ${{ secrets.ENV_FILE }}
+            ENV_EOF
+            chmod 600 ./.env
+            
+            # compose가 참조할 환경변수(이미지 태그/계정)
+            export TAG=${{ github.sha }}
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             
             # Docker Hub 로그인
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             
-            # 네트워크 준비
-            docker network create gitdeun-network || true
-      
-            # 최신 커밋 SHA로 배포(불변 태그)
-            IMAGE="${{ secrets.DOCKER_USERNAME }}/gitdeun:${{ github.sha }}"
-            docker pull "$IMAGE"
-      
-            # 기존 컨테이너 중지/삭제
-            docker stop gitdeun || true
-            docker rm gitdeun || true
-      
-            # 실행
-            docker run -d \
-              --name gitdeun \
-              --restart unless-stopped \
-              --env SPRING_PROFILES_ACTIVE=prod,s3Bucket \
-              --env-file ${{ secrets.EC2_TARGET_PATH }}/.env \
-              --network gitdeun-network \
-              -p 8080:8080 \
-              -v ${{ secrets.EC2_TARGET_PATH }}/logs:/app/logs \
-              "$IMAGE"
-            # 오래된 이미지 정리
+            # 이미지 갱신 후 구동
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            
             docker image prune -f --filter "until=168h"
