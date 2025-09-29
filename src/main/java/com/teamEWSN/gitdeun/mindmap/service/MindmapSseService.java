@@ -1,19 +1,21 @@
 package com.teamEWSN.gitdeun.mindmap.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
 import com.teamEWSN.gitdeun.mindmap.dto.MindmapDetailResponseDto;
 import com.teamEWSN.gitdeun.mindmap.dto.prompt.PromptPreviewResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
 public class MindmapSseService {
 
     private final ObjectMapper objectMapper;
-
+    private final RedisTemplate<String, String> redisTemplate;
     private record SseConnection(Long userId, String nickname, String profileImage, SseEmitter emitter) {}
     private final Map<Long, List<SseConnection>> connectionsByMapId = new ConcurrentHashMap<>();
 
@@ -45,19 +47,27 @@ public class MindmapSseService {
 
         connectionsByMapId.computeIfAbsent(mapId, k -> new CopyOnWriteArrayList<>()).add(connection);
 
+        try {
+            // Redis Set에 현재 접속자 정보 추가
+            String redisKey = "mindmap:" + mapId + ":users";
+            String userData = objectMapper.writeValueAsString(
+                new ConnectedUserDto(userDetails.getId(), userDetails.getNickname(), userDetails.getProfileImage())
+            );
+            redisTemplate.opsForSet().add(redisKey, userData);
+
+            // Redis Set의 만료 시간을 설정하여 비정상 종료된 연결 처리
+            redisTemplate.expire(redisKey, 1, TimeUnit.HOURS);
+
+        } catch (JsonProcessingException e) {
+            log.error("사용자 정보 직렬화 실패", e);
+        }
+
         // 연결 종료 시 정리 (기존 로직 개선)
-        emitter.onCompletion(() -> {
-            removeConnection(mapId, connection);
-            broadcastUserListUpdate(mapId);
-        });
-        emitter.onTimeout(() -> {
-            removeConnection(mapId, connection);
-            broadcastUserListUpdate(mapId);
-        });
+        emitter.onCompletion(() -> removeConnection(mapId, connection));
+        emitter.onTimeout(() -> removeConnection(mapId, connection));
         emitter.onError(throwable -> {
             log.error("SSE 연결 오류 - 마인드맵 ID: {}, 사용자 ID: {}", mapId, userDetails.getId(), throwable);
             removeConnection(mapId, connection);
-            broadcastUserListUpdate(mapId);
         });
 
         // 연결 확인용 초기 메시지
@@ -158,14 +168,20 @@ public class MindmapSseService {
     // 연결 종료 시 SseConnection 객체를 찾아 제거
     private void removeConnection(Long mapId, SseConnection connection) {
         List<SseConnection> connections = connectionsByMapId.get(mapId);
-        if (connections != null) {
-            connections.remove(connection);
-            log.info("SSE 연결 해제 - 마인드맵 ID: {}, 사용자 ID: {}", mapId, connection.userId());
-            if (connections.isEmpty()) {
-                connectionsByMapId.remove(mapId);
-                log.info("마인드맵 ID {} 의 모든 구독자 연결 종료", mapId);
+        if (connections != null && connections.remove(connection)) {
+            try {
+                // Redis Set에서 접속 종료한 사용자 정보 제거
+                String redisKey = "mindmap:" + mapId + ":users";
+                String userData = objectMapper.writeValueAsString(
+                    new ConnectedUserDto(connection.userId(), connection.nickname(), connection.profileImage())
+                );
+                redisTemplate.opsForSet().remove(redisKey, userData);
+
+            } catch (JsonProcessingException e) {
+                log.error("사용자 정보 직렬화 실패 (연결 종료)", e);
             }
             broadcastUserListUpdate(mapId);
+            log.info("SSE 연결 해제 및 Redis 업데이트 - 마인드맵 ID: {}, 사용자 ID: {}", mapId, connection.userId());
         }
     }
 
@@ -188,13 +204,23 @@ public class MindmapSseService {
 
     // 현재 접속 중인 사용자 목록을 반환하는 서비스 메서드
     public List<ConnectedUserDto> getConnectedUsers(Long mapId) {
-        List<SseConnection> connections = connectionsByMapId.getOrDefault(mapId, new CopyOnWriteArrayList<>());
+        String redisKey = "mindmap:" + mapId + ":users";
+        Set<String> usersJson = redisTemplate.opsForSet().members(redisKey);
 
-        // 중복된 userId를 제거하고 DTO로 변환하여 반환 (여러 탭 접속 시 중복 방지)
-        return connections.stream()
-            .map(conn -> new ConnectedUserDto(conn.userId(), conn.nickname(), conn.profileImage()))
-            .distinct() // userId 기준으로 중복 제거
+        if (usersJson == null) {
+            return Collections.emptyList();
+        }
+
+        return usersJson.stream()
+            .map(json -> {
+                try {
+                    return objectMapper.readValue(json, ConnectedUserDto.class);
+                } catch (JsonProcessingException e) {
+                    log.error("사용자 정보 역직렬화 실패", e);
+                    return null;
+                }
+            })
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
     }
-
 }
