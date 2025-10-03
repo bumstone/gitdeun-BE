@@ -33,6 +33,8 @@ app:
 fastapi:
   base-url: http://13.124.93.205:8000 # Docker 네트워크 내부에서 사용할 주소
 
+security:
+  require-auth-for-unknown: false
 management:
   endpoints:
     web:

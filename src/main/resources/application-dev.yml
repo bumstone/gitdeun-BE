@@ -21,7 +21,8 @@ spring:
 #          user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
 #          user-name-attribute: sub
 
-
+security:
+  require-auth-for-unknown: false
 jwt:
   access-expired: 28800  # 8시간
   refresh-expired: 86400  # 1일

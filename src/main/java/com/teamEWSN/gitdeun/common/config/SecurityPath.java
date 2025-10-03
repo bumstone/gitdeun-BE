@@ -7,8 +7,13 @@ public class SecurityPath {
   public static final String[] PUBLIC_ENDPOINTS = {
       "/api/auth/token/refresh",
       "/api/auth/oauth/refresh/*",
+      "/oauth/logout",
       "/",
 
+      "/api/webhook/**",
+      "/actuator/health",
+      "/actuator/health/**",
+      "/actuator/info"
   };
 
   // hasRole("USER")
@@ -27,8 +32,10 @@ public class SecurityPath {
       "/api/skills/**",
       "/api/recruitments/**",
       "/api/applications/**",
+      "/api/comments/**",
+      "/api/code-reviews/**",
+      "/api/references/**",
       "/api/s3/bucket/**",
-      "/api/webhook/**"
   };
 
   // hasRole("ADMIN")
