@@ -54,6 +54,9 @@ dependencies {
 	// OAuth 2.0
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
+	// Actuator/Health
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+
 	// lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

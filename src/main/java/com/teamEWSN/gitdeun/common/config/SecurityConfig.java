@@ -69,6 +69,7 @@ public class SecurityConfig {
         .authorizeHttpRequests((auth) -> auth
             // 내부 webhook 통신 API
             .requestMatchers("/api/webhook/**").permitAll()
+            .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
             // 외부 공개 API(클라이언트 - JWT)
             .requestMatchers(SecurityPath.ADMIN_ENDPOINTS).hasRole("ADMIN")
             .requestMatchers(SecurityPath.USER_ENDPOINTS).hasAnyRole("USER", "ADMIN")
