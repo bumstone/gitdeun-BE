@@ -7,6 +7,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.teamEWSN.gitdeun.recruitment.entity.Recruitment;
 import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentField;
 import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentStatus;
+import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,12 +34,12 @@ public class RecruitmentRepositoryImpl implements RecruitmentCustomRepository {
 
     @Override
     public Page<Recruitment> searchRecruitments(
-        String keyword, RecruitmentStatus status, List<RecruitmentField> fields, Pageable pageable
+        String keyword, RecruitmentStatus status, List<RecruitmentField> fields, List<DeveloperSkill> languages, Pageable pageable
     ) {
         // 키워드 전처리 후 Full-Text Search 활용 여부 확인
         String processed = preprocessKeyword(keyword);
 
-        // 키워드 없으면: 키워드 조건 없이 status/fields만으로 페이지 조회
+        // 키워드 없으면: 키워드 조건 없이 status/fields/languages 으로 페이지 조회
         boolean hasKeyword = (processed != null);
         boolean useFullTextSearch = hasKeyword && isFullTextSearchAvailable(processed);
 
@@ -52,7 +53,7 @@ public class RecruitmentRepositoryImpl implements RecruitmentCustomRepository {
         // id 페이지닝
         List<Long> ids = queryFactory.select(recruitment.id).distinct()
             .from(recruitment)
-            .where(keywordExpr, statusEq(status), fieldOrFilter(fields))
+            .where(keywordExpr, statusEq(status), fieldOrFilter(fields), languageOrFilter(languages))
             .orderBy(useFullTextSearch ? scoreOrder(processed) : recruitment.id.desc())
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
@@ -71,7 +72,7 @@ public class RecruitmentRepositoryImpl implements RecruitmentCustomRepository {
         // 카운팅
         Long total = queryFactory.select(recruitment.id.countDistinct())
             .from(recruitment)
-            .where(keywordExpr, statusEq(status), fieldOrFilter(fields))
+            .where(keywordExpr, statusEq(status), fieldOrFilter(fields), languageOrFilter(languages))
             .fetchOne();
 
         return new PageImpl<>(content, pageable, total != null ? total : 0L);
@@ -189,5 +190,11 @@ public class RecruitmentRepositoryImpl implements RecruitmentCustomRepository {
         return CollectionUtils.isEmpty(fields)
             ? null
             : recruitment.fieldTags.any().in(fields);
+    }
+
+    private BooleanExpression languageOrFilter(List<DeveloperSkill> languages) {
+        return CollectionUtils.isEmpty(languages)
+            ? null
+            : recruitment.languageTags.any().in(languages);
     }
 }
