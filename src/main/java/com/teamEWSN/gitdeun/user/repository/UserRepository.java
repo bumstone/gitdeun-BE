@@ -18,7 +18,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // user email로 검색
     Optional<User> findByEmailAndDeletedAtIsNull(String email);
-
-    // 닉네임으로 사용자 찾기
-    Optional<User> findByNicknameAndDeletedAtIsNull(String nickname);
 }

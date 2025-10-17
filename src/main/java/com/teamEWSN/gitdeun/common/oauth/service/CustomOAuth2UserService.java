@@ -34,6 +34,7 @@ import java.util.UUID;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final GitHubApiHelper gitHubApiHelper;
+    private final GoogleApiHelper googleApiHelper;
     private final SocialTokenRefreshService socialTokenRefreshService;
     private final UserRepository userRepository;
     private final SocialConnectionRepository socialConnectionRepository;
@@ -71,7 +72,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 // 사용자 정보 갱신
                 User user = conn.getUser();
                 user.updateProfile(dto.getName(), dto.getProfileImageUrl());
-
                 return user;
             })
             .orElseGet(() -> createOrConnect(dto, provider, providerId, accessToken, refreshToken));
@@ -84,8 +84,24 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         Map<String, Object> attr = new HashMap<>(oAuth2User.getAttributes());
 
         if (registrationId.equalsIgnoreCase("google")) {
+            String accessToken = userRequest.getAccessToken().getTokenValue();
+
+            // 만료 시 토큰 리프레시 후 최신 userinfo 재조회
+            if (googleApiHelper.isExpired(accessToken)) {
+                String refreshToken = (String) userRequest.getAdditionalParameters().get("refresh_token");
+                if (refreshToken != null) {
+                    var tokenResp = googleApiHelper.refreshToken(refreshToken);
+                    accessToken = tokenResp.accessToken();
+                }
+            }
+
+            // 항상 최신 userinfo로 덮어쓰기 (이름 변경 즉시 반영)
+            Map<String, Object> latestInfo = googleApiHelper.fetchLatestUserInfo(accessToken);
+            attr.putAll(latestInfo);
+
             return new GoogleResponseDto(attr);
         }
+
         if (registrationId.equalsIgnoreCase("github")) {
             /* ① 기본 프로필에 e-mail 없으면 /user/emails 호출 */
             if (attr.get("email") == null) {
@@ -156,6 +172,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .accessToken(accessToken)
             .refreshToken(refreshToken)
             .build();
+
         socialConnectionRepository.save(connection);
     }
 

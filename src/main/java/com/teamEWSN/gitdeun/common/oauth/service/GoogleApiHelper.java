@@ -15,6 +15,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
+
 
 @Slf4j
 @Component
@@ -96,6 +98,26 @@ public class GoogleApiHelper {
         }
     }
 
+    /**
+     * access token 으로 최신 프로필(userinfo) 조회
+     * (name, picture, email 등)
+     */
+    public Map<String, Object> fetchLatestUserInfo(String accessToken) {
+        try {
+            return webClient.get()
+                .uri("https://www.googleapis.com/oauth2/v2/userinfo")
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
+        } catch (WebClientResponseException e) {
+            log.error("Google userinfo 조회 실패: {}", e.getResponseBodyAsString());
+            throw new GlobalException(ErrorCode.OAUTH_COMMUNICATION_FAILED);
+        } catch (Exception e) {
+            log.error("Google userinfo 조회 중 오류: {}", e.getMessage());
+            throw new GlobalException(ErrorCode.OAUTH_COMMUNICATION_FAILED);
+        }
+    }
 
     public Mono<Void> revokeToken(String accessToken) {
         String revokeUrl = "https://accounts.google.com/o/oauth2/revoke";
