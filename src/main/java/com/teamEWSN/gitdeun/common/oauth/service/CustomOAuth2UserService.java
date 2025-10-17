@@ -67,7 +67,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .map(conn -> {
                 // provider 별 refresh 정책
                 socialTokenRefreshService.refreshSocialToken(conn, accessToken, refreshToken);
-                return conn.getUser();
+
+                // 사용자 정보 갱신
+                User user = conn.getUser();
+                user.updateProfile(dto.getName(), dto.getProfileImageUrl());
+
+                return user;
             })
             .orElseGet(() -> createOrConnect(dto, provider, providerId, accessToken, refreshToken));
     }
@@ -105,6 +110,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return userRepository.findByEmailAndDeletedAtIsNull(response.getEmail())
             .map(user -> {
                 // 사용자가 존재하면, 새 소셜 계정을 연결
+                user.updateProfile(response.getName(), response.getProfileImageUrl());
                 connectSocialAccount(user, provider, providerId, accessToken, refreshToken);
                 return user;
             })
