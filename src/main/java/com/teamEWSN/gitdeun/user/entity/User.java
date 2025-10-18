@@ -23,10 +23,13 @@ public class User extends AuditedEntity {
     @Column(length = 100)
     private String name;
 
-    @Column(nullable = false, length = 100, unique = true)
+    @Column(nullable = false, length = 100)
     private String nickname;
 
-    @Column(nullable = false, length = 256)
+    @Column(nullable = false, length = 50, unique = true)
+    private String handle;               // @menton / URL 용 전역 유니크 핸들
+
+    @Column(nullable = false, length = 256, unique = true)
     private String email;
 
     @Column(name="profile_image", length = 512)
@@ -49,18 +52,19 @@ public class User extends AuditedEntity {
 
 
     @Builder
-    public User(String name, String nickname, String email, String profileImage, Role role) {
+    public User(String name, String nickname, String handle, String email, String profileImage, Role role) {
         this.name = name;
         this.nickname = nickname;
+        this.handle = handle;
         this.email = email;
         this.profileImage = profileImage;
         this.role = role;
     }
 
-    public User updateProfile(String name, String profileImage) {
+    public void updateProfile(String name, String nickname, String profileImage) {
         this.name = name;
+        this.nickname = nickname;
         this.profileImage = profileImage;
-        return this; // 메소드 체이닝을 위해 this 반환
     }
 
     // 회원 탈퇴 처리
@@ -68,10 +72,27 @@ public class User extends AuditedEntity {
         this.deletedAt = LocalDateTime.now();
     }
 
-    // 회원 닉네임 변경
-    public void updateNickname(String newNickname) {
-        this.nickname = newNickname;
+
+    /**
+     * handle이 아직 비어 있는(=최초 보정이 필요한) 계정에서만 1회 설정을 허용합니다.
+     * 이미 handle이 존재한다면 예외를 던져 서비스 내 불변성을 유지합니다.
+     */
+    public void setHandle(String newHandle) {
+        if (this.handle != null && !this.handle.isBlank()) {
+            throw new IllegalStateException("Handle is already set and cannot be changed.");
+        }
+        if (newHandle == null || newHandle.isBlank()) {
+            throw new IllegalArgumentException("Handle cannot be null or blank.");
+        }
+        // 길이·문자 정책은 HandleGenerator에서 보장하지만, 방어적으로 한 번 더 체크해도 됩니다.
+        if (newHandle.length() > 50) {
+            throw new IllegalArgumentException("Handle exceeds maximum length of 50 characters.");
+        }
+        this.handle = newHandle;
     }
 
-
+    /** 편의 메서드: handle 존재 여부 */
+    public boolean hasHandle() {
+        return this.handle != null && !this.handle.isBlank();
+    }
 }

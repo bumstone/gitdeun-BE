@@ -7,12 +7,12 @@ import com.teamEWSN.gitdeun.common.oauth.dto.provider.GitHubResponseDto;
 import com.teamEWSN.gitdeun.common.oauth.dto.provider.GoogleResponseDto;
 import com.teamEWSN.gitdeun.common.oauth.dto.provider.OAuth2ResponseDto;
 import com.teamEWSN.gitdeun.common.oauth.entity.OauthProvider;
-import com.teamEWSN.gitdeun.user.entity.Role;
 import com.teamEWSN.gitdeun.common.oauth.entity.SocialConnection;
 import com.teamEWSN.gitdeun.user.entity.User;
 import com.teamEWSN.gitdeun.common.oauth.repository.SocialConnectionRepository;
 import com.teamEWSN.gitdeun.user.repository.UserRepository;
 import com.teamEWSN.gitdeun.common.oauth.dto.CustomOAuth2User;
+import com.teamEWSN.gitdeun.user.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,10 +22,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 
 @Slf4j
@@ -35,6 +32,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final GitHubApiHelper gitHubApiHelper;
     private final GoogleApiHelper googleApiHelper;
+    private final UserService userService;
     private final SocialTokenRefreshService socialTokenRefreshService;
     private final UserRepository userRepository;
     private final SocialConnectionRepository socialConnectionRepository;
@@ -63,18 +61,30 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String accessToken  = userRequest.getAccessToken().getTokenValue();
         String refreshToken = (String) userRequest.getAdditionalParameters().get("refresh_token");
 
-        /* ② 이미 연결된 계정 → 토큰 갱신 로직 추상화  */
-        return socialConnectionRepository.findByProviderAndProviderId(provider, providerId)
-            .map(conn -> {
-                // provider 별 refresh 정책
-                socialTokenRefreshService.refreshSocialToken(conn, accessToken, refreshToken);
+        // 1) 이미 연결된 소셜 계정이면 토큰 갱신 + 프로필 갱신
+        var existingConnOpt = socialConnectionRepository.findByProviderAndProviderId(provider, providerId);
+        if (existingConnOpt.isPresent()) {
+            var conn = existingConnOpt.get();
+            socialTokenRefreshService.refreshSocialToken(conn, accessToken, refreshToken);
 
-                // 사용자 정보 갱신
-                User user = conn.getUser();
-                user.updateProfile(dto.getName(), dto.getProfileImageUrl());
-                return user;
-            })
-            .orElseGet(() -> createOrConnect(dto, provider, providerId, accessToken, refreshToken));
+            // 프로필 갱신 + (handle 보정 포함) — upsertAndGetId가 책임
+            Long userId = userService.upsertAndGetId(
+                dto.getEmail(), dto.getName(), dto.getProfileImageUrl(), dto.getNickname()
+            );
+            return userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
+        }
+
+        // 2) 아직 연결 안된 계정 → upsertAndGetId로 (신규/기존) 저장/보정 먼저
+        Long userId = userService.upsertAndGetId(
+            dto.getEmail(), dto.getName(), dto.getProfileImageUrl(), dto.getNickname()
+        );
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND_BY_ID));
+
+        // 3) 그 다음 소셜 계정 연결만 수행
+        connectSocialAccount(user, provider, providerId, accessToken, refreshToken);
+        return user;
     }
 
     // OAuth2 공급자로부터 받은 사용자 정보를 기반으로 OAuth2ResponseDto를 생성(인스턴스 메서드)
@@ -116,44 +126,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
         // 지원하지 않는 소셜 로그인 제공자
         throw new GlobalException(ErrorCode.UNSUPPORTED_OAUTH_PROVIDER);
-    }
-
-    /**
-     * 사용자가 존재하면 계정을 연결하고, 존재하지 않으면 새로 생성합니다.
-     */
-    private User createOrConnect(OAuth2ResponseDto response, OauthProvider provider, String providerId, String accessToken, String refreshToken) {
-        // 이메일로 기존 사용자를 찾습니다.
-        return userRepository.findByEmailAndDeletedAtIsNull(response.getEmail())
-            .map(user -> {
-                // 사용자가 존재하면, 새 소셜 계정을 연결
-                user.updateProfile(response.getName(), response.getProfileImageUrl());
-                connectSocialAccount(user, provider, providerId, accessToken, refreshToken);
-                return user;
-            })
-            .orElseGet(() -> {
-                // 사용자가 존재하지 않으면, 새 사용자를 생성
-                return createNewUser(response, provider, providerId, accessToken, refreshToken);
-            });
-    }
-
-    private User createNewUser(OAuth2ResponseDto response, OauthProvider provider, String providerId, String accessToken, String refreshToken) {
-        // provider별 다른 Nickname 처리 로직
-        String nickname = response.getNickname();
-        if (provider == OauthProvider.GOOGLE) {
-            nickname = nickname + "_" + UUID.randomUUID().toString().substring(0, 6);
-        }
-
-        User newUser = User.builder()
-            .email(response.getEmail())
-            .name(response.getName())   // GitHub의 경우 full name, Google의 경우 name
-            .nickname(nickname)
-            .profileImage(response.getProfileImageUrl())
-            .role(Role.USER)
-            .build();
-        User savedUser = userRepository.save(newUser);
-
-        connectSocialAccount(savedUser, provider, providerId, accessToken, refreshToken);
-        return savedUser;
     }
 
     private void connectSocialAccount(User user, OauthProvider provider, String providerId, String accessToken, String refreshToken) {

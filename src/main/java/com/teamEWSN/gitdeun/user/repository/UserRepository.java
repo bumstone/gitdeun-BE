@@ -18,4 +18,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // user email로 검색
     Optional<User> findByEmailAndDeletedAtIsNull(String email);
+
+    // 신규 생성/백필 시 충돌 검사
+    boolean existsByHandle(String handle);
+    // 수정·보정 시 “본인 제외” 충돌 검사
+    boolean existsByHandleAndIdNot(String handle, Long id);
 }

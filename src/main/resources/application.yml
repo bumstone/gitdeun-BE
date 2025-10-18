@@ -16,7 +16,7 @@ spring:
   jpa:
     show-sql: true  # SQL 로그 출력
     hibernate:
-      ddl-auto: update # create # update
+      ddl-auto: validate # create # update
     properties:
       hibernate:
         format_sql: true  # SQL 로그를 보기 좋게 포맷
@@ -26,6 +26,8 @@ spring:
         jdbc:
           batch_size: 1000
           time_zone: UTC
+  flyway:
+    baseline-on-migrate: true # 기존 스키마가 있을 때 베이스라인 설정
   security:
     oauth2:
       client:
