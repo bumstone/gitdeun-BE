@@ -7,6 +7,7 @@ import com.teamEWSN.gitdeun.common.oauth.handler.CustomOAuth2FailureHandler;
 import com.teamEWSN.gitdeun.common.oauth.handler.CustomOAuth2SuccessHandler;
 import com.teamEWSN.gitdeun.common.oauth.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -35,6 +36,9 @@ public class SecurityConfig {
   private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
   private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
+  @Value("${security.require-auth-for-unknown:true}")
+  private boolean requireAuthForUnknown;
+
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
@@ -53,9 +57,7 @@ public class SecurityConfig {
         .oauth2Login((oauth2) -> oauth2
             .userInfoEndpoint(userInfoEndpointConfig -> userInfoEndpointConfig
                 .userService(customOAuth2UserService))
-//                        .defaultSuccessUrl("/oauth/success") // 로그인 성공시 이동할 URL
             .successHandler(customOAuth2SuccessHandler)
-//                        .failureUrl("/oauth/fail") // 로그인 실패시 이동할 URL
             .failureHandler(customOAuthFailureHandler))
         .logout(logout -> logout
             .logoutUrl("/logout")
@@ -66,16 +68,18 @@ public class SecurityConfig {
 
     // 경로별 인가 작업
     http
-        .authorizeHttpRequests((auth) -> auth
-            // 내부 webhook 통신 API
-            .requestMatchers("/api/webhook/**").permitAll()
-            // 외부 공개 API(클라이언트 - JWT)
-            .requestMatchers(SecurityPath.ADMIN_ENDPOINTS).hasRole("ADMIN")
-            .requestMatchers(SecurityPath.USER_ENDPOINTS).hasAnyRole("USER", "ADMIN")
-            .requestMatchers(SecurityPath.PUBLIC_ENDPOINTS).permitAll()
-            .anyRequest().permitAll()
-            // .anyRequest().authenticated()
-        );
+        .authorizeHttpRequests((auth) -> {
+          auth
+              .requestMatchers(SecurityPath.ADMIN_ENDPOINTS).hasRole("ADMIN")
+              .requestMatchers(SecurityPath.USER_ENDPOINTS).hasAnyRole("USER", "ADMIN")
+              .requestMatchers(SecurityPath.PUBLIC_ENDPOINTS).permitAll();
+
+          if (requireAuthForUnknown) {
+            auth.anyRequest().authenticated();
+          } else {
+            auth.anyRequest().permitAll();
+          }
+        });
 
     // 예외 처리
     http

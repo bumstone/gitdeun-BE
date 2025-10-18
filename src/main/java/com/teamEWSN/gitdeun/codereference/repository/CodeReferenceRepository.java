@@ -14,5 +14,4 @@ public interface CodeReferenceRepository extends JpaRepository<CodeReference, Lo
 
     Optional<CodeReference> findByMindmapIdAndId(Long mindmapId, Long id);
 
-    boolean existsByMindmapIdAndId(Long mindmapId, Long id);
 }

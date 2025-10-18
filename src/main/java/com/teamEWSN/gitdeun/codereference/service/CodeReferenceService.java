@@ -127,18 +127,16 @@ public class CodeReferenceService {
 
     @Transactional
     public void deleteReference(Long mapId, Long refId, Long userId) {
-        // 1. 권한 확인
+        // 권한 확인
         if (!mindmapAuthService.hasEdit(mapId, userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        // 2. 해당 마인드맵에 코드 참조가 존재하는지 확인
-        if (!codeReferenceRepository.existsByMindmapIdAndId(mapId, refId)) {
-            throw new GlobalException(ErrorCode.CODE_REFERENCE_NOT_FOUND);
-        }
+        CodeReference codeReference = codeReferenceRepository.findByMindmapIdAndId(mapId, refId)
+            .orElseThrow(() -> new GlobalException(ErrorCode.CODE_REFERENCE_NOT_FOUND));
 
-        // 3. 코드 참조 삭제
-        codeReferenceRepository.deleteById(refId);
+        // 코드 참조 삭제
+        codeReferenceRepository.delete(codeReference);
     }
 
     private String extractLines(String fullContent, Integer startLine, Integer endLine) {

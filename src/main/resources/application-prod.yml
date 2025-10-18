@@ -31,4 +31,16 @@ app:
     same-site: None
 
 fastapi:
-  base-url: http://fastapi-server:8000 # Docker 네트워크 내부에서 사용할 주소
+  base-url: http://172.31.47.81:8000 # Docker 네트워크 내부에서 사용할 주소
+
+security:
+  require-auth-for-unknown: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

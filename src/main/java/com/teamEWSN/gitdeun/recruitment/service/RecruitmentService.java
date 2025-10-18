@@ -116,8 +116,8 @@ public class RecruitmentService {
      * @return 페이징 처리된 검색 결과 목록
      */
     @Transactional(readOnly = true)
-    public Page<RecruitmentListResponseDto> searchRecruitments(String keyword, RecruitmentStatus status, List<RecruitmentField> fields, Pageable pageable) {
-        return recruitmentRepository.searchRecruitments(keyword, status, fields, pageable)
+    public Page<RecruitmentListResponseDto> searchRecruitments(String keyword, RecruitmentStatus status, List<RecruitmentField> fields, List<DeveloperSkill> languages, Pageable pageable) {
+        return recruitmentRepository.searchRecruitments(keyword, status, fields, languages, pageable)
             .map(recruitmentMapper::toListResponseDto);
     }
 

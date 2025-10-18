@@ -5,6 +5,7 @@ import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentField;
 import com.teamEWSN.gitdeun.recruitment.entity.RecruitmentStatus;
 import com.teamEWSN.gitdeun.recruitment.service.RecruitmentService;
 import com.teamEWSN.gitdeun.common.jwt.CustomUserDetails;
+import com.teamEWSN.gitdeun.userskill.entity.DeveloperSkill;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -85,9 +86,10 @@ public class RecruitmentController {
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) RecruitmentStatus status,
         @RequestParam(required = false) List<RecruitmentField> field,
+        @RequestParam(required = false) List<DeveloperSkill> languages,
         @PageableDefault(size = 10) Pageable pageable
     ) {
-        Page<RecruitmentListResponseDto> response = recruitmentService.searchRecruitments(keyword, status, field, pageable);
+        Page<RecruitmentListResponseDto> response = recruitmentService.searchRecruitments(keyword, status, field, languages, pageable);
         return ResponseEntity.ok(response);
     }
 
