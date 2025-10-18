@@ -6,6 +6,7 @@ import com.teamEWSN.gitdeun.common.oauth.dto.GoogleTokenResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -108,7 +109,7 @@ public class GoogleApiHelper {
                 .uri("https://www.googleapis.com/oauth2/v2/userinfo")
                 .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
-                .bodyToMono(Map.class)
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
         } catch (WebClientResponseException e) {
             log.error("Google userinfo 조회 실패: {}", e.getResponseBodyAsString());
