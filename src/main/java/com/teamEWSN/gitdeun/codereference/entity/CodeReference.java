@@ -5,7 +5,10 @@ import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +18,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "code_reference")
+@SQLDelete(sql = "UPDATE code_reference SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class CodeReference extends AuditedEntity {
 
     @Id
@@ -41,6 +46,8 @@ public class CodeReference extends AuditedEntity {
     @OneToMany(mappedBy = "codeReference", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CodeReview> codeReviews = new ArrayList<>();
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     public void update(String filePath, Integer startLine, Integer endLine) {
         this.filePath = filePath;

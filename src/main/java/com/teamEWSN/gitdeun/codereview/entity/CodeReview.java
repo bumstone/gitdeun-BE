@@ -6,8 +6,11 @@ import com.teamEWSN.gitdeun.common.util.AuditedEntity;
 import com.teamEWSN.gitdeun.mindmap.entity.Mindmap;
 import com.teamEWSN.gitdeun.user.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +20,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "code_review")
+@SQLDelete(sql = "UPDATE code_review SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class CodeReview extends AuditedEntity {
 
     @Id
@@ -46,6 +51,9 @@ public class CodeReview extends AuditedEntity {
     @Builder.Default
     @OneToMany(mappedBy = "codeReview", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     public void changeStatus(CodeReviewStatus status) {
         this.status = status;
