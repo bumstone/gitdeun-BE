@@ -1,0 +1,281 @@
+# Gitdeun(깃든)
+![Gitdeun](https://github.com/user-attachments/assets/b8bbd96b-4467-4e32-b203-209530a0c4ee)
+
+
+- 🚀배포사이트 : [Gitdeun](https://gitdeun.site/)
+
+## 🗣 프로젝트 소개
+**Gitdeun(깃든)**은 비개발자 및 주니어 개발자들을 위한 Github Url을 통한 Repository에 대한 코드 구조의 마인드맵 협업 도구입니다.
+
+<br>
+
+## 🎯 기획 배경
+현대 소프트웨어 개발에서 협업은 필수지만, 새 팀원이 기존 프로젝트 구조를 파악하거나 타인의 코드를 이해하는 데 많은 어려움을 겪습니다. [cite: 8, 9] AI 코드 생성 기술의 발전으로 개발 속도는 빨라졌지만, 오히려 코드의 전체 구조와 동작 원리를 파악하기는 더 어려워졌습니다.
+
+기존 협업 도구는 버전 관리에는 유용하지만, 프로젝트의 구조, 기능별 역할, 코드 간의 연결성을 한눈에 보여주지 못합니다. [cite: 18] 이는 특히 기획자, 디자이너, PM 등 비개발 직군에게 큰 진입 장벽이 되어 팀 내 소통 오류를 유발합니다.
+
+'깃든'은 이 문제를 해결하기 위해, 코드와 협업 과정을 시각적으로 정리하고 AI 프롬프트를 통해 마인드맵을 수정/보완하며, 개발자와 비개발자 모두가 동일한 그림을 보며 소통할 수 있는 플랫폼을 제공하고자 합니다.
+
+<br>
+
+## 🔍 주요 기능 소개
+### ✅ 1. Git 레포지토리 기반 AI 마인드맵 시각화
+- Github API를 통해 메인 브랜치의 코드와 디렉토리 구조를 분석, AI가 기능 단위로 분류하여 Go.js 기반의 인터랙티브 마인드맵으로 자동 시각화합니다.
+- 마인드맵 노드 클릭 시, 해당 코드 블록과 코드 리뷰 히스토리를 바로 확인할 수 있습니다.
+
+<br>
+
+### ✅ 2. AI(Gemini) 프롬프트를 통한 마인드맵 수정
+- "핵심 기능 위주로 요약해줘" 같은 자연어 프롬프트를 입력하면, Gemini API가 마인드맵의 내용을 동적으로 수정하고 보완합니다.
+- AI가 코드 내 주요 영역을 분석하여 리팩토링 제안이나 설계 의도를 요약하고 추천 코드를 제시합니다.
+
+<br>
+
+### ✅ 3. 실시간 마인드맵 협업 및 코드 리뷰
+- 마인드맵의 각 기능 노드에 `[중요]`, `[질문]`, `[수정요청]` 등의 태그를 달아 실시간 피드백을 공유할 수 있습니다.
+- 코드 참조(Code Reference) 및 코드 리뷰 기능을 통해 마인드맵 노드와 특정 코드 라인을 연결하여 협업합니다.
+
+<br>
+
+### ✅ 4.  실시간 알림
+- 이메일과 연동하여 마인드맵 생성과 새로고침, 초대, 코멘트 등의 이벤트 발생 시 SSE를 통해 실시간 협업 알림을 전송합니다.
+
+<br>
+
+# 1. 팀원 소개 :technologist: 
+
+| <img src="https://avatars.githubusercontent.com/u/73152527?v=4" width="150" height="150"> | <img src="https://avatars.githubusercontent.com/u/157580000?v=4"  width="150" height="150"> | <img src="https://avatars.githubusercontent.com/u/115947715?v=4"  width="150" height="150"> | <img src="https://avatars.githubusercontent.com/u/109144010?v=4"  width="150" height="150"> |
+| :---------------------------------------------------------------: | :---------------------------------------------------------------: | :--------------------------------------------------------------: | :--------------------------------------------------------------: | 
+|           [고범석](https://github.com/bumstone)         |        [장욱](https://github.com/uk0k)      |           [오채연](https://github.com/oh-chaeyeon)       |            [백승은](https://github.com/s-eun20)       |      
+
+
+### [맡은 작업]
+**고범석** : 메인 백엔드(Spring Boot), 인증/인가(JWT, OAuth2), DB 설계(RDB), 실시간 SSE, AWS 배포 <br>
+**장욱** : AI 백엔드(Fast API), ArangoDB(Graph DB), Gemini API 연동 <br>
+**오채연** : UI/UX 디자인 및 웹 프론트 구현<br>
+**백승은** : UI 설계, Go.js 마인드맵 시각화 및 웹 프론트 구현<br>
+
+
+-------------------------------------------------------------------------------------
+# 2.  기술 및 개발 환경 🛠️
+#### [Frontend]
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![TypeScript](https://img.shields.io/badge/typescript-%233178C6.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Axios](https://img.shields.io/badge/axios-671ddf?&style=for-the-badge&logo=axios&logoColor=white)
+![GoJS](https://img.shields.io/badge/GoJS-Go.js-orange?style=for-the-badge)
+
+#### [Backend (Spring)]
+![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring_Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![Spring_Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-00000F?style=for-the-badge&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?&style=for-the-badge&logo=redis&logoColor=white)
+
+#### [Backend (AI)]
+![Python](https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Google_Gemini](https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![ArangoDB](https://img.shields.io/badge/ArangoDB-D9262C?style=for-the-badge&logo=arangodb&logoColor=white)
+![DockerHub](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+![NGINX](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![AWS E2C](https://img.shields.io/badge/Amazon_Web_Services-FF9900?style=for-the-badge&logo=amazonwebservices&logoColor=white)
+![AWS RDS](https://img.shields.io/badge/Amazon%20RDS-527FFF?style=for-the-badge&logo=amazon-rds&logoColor=white)
+
+#### [Infra & DevOps]
+![AWS EC2](https://img.shields.io/badge/Amazon%20EC2-FF9900?style=for-the-badge&logo=amazon-ec2&logoColor=white)
+![AWS RDS](https://img.shields.io/badge/Amazon%20RDS-527FFF?style=for-the-badge&logo=amazon-rds&logoColor=white)
+![AWS S3](https://img.shields.io/badge/Amazon%20S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white)
+![Elastic_Beanstalk](https://img.shields.io/badge/Elastic_Beanstalk-FF9900?style=for-the-badge&logo=aws-elastic-beanstalk&logoColor=white)
+![NGINX](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![DockerHub](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+![GitHub_Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+![Netlify](https://img.shields.io/badge/Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)
+
+#### [협력 도구]
+![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
+![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)
+![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)
+![Figma](https://img.shields.io/badge/figma-%23F24E1E.svg?style=for-the-badge&logo=figma&logoColor=white)
+
+
+
+-------------------------------------------------------------------------------------
+# 3. 시스템 아키텍처 및 데이터 흐름 요약
+
+프로젝트는 React 기반 프론트엔드, Spring Boot 기반 메인 백엔드, FastAPI 기반 AI 백엔드로 구성되어 다음과 같은 데이터 흐름 구조를 따릅니다.
+
+<br>
+
+<img width="748" height="428" alt="gitdeun drawio" src="https://github.com/user-attachments/assets/9bf7384a-e59c-4117-9a49-da457c977838" />
+
+
+### 🔁 데이터 흐름 요약
+
+1.  **사용자 요청 (Frontend)**: 사용자가 Netlify에 배포된 React/Go.js 웹사이트에 접속하여 Github URL을 입력하거나 마인드맵 수정을 위한 프롬프트를 입력합니다.
+2.  **메인 서버 (Spring Boot)**: Nginx를 통해 요청을 받은 Spring Boot 백엔드는 사용자 인증(JWT, Google OAuth), 회원 정보 관리, 마인드맵 메타데이터 관리, 초대/알림(SSE) 기능 등 핵심 비즈니스 로직을 처리합니다. 
+3.  **AI 서버 (FastAPI)**:
+    * **마인드맵 생성**: Spring Boot의 요청을 받아 Github 레포지토리를 분석하고, **Gemini API**를 호출하여 코드 구조를 분석합니다.
+    * **그래프 저장**: 분석된 마인드맵(노드, 엣지) 데이터를 Graph DB인 **ArangoDB**에 저장합니다.
+    * **프롬프트 처리**: 사용자의 프롬프트 입력을 받아 Gemini API로 전달하고, ArangoDB의 그래프 데이터를 수정/보완합니다. 
+    * **음성 회의 (STT)**: LiveKit을 통해 전달된 음성 데이터를 **CLOVA Speech** API로 전송하여 텍스트로 변환하고 요약합니다.
+4.  **데이터베이스**:
+    * **MySQL (AWS RDS)**: 사용자 정보, 마인드맵 메타데이터, 초대/리뷰 정보 등 정형 데이터를 저장합니다. 
+    * **ArangoDB (Graph DB)**: 마인드맵의 노드와 엣지, 코드 간의 관계 등 복잡한 그래프 데이터를 저장합니다. 
+    * **Redis**: 실시간 접속자 현황, 인증 토큰(Refresh), 캐시 등을 관리합니다.
+    * **AWS S3**: 코드 리뷰 시 첨부되는 이미지/파일 등을 저장합니다.
+5.  **응답 및 시각화**: 처리된 마인드맵 데이터는 백엔드를 거쳐 프론트엔드로 전달되며, React와 **Go.js**가 이를 인터랙티브 마인드맵으로 시각화합니다.
+
+
+
+# API 명세서(Spring Boot)
+<details>
+  <summary>👤 유저, 인증, 설정 API</summary>
+  
+| API URL | Method | 설명 |
+|---------|--------|------|
+| `/login/oauth2/code/{provider}` | GET | OAuth2 소셜 로그인 (Google, Github) |
+| `/api/auth/logout` | POST | 로그아웃 |
+| `/api/auth/token/refresh` | GET | 액세스 토큰 재발급 |
+| `/api/auth/connect/github/state` | GET | Github 계정 연동을 위한 상태 코드 생성 |
+| `/api/auth/oauth/refresh/{provider}` | POST | (구현 예정) 소셜 토큰 갱신 |
+| `/api/auth/social` | GET | 현재 연동된 소셜 계정 목록 조회 |
+| `/api/users/me` | GET | 내 정보 조회 |
+| `/api/users/me` | DELETE | 회원 탈퇴 |
+| `/api/users/me/settings` | GET | 내 설정 조회 (테마, 알림 여부) |
+| `/api/users/me/settings` | PATCH | 내 설정 수정 |
+
+</details>
+
+<details>
+  <summary>🗺️ 마인드맵, 노드, 프롬프트 API</summary>
+  
+| API URL | Method | 설명 |
+|---------|--------|------|
+| `/api/mindmaps/async` | POST | 마인드맵 비동기 생성 요청 |
+| `/api/mindmaps/{mapId}` | GET | 마인드맵 상세 조회 |
+| `/api/mindmaps/{mapId}` | DELETE | 마인드맵 삭제 (Soft Delete) |
+| `/api/mindmaps/{mapId}/title` | PATCH | 마인드맵 제목 수정 |
+| `/api/mindmaps/{mapId}/refresh` | POST | 마인드맵 비동기 새로고침 |
+| `/api/mindmaps/{mapId}/sse` | GET | 마인드맵 실시간 SSE 연결 (접속자, 수정사항) |
+| `/api/mindmaps/{mapId}/connections/users` | GET | 마인드맵 현재 접속자 목록 |
+| `/api/mindmaps/{mapId}/nodes/{nodeKey}/code` | GET | 특정 노드의 코드 상세 조회 |
+| `/api/mindmaps/{mapId}/nodes/list` | GET | (테스트용) 마인드맵 전체 노드 목록 |
+| `/api/mindmaps/{mapId}/prompts` | POST | AI 프롬프트 분석 및 적용 요청 |
+| `/api/mindmaps/{mapId}/prompts/histories` | GET | 프롬프트 히스토리 목록 조회 (페이징) |
+| `/api/mindmaps/{mapId}/prompts/histories/{historyId}` | DELETE | 프롬프트 히스토리 삭제 |
+| `/api/mindmaps/{mapId}/prompts/applied` | GET | 현재 적용된 프롬프트 히스토리 조회 |
+
+</details>
+
+<details>
+  <summary>✍️ 코드 리뷰, 댓글, 참조 API</summary>
+  
+| API URL | Method | 설명 |
+|---------|--------|------|
+| `/api/mindmaps/{mapId}/nodes/{nodeKey}/code-reviews` | POST | 노드에 코드 리뷰 생성 |
+| `/api/mindmaps/{mapId}/nodes/{nodeKey}/code-reviews` | GET | 노드의 코드 리뷰 목록 조회 |
+| `/api/references/{refId}/code-reviews` | POST | 코드 참조(블록)에 코드 리뷰 생성 |
+| `/api/code-reviews/{reviewId}` | GET | 코드 리뷰 상세 조회 (댓글 포함) |
+| `/api/code-reviews/{reviewId}/status` | PATCH | 코드 리뷰 상태 변경 (Resolved/Pending) |
+| `/api/code-reviews/{reviewId}/comments` | POST | 리뷰에 댓글/대댓글 작성 (파일 첨부) |
+| `/api/comments/{commentId}` | PATCH | 댓글 내용 수정 |
+| `/api/comments/{commentId}` | DELETE | 댓글 삭제 |
+| `/api/comments/{commentId}/resolve` | PATCH | 댓글 스레드 해결/미해결 토글 |
+| `/api/comments/{commentId}/attachments` | POST | 기존 댓글에 파일 추가 첨부 |
+| `/api/comments/attachments/{attachmentId}` | DELETE | 첨부파일 개별 삭제 |
+| `/api/comments/{commentId}/emoji` | PATCH | 댓글에 이모지 추가/변경/삭제 |
+| `/api/mindmaps/{mapId}/nodes/{nodeKey}/code-references` | POST | 노드에 코드 참조(블록) 생성 |
+| `/api/mindmaps/{mapId}/nodes/{nodeKey}/code-references` | GET | 노드의 코드 참조 목록 조회 |
+| `/api/mindmaps/{mapId}/code-references/{refId}/detail` | GET | 코드 참조 상세 조회 (코드 스니펫 포함) |
+| `/api/mindmaps/{mapId}/code-references/{refId}` | PATCH | 코드 참조 수정 (라인 변경 등) |
+| `/api/mindmaps/{mapId}/code-references/{refId}` | DELETE | 코드 참조 삭제 |
+
+</details>
+
+<details>
+  <summary>🤝 초대, 알림, 방문기록 API</summary>
+  
+| API URL | Method | 설명 |
+|---------|--------|------|
+| `/api/invitations/mindmaps/{mapId}` | POST | 이메일로 멤버 초대 |
+| `/api/invitations/mindmaps/{mapId}` | GET | 마인드맵의 초대 목록 조회 (페이징) |
+| `/api/invitations/mindmaps/{mapId}/accepted` | GET | 수락된 초대 목록 |
+| `/api/invitations/mindmaps/{mapId}/pending` | GET | 대기중인 초대 목록 |
+| `/api/invitations/{invitationId}/accept` | POST | (수신자) 이메일 초대 수락 |
+| `/api/invitations/{invitationId}/reject` | POST | (수신자) 초대 거절 |
+| `/api/invitations/mindmaps/{mapId}/link` | POST | (Owner) 초대 링크 생성 |
+| `/api/invitations/link/{token}/accept` | POST | (수신자) 초대 링크 수락 (참여 요청) |
+| `/api/invitations/{invitationId}/approve` | POST | (Owner) 링크 참여 요청 승인 |
+| `/api/invitations/{invitationId}/reject-link` | POST | (Owner) 링크 참여 요청 거절 |
+| `/api/notifications/sse` | GET | 알림 실시간 SSE 연결 (개수, 새 알림) |
+| `/api/notifications` | GET | 내 알림 목록 조회 (페이징) |
+| `/api/notifications/unread-count` | GET | 읽지 않은 알림 개수 |
+| `/api/notifications/{notificationId}/read` | PATCH | 알림 읽음 처리 |
+| `/api/notifications/read-all` | PATCH | 모든 알림 읽음 처리 |
+| `/api/notifications/{notificationId}` | DELETE | 알림 삭제 |
+| `/api/history/sse` | GET | 방문 기록 실시간 SSE 연결 (핀 고정) |
+| `/api/history/visits` | GET | 최근 방문 기록 조회 (페이징, 핀 제외) |
+| `/api/history/pins` | GET | 핀 고정된 방문 기록 조회 |
+| `/api/history/visits/{historyId}` | DELETE | 방문 기록 삭제 (및 멤버 탈퇴) |
+| `/api/history/{historyId}/pin` | POST | 방문 기록 핀 고정 |
+| `/api/history/{historyId}/pin` | DELETE | 방문 기록 핀 해제 |
+
+</details>
+
+<details>
+  <summary>📢 모집, 지원, 기술스택 API</summary>
+  
+| API URL | Method | 설명 |
+|---------|--------|------|
+| `/api/recruitments` | POST | 모집 공고 생성 (이미지 첨부) |
+| `/api/recruitments` | GET | 모집 공고 필터링/검색 (페이징) |
+| `/api/users/me/recruitments` | GET | 내가 작성한 모집 공고 |
+| `/api/recruitments/{id}` | GET | 모집 공고 상세 조회 |
+| `/api/recruitments/{id}` | PUT | 모집 공고 수정 |
+| `/api/recruitments/{id}` | DELETE | 모집 공고 삭제 |
+| `/api/recruitments/recommendations` | GET | 맞춤 추천 공고 목록 |
+| `/api/recruitments/{recruitmentId}/applications` | POST | 모집 공고에 지원하기 |
+| `/api/recruitments/{recruitmentId}/applications` | GET | (작성자) 공고의 지원자 목록 조회 |
+| `/api/users/me/applications` | GET | (지원자) 내 지원 목록 조회 |
+| `/api/applications/{applicationId}` | GET | 지원 상세 조회 (양측) |
+| `/api/applications/{applicationId}/withdraw` | PATCH | (지원자) 지원 철회 |
+| `/api/applications/{applicationId}/accept` | PATCH | (작성자) 지원 수락 |
+| `/api/applications/{applicationId}/reject` | PATCH | (작성자) 지원 거절 |
+| `/api/skills` | GET | 선택 가능한 개발 기술 목록 |
+| `/api/skills/me` | GET | 내 개발 기술 목록 (선택 여부 포함) |
+| `/api/skills/me` | POST | 내 개발 기술 저장 |
+
+</details>
+
+<details>
+  <summary>⚙️ 기타 (S3, Webhook, Repo) API</summary>
+  
+| API URL | Method | 설명 |
+|---------|--------|------|
+| `/api/s3/bucket/upload` | POST | S3 파일 업로드 |
+| `/api/s3/bucket/delete` | DELETE | S3 파일 삭제 |
+| `/api/s3/bucket/download` | GET | S3 파일 다운로드 |
+| `/api/repos/check` | GET | URL로 레포지토리 등록 여부 확인 |
+| `/api/repos/{repoId}` | GET | 레포지토리 정보 조회 |
+| `/api/webhook/mindmaps/update` | POST | (FastAPI용) Webhook 업데이트 수신 |
+
+</details>
+
+
+ 
+-------------------------------------------------------------------------------------
+# 4. 실제 동작화면
+
+### ✅ 자체 웹사이트 로그인/회원가입 기능
+#### 회원가입
+##### 메인페이지 및 OAuth 로그인
+![혜택온-회원가입2배속](https://github.com/user-attachments/assets/e341e8ff-9341-425a-a0ab-7df6fc5d0fdf)
+
+
+
+
+
+
+
