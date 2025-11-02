@@ -1,8 +1,17 @@
 # Gitdeun(깃든)
 ![Gitdeun](https://github.com/user-attachments/assets/b8bbd96b-4467-4e32-b203-209530a0c4ee)
 
-
 - 🚀배포사이트 : [Gitdeun](https://gitdeun.site/)
+
+## 📜 목차
+- [1. 팀원 소개 :technologist:](#1-팀원-소개-technologist)
+- [2. 기술 및 개발 환경 🛠️](#2-기술-및-개발-환경-️)
+- [3. 시스템 아키텍처 및 데이터 흐름 요약](#3-시스템-아키텍처-및-데이터-흐름-요약)
+- [4. API 명세서(Spring Boot)](#4-api-명세서spring-boot)
+- [5. 트러블 슈팅 및 고민 거리](#5-트러블-슈팅-및-고민-거리)
+- [6. 실제 동작화면](#6-실제-동작화면)
+
+<br>
 
 ## 🗣 프로젝트 소개
 **Gitdeun(깃든)**은 비개발자 및 주니어 개발자들을 위한 Github Url을 통한 Repository에 대한 코드 구조의 마인드맵 협업 도구입니다.
@@ -128,7 +137,7 @@
 
 
 
-# API 명세서(Spring Boot)
+# 4. API 명세서(Spring Boot)
 <details>
   <summary>👤 유저, 인증, 설정 API</summary>
   
@@ -263,9 +272,13 @@
 </details>
 
 
- 
 -------------------------------------------------------------------------------------
-# 4. 실제 동작화면
+# 5. 트러블 슈팅 및 고민 거리
+
+
+
+-------------------------------------------------------------------------------------
+# 6. 실제 동작화면
 
 ### ✅ 메인페이지 및 OAuth 로그인
 
@@ -346,10 +359,3 @@ https://github.com/user-attachments/assets/410acad2-7452-4a84-9e2b-5e25360ab9eb
 ### ✅ 마이페이지 정보 조회
 
 <img width="1086" height="956" alt="마이페이지" src="https://github.com/user-attachments/assets/46eb1746-a3b1-4557-9e33-f11f5eacaf88" />
-
-
-
-
-
-
-
