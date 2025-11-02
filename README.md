@@ -119,7 +119,6 @@
     * **마인드맵 생성**: Spring Boot의 요청을 받아 Github 레포지토리를 분석하고, **Gemini API**를 호출하여 코드 구조를 분석합니다.
     * **그래프 저장**: 분석된 마인드맵(노드, 엣지) 데이터를 Graph DB인 **ArangoDB**에 저장합니다.
     * **프롬프트 처리**: 사용자의 프롬프트 입력을 받아 Gemini API로 전달하고, ArangoDB의 그래프 데이터를 수정/보완합니다. 
-    * **음성 회의 (STT)**: LiveKit을 통해 전달된 음성 데이터를 **CLOVA Speech** API로 전송하여 텍스트로 변환하고 요약합니다.
 4.  **데이터베이스**:
     * **MySQL (AWS RDS)**: 사용자 정보, 마인드맵 메타데이터, 초대/리뷰 정보 등 정형 데이터를 저장합니다. 
     * **ArangoDB (Graph DB)**: 마인드맵의 노드와 엣지, 코드 간의 관계 등 복잡한 그래프 데이터를 저장합니다. 
@@ -268,10 +267,85 @@
 -------------------------------------------------------------------------------------
 # 4. 실제 동작화면
 
-### ✅ 자체 웹사이트 로그인/회원가입 기능
-#### 회원가입
-##### 메인페이지 및 OAuth 로그인
-![혜택온-회원가입2배속](https://github.com/user-attachments/assets/e341e8ff-9341-425a-a0ab-7df6fc5d0fdf)
+### ✅ 메인페이지 및 OAuth 로그인
+
+https://github.com/user-attachments/assets/7467f245-7b5e-4a73-898b-cf12ad823e39
+
+---
+
+### ✅ 관심 개발 언어 선택
+
+https://github.com/user-attachments/assets/7112c4df-7f19-40e1-9ad8-fbdd8945c43d
+
+---
+
+### ✅ 마인드맵 기록 및 핀 고정 유무 조회
+
+https://github.com/user-attachments/assets/4b741e4f-f2ff-43c9-a957-7e6e8859d204
+
+---
+
+### ✅ 마인드맵 생성 요청과 알림 확인
+
+https://github.com/user-attachments/assets/2f53a7fb-09ed-479c-9fad-10346aa6acfc
+
+---
+
+### ✅ 마인드맵 생성 완료 시 SSE로 자동 전환
+
+https://github.com/user-attachments/assets/171ecf08-d764-489f-b484-644fab7f112a
+
+---
+
+### ✅ 마인드맵 상세 조회
+
+https://github.com/user-attachments/assets/f23f9287-bb7f-4c58-9234-6b6cecd13332
+
+---
+
+### ✅ 마인드맵 코드 파일 및 리뷰 확인
+
+https://github.com/user-attachments/assets/fcf3f06d-66d5-4c34-bab4-f0461e825a3f
+
+---
+
+### ✅ 코드 블록 작성
+
+https://github.com/user-attachments/assets/2a097d07-921c-4fb5-ba77-3f8fa4394bdd
+
+---
+
+### ✅ 초대하기 (이메일)
+
+https://github.com/user-attachments/assets/410acad2-7452-4a84-9e2b-5e25360ab9eb
+
+<img width="489" height="338" alt="초대 이메일 확인" src="https://github.com/user-attachments/assets/f8377e6a-9682-415b-b8ab-d41b1b65bc58" />
+
+---
+
+### ✅ 모집 공고 작성
+
+<img width="1078" height="1871" alt="모집공고 작성" src="https://github.com/user-attachments/assets/95f3bf8d-480f-403f-83e1-9f6f1e08ebe7" />
+
+---
+
+### ✅ 모집 공고 상세 조회
+
+<img width="1090" height="1159" alt="모집공고 상세조회" src="https://github.com/user-attachments/assets/7815d11d-ec82-4bca-8bf1-02681473e344" />
+
+---
+
+### ✅ 모집 신청 
+
+<img width="657" height="545" alt="모집신청" src="https://github.com/user-attachments/assets/3901ed41-e73b-461e-9e25-6b47ad75c27c" />
+
+<img width="1023" height="909" alt="모집신청2" src="https://github.com/user-attachments/assets/9b890be4-8dfb-45ac-9c82-08812d5410dd" />
+
+---
+
+### ✅ 마이페이지 정보 조회
+
+<img width="1086" height="956" alt="마이페이지" src="https://github.com/user-attachments/assets/46eb1746-a3b1-4557-9e33-f11f5eacaf88" />
 
 
 
