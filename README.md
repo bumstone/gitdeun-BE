@@ -66,7 +66,7 @@
 
 
 -------------------------------------------------------------------------------------
-# 2.  기술 및 개발 환경
+# 2. 기술 및 개발 환경 🛠️
 #### [Frontend]
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![TypeScript](https://img.shields.io/badge/typescript-%233178C6.svg?style=for-the-badge&logo=typescript&logoColor=white)
